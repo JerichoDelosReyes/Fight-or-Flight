@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 public class GameUI : MonoBehaviour
@@ -43,5 +43,6 @@ public class GameUI : MonoBehaviour
         _gameUI.SetActive(true);
         Instantiate(_playerPrefab, _playerSpawner.transform.position, _playerSpawner.transform.rotation);
     }
+
 
 }

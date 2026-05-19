@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Light))]
@@ -106,5 +106,6 @@ public class Laser : MonoBehaviour
     {
         _canFire = true;
     }
+
 
 }

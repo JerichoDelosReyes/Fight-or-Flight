@@ -1,0 +1,15 @@
+{
+    "asset": "a6947b097f6e04c6a8308c8ac6bd6065",
+    "fileName": "019e40df-aa4d-7d7a-9d3a-8ddf8b9e481c.wav",
+    "prompt": "powerful space explosion, metallic crunch, debris scattering, muffled by vacuum",
+    "negativePrompt": "",
+    "model": "elevenlabs-sound-effects-v2",
+    "modelName": "ElevenLabs Sound Effects V2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "duration": 3.0,
+    "autoTrim": false,
+    "hasReference": false,
+    "voice": ""
+}

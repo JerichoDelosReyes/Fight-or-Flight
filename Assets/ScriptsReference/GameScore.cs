@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
 using UnityEngine.UI;
 
@@ -64,6 +64,7 @@ public class GameScore : MonoBehaviour
     {
         _highScoreText.text = _highScore.ToString();
     }
+
 
 
 }

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 
 [RequireComponent(typeof(Light))]
@@ -20,5 +20,6 @@ public class Thruster : MonoBehaviour
     {
         _thrusterLight.intensity = value * 2f;
     }
+
 
 }

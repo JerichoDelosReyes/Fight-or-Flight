@@ -1,0 +1,15 @@
+{
+    "asset": "559c70b64620d45ee9e9acae8922044e",
+    "fileName": "019e40e4-b0e5-7147-93d8-ec7915a27bd9.wav",
+    "prompt": "Sci-fi laser impact sound, sharp, energy zap",
+    "negativePrompt": "",
+    "model": "elevenlabs-sound-effects-v2",
+    "modelName": "ElevenLabs Sound Effects V2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "duration": 10.0,
+    "autoTrim": false,
+    "hasReference": false,
+    "voice": ""
+}

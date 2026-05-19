@@ -24,8 +24,9 @@ public class ShipCollisionEffects : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Simple name check for asteroids
-        if (collision.gameObject.name.ToLower().Contains("asteroid") && !_isBumping)
+        // Simple name check for asteroids or rocks
+        string objName = collision.gameObject.name.ToLower();
+        if ((objName.Contains("asteroid") || objName.Contains("rock")) && !_isBumping)
         {
             StartCoroutine(BumpCoroutine());
         }

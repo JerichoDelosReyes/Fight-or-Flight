@@ -1,0 +1,15 @@
+{
+    "asset": "fe70235b9e113431990a0368931ba94d",
+    "fileName": "019e40e4-9c67-71b7-960b-ebcb7ea401bc.wav",
+    "prompt": "Low frequency engine rumble for a space ship, loopable, steady",
+    "negativePrompt": "",
+    "model": "elevenlabs-sound-effects-v2",
+    "modelName": "ElevenLabs Sound Effects V2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "duration": 10.0,
+    "autoTrim": false,
+    "hasReference": false,
+    "voice": ""
+}

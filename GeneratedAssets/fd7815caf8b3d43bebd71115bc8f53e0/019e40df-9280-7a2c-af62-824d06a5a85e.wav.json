@@ -1,0 +1,15 @@
+{
+    "asset": "fd7815caf8b3d43bebd71115bc8f53e0",
+    "fileName": "019e40df-9280-7a2c-af62-824d06a5a85e.wav",
+    "prompt": "sci-fi laser blast, short, sharp, energy pulse sound",
+    "negativePrompt": "",
+    "model": "elevenlabs-sound-effects-v2",
+    "modelName": "ElevenLabs Sound Effects V2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "duration": 2.0,
+    "autoTrim": false,
+    "hasReference": false,
+    "voice": ""
+}

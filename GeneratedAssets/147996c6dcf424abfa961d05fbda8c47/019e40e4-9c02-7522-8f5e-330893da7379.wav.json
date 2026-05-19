@@ -1,0 +1,15 @@
+{
+    "asset": "147996c6dcf424abfa961d05fbda8c47",
+    "fileName": "019e40e4-9c02-7522-8f5e-330893da7379.wav",
+    "prompt": "Powerful sci-fi explosion in space, bassy, echoing",
+    "negativePrompt": "",
+    "model": "elevenlabs-sound-effects-v2",
+    "modelName": "ElevenLabs Sound Effects V2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "duration": 10.0,
+    "autoTrim": false,
+    "hasReference": false,
+    "voice": ""
+}

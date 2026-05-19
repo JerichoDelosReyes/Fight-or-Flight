@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class Shield : MonoBehaviour
 {
@@ -41,5 +41,6 @@ public class Shield : MonoBehaviour
             GameEventManager.PlayerDestroyed();
         }
     }
+
 
 }

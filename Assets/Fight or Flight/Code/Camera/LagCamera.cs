@@ -78,13 +78,37 @@ public class LagCamera : MonoBehaviour
         currentDistanceScale = Mathf.Clamp(currentDistanceScale, minDistanceScale, maxDistanceScale);
     }
 
+    [Header("Bob & Drift")]
+    public float bobAmount = 2.0f;
+    public float bobSpeed = 5.0f;
+    public float driftAmount = 5.0f;
+    public float driftSpeed = 3.0f;
+
+    private float bobTimer = 0f;
+    private Vector3 driftOffset;
+
     private void UpdateCamera()
     {
         if (target != null)
         {
+            // Bobbing
+            bobTimer += Time.deltaTime * bobSpeed;
+            float bobY = Mathf.Sin(bobTimer) * bobAmount;
+
+            // Drifting based on ship rotation/turning
+            // We can use the ship's angular velocity if it has a Rigidbody, or just simulate it.
+            Rigidbody targetRb = target.GetComponent<Rigidbody>();
+            if (targetRb != null)
+            {
+                Vector3 localAngularVel = target.InverseTransformDirection(targetRb.angularVelocity);
+                Vector3 targetDrift = new Vector3(-localAngularVel.y, localAngularVel.x, 0) * driftAmount;
+                driftOffset = Vector3.Lerp(driftOffset, targetDrift, Time.deltaTime * driftSpeed);
+            }
+
             Vector3 offset = startOffset + Vector3.up * verticalOffset;
-            transform.position = target.TransformPoint(offset * currentDistanceScale);
-            // Use a very high rotation speed for 'direct' response as requested, fixing the lag that makes it hard to control.
+            Vector3 finalOffset = (offset * currentDistanceScale) + new Vector3(0, bobY, 0) + driftOffset;
+            
+            transform.position = target.TransformPoint(finalOffset);
             transform.rotation = Quaternion.Slerp(transform.rotation, target.rotation * startRotationOffset, rotateSpeed * Time.deltaTime);
         }
     }

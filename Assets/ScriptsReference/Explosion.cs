@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [DisallowMultipleComponent]
 public class Explosion : MonoBehaviour
@@ -44,5 +44,6 @@ public class Explosion : MonoBehaviour
         Destroy(spawnedExplosion, _explosionDuration);
         Destroy(gameObject);
     }
+
 
 }

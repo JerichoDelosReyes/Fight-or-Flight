@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class PlayGameButton : MonoBehaviour
 {
@@ -6,4 +6,5 @@ public class PlayGameButton : MonoBehaviour
     {
         GameEventManager.StartGame();
     }
+
 }

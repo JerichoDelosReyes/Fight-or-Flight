@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [DisallowMultipleComponent]
 public class Rotate : MonoBehaviour
@@ -29,5 +29,6 @@ public class Rotate : MonoBehaviour
         returnValue.z = Random.Range(minRange, maxRange);
         return returnValue;
     }
+
 
 }

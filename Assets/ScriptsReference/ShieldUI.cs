@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class ShieldUI : MonoBehaviour
 {
@@ -26,4 +26,5 @@ public class ShieldUI : MonoBehaviour
     {
         _healthBar.sizeDelta = new Vector2(Mathf.RoundToInt(_maxWidth * (percentHealthRemaining / 100f)), _healthBar.rect.height);
     }
+
 }

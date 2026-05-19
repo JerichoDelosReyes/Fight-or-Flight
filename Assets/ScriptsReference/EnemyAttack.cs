@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 
 public class EnemyAttack : MonoBehaviour
@@ -75,5 +75,6 @@ public class EnemyAttack : MonoBehaviour
         var foundTarget = (_target != null);
         return foundTarget;
     }
+
 
 }

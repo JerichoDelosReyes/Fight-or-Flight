@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(MeshCollider))]
@@ -29,5 +29,6 @@ public class Pickup : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
 
 }

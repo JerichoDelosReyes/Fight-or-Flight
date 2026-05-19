@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class GameEventManager : MonoBehaviour
 {
@@ -53,6 +53,7 @@ public class GameEventManager : MonoBehaviour
             OnPlayerDestroyed();
         }
     }
+
 
 
 }

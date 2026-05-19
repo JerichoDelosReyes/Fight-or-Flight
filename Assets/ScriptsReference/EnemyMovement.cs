@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
@@ -128,5 +128,6 @@ public class EnemyMovement : MonoBehaviour
             SelfDestruct();
         }
     }
+
 
 }
