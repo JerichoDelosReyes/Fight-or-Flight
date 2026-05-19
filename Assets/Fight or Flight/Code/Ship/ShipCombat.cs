@@ -11,7 +11,7 @@ public class ShipCombat : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F) && Time.time >= _nextFireTime)
+        if (Input.GetKey(KeyCode.F) && Time.time >= _nextFireTime)
         {
             FireLasers();
             _nextFireTime = Time.time + _fireRate;

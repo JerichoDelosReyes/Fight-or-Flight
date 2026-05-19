@@ -28,6 +28,9 @@ public class LagCamera : MonoBehaviour
     [Tooltip("Current distance multiplier. Defaults to 0.6 to be closer to the ship.")]
     public float currentDistanceScale = 0.6f;
 
+    [Tooltip("Vertical offset to adjust the ship's position in the frame. Higher values move the ship lower.")]
+    public float verticalOffset = 40.0f;
+
     private Transform target;
     private Vector3 startOffset;
     private Quaternion startRotationOffset;
@@ -79,7 +82,8 @@ public class LagCamera : MonoBehaviour
     {
         if (target != null)
         {
-            transform.position = target.TransformPoint(startOffset * currentDistanceScale);
+            Vector3 offset = startOffset + Vector3.up * verticalOffset;
+            transform.position = target.TransformPoint(offset * currentDistanceScale);
             // Use a very high rotation speed for 'direct' response as requested, fixing the lag that makes it hard to control.
             transform.rotation = Quaternion.Slerp(transform.rotation, target.rotation * startRotationOffset, rotateSpeed * Time.deltaTime);
         }
