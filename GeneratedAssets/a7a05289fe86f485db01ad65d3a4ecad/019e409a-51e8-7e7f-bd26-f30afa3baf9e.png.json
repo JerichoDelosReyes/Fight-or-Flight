@@ -1,0 +1,28 @@
+{
+    "asset": "a7a05289fe86f485db01ad65d3a4ecad",
+    "fileName": "019e409a-51e8-7e7f-bd26-f30afa3baf9e.png",
+    "prompt": "A clean rounded rectangle UI button background. Dark navy blue #0D1626 semi-transparent. It must have a very thin, crisp white 1px border. Professional minimalist game UI style. No text.",
+    "negativePrompt": "",
+    "model": "flux-2-dev",
+    "modelName": "Flux 2 (Dev)",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}
