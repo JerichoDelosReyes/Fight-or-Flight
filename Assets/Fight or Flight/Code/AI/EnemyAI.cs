@@ -235,12 +235,15 @@ public class EnemyAI : MonoBehaviour
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    // Enemies roam within this sphere regardless of BoundaryLimit.
+    // Keeps them inside the asteroid play area rather than fleeing to open space.
+    private const float EnemyRoamRadius = 10000f;
+
     private void PickNewPatrolTarget()
     {
-        // Wander within patrolRadius, but respect the global boundary.
         Vector3 offset = Random.insideUnitSphere * patrolRadius;
         Vector3 candidate = transform.position + offset;
-        float limit = ScriptsReference.BoundaryLimit * 0.85f;
+        float limit = EnemyRoamRadius * 0.9f;
         if (candidate.magnitude > limit)
             candidate = candidate.normalized * limit;
         patrolTarget = candidate;
@@ -267,13 +270,20 @@ public class EnemyAI : MonoBehaviour
     private Vector3 ApplyBoundaryCorrection(Vector3 dir)
     {
         float distToCenter = transform.position.magnitude;
-        float softLimit = ScriptsReference.BoundaryLimit * 0.8f;
+        float softLimit = EnemyRoamRadius * 0.8f;
+
         if (distToCenter > softLimit)
         {
             Vector3 toCenter = -transform.position.normalized;
-            float t = Mathf.InverseLerp(softLimit, ScriptsReference.BoundaryLimit, distToCenter);
-            dir = Vector3.Slerp(dir, toCenter, t).normalized;
+            // Ramp up strongly: at softLimit t=0 (no push), at EnemyRoamRadius t=1 (fully toward center).
+            float t = Mathf.InverseLerp(softLimit, EnemyRoamRadius, distToCenter);
+            dir = Vector3.Slerp(dir, toCenter, Mathf.Clamp01(t * 2.5f)).normalized;
         }
+
+        // Hard cap: if past the absolute kill boundary, steer straight back to center.
+        if (distToCenter > ScriptsReference.BoundaryLimit * 0.9f)
+            dir = -transform.position.normalized;
+
         return dir;
     }
 

@@ -75,6 +75,22 @@ public Vector3 Velocity { get { return physics.Rigidbody.linearVelocity; } }
 // is set to player, then whatever happens to be the last ship to be updated will be
         // considered the player. Don't let this happen.
         if (isPlayer)
+        {
             playerShip = this;
+            CheckBoundaryWarning();
+        }
+    }
+
+    private float lastBoundaryWarnTime = -999f;
+
+    private void CheckBoundaryWarning()
+    {
+        float dist = transform.position.magnitude;
+        float warnThreshold = ScriptsReference.BoundaryLimit * 0.85f;
+        if (dist > warnThreshold && Time.time - lastBoundaryWarnTime > 1.2f)
+        {
+            ScreenShake.Trigger(0.18f, 2f);
+            lastBoundaryWarnTime = Time.time;
+        }
     }
 }

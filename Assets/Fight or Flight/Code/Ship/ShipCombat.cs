@@ -89,15 +89,19 @@ AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
             }
         }
 
+        // Aim toward a far point along the ship's own forward so both side-offset
+        // gun barrels converge at the same target instead of firing parallel beams
+        // that appear offset from the crosshair.
+        Vector3 aimTarget = transform.position + transform.forward * 10000f;
+
         foreach (Transform point in firePoints)
         {
             if (point == null) continue;
 
-            Vector3 shotDirection = point.forward;
-            Quaternion shotRotation = point.rotation;
+            Vector3 shotDirection = (aimTarget - point.position).normalized;
+            Quaternion shotRotation = Quaternion.LookRotation(shotDirection);
 
             GameObject laser = Instantiate(laserPrefab, point.position, shotRotation);
-            // Ensure the instantiated prefab is not parented to anything (safety)
             laser.transform.SetParent(null);
             ShipLaserProjectile script = laser.GetComponent<ShipLaserProjectile>();
             if (script != null)
