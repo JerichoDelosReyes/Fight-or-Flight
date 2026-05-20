@@ -40,8 +40,8 @@ public class ShipInput : MonoBehaviour
         throttle = 0;
 
         // Pitch/Yaw/Roll controls with sensitivity
-        // Negative pitch to ensure "Up" tilts the nose "Up" (non-inverted)
-        pitch = -Input.GetAxis("Vertical") * pitchSensitivity * SensitivityScale;
+        // W/S keys (Vertical axis) now inverted: W tilts nose DOWN, S tilts nose UP
+        pitch = Input.GetAxis("Vertical") * pitchSensitivity * SensitivityScale;
         yaw = Input.GetAxis("Horizontal") * yawSensitivity * SensitivityScale;
 
         // Explicit Q/E for roll
