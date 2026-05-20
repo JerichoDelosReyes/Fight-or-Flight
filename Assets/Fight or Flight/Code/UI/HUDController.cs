@@ -37,19 +37,10 @@ public class HUDController : MonoBehaviour
                 fixedCrosshair.gameObject.SetActive(false);
         }
 
-        // Mouse crosshair follows the virtual mouse position from ShipInput
+        // Hide mouse crosshair since player prefers a cleaner look
         if (mouseCrosshair != null)
         {
-            ShipInput input = Ship.PlayerShip.GetComponent<ShipInput>();
-            if (input != null)
-            {
-                mouseCrosshair.position = input.VirtualMousePosition;
-                mouseCrosshair.gameObject.SetActive(true); // Assuming we want it on if ship is active
-            }
-            else
-            {
-                mouseCrosshair.gameObject.SetActive(false);
-            }
+            mouseCrosshair.gameObject.SetActive(false);
         }
-        }
-        }
+    }
+    }

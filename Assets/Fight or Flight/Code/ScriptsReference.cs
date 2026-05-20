@@ -6,7 +6,7 @@ using UnityEngine;
 public static class ScriptsReference
 {
     // Boundary Settings
-    public const float BoundaryLimit = 4800f; // Stay within the 5000 unit background
+    public const float BoundaryLimit = 24000f; // Stay within the expanded background
 
     // Ship Movement Settings
     public static readonly Vector3 DefaultLinearForce = new Vector3(500f, 500f, 2000f);
