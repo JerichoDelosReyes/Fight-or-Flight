@@ -2,37 +2,36 @@ using UnityEngine;
 
 public class ShipLaserProjectile : MonoBehaviour
 {
-    public float speed = 3500f; // Increased speed
+    public float speed = 7000f; 
     public float lifeTime = 3f;
     public float damage = 8f;
     public string targetTag = "Enemy";
 
     public AudioClip shotSound;
     private AudioSource audioSource;
-    private Vector3 initialVelocity = Vector3.zero;
+    private Vector3 movementDirection;
 
     public void Initialize(Vector3 shipVelocity)
     {
-        initialVelocity = shipVelocity;
+        // Ignore velocity inheritance as requested
     }
 
     private void Start()
     {
+        // Cache direction immediately on spawn
+        movementDirection = transform.forward;
         Destroy(gameObject, lifeTime);
         
-        // Ensure it's not a child to avoid following the ship
         transform.SetParent(null);
 
-        // Setup Audio
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 1.0f; // 3D sound
+        audioSource.spatialBlend = 1.0f;
         if (shotSound != null)
         {
             audioSource.PlayOneShot(shotSound, 0.5f);
         }
 
-        // Rigidbody setup to ensure no physics interference
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -43,8 +42,8 @@ public class ShipLaserProjectile : MonoBehaviour
 
     private void Update()
     {
-        // Linear movement in world space, plus initial ship velocity
-        transform.position += (transform.forward * speed + initialVelocity) * Time.deltaTime;
+        // Straight movement in world space using cached direction
+        transform.position += (movementDirection * speed) * Time.deltaTime;
     }
 
     private void OnTriggerEnter(Collider other)

@@ -1,18 +1,29 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Explosion))]
 public class Asteroid : MonoBehaviour
 {
+    public static List<Asteroid> AllAsteroids = new List<Asteroid>();
 
     [SerializeField] private float _minScale = 0.8f;
     [SerializeField] private float _maxScale = 1.2f;
 
     public static float destructionDelay = 1f;
 
+    private void OnEnable()
+    {
+        AllAsteroids.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        AllAsteroids.Remove(this);
+    }
 
     private void Start()
-    {
+{
         transform.localScale = GetRandomVector3(_minScale, _maxScale);
     }
 

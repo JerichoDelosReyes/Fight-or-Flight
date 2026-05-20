@@ -48,10 +48,11 @@ public class Radar : MonoBehaviour
 
         Vector3 playerPos = Ship.PlayerShip.transform.position;
 
-        // Find Enemies
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (var enemy in enemies)
+        // Find Enemies (using cached list)
+        foreach (var enemy in EnemyAI.allEnemies)
         {
+            if (enemy == null) continue;
+
             if (Vector3.Distance(enemy.transform.position, playerPos) <= range)
             {
                 GameObject icon = GetIcon(true);
@@ -59,17 +60,17 @@ public class Radar : MonoBehaviour
             }
         }
 
-        // Find Asteroids
-        Asteroid[] asteroids = Object.FindObjectsByType<Asteroid>(FindObjectsInactive.Exclude);
-foreach (var asteroid in asteroids)
+        // Find Asteroids (using static list)
+foreach (var asteroid in Asteroid.AllAsteroids)
         {
+            if (asteroid == null) continue;
             if (Vector3.Distance(asteroid.transform.position, playerPos) <= range)
             {
                 GameObject icon = GetIcon(false);
                 activeIcons.Add(new RadarIcon { target = asteroid.transform, icon = icon, isEnemy = false });
             }
         }
-    }
+        }
 
     private GameObject GetIcon(bool isEnemy)
     {
