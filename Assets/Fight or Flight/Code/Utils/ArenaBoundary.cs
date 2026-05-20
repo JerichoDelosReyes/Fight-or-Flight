@@ -60,7 +60,20 @@ public class ArenaBoundary : MonoBehaviour
     {
         BuildVignetteHUD();
         BuildForceField();
+        BuildBoundaryCollider();
         StartCoroutine(SpawnAsteroidWall());
+    }
+
+    private void BuildBoundaryCollider()
+    {
+        // An inner-facing sphere trigger that pushes ships back.
+        // We simulate it in Update() since Unity SphereColliders face outward by default.
+        // The actual hard stop is in Update() — this trigger is for physics detection.
+        var triggerGo = new GameObject("BoundaryTrigger");
+        triggerGo.transform.SetParent(transform, false);
+        var sc = triggerGo.AddComponent<SphereCollider>();
+        sc.radius    = ScriptsReference.ArenaRadius;
+        sc.isTrigger = true;
     }
 
     private void OnDestroy()
@@ -103,20 +116,25 @@ public class ArenaBoundary : MonoBehaviour
             forceFieldMat.color = col;
         }
 
-        // ── Hard boundary push-back ───────────────────────────────────────────
+        // ── Hard boundary wall — immediate stop + pushback ───────────────────
         if (dist > ScriptsReference.ArenaRadius)
         {
             var rb = Ship.PlayerShip.GetComponent<Rigidbody>();
             if (rb != null)
             {
+                // Snap to boundary surface
                 Ship.PlayerShip.transform.position =
                     Ship.PlayerShip.transform.position.normalized * ScriptsReference.ArenaRadius;
 
+                // Completely kill the outward velocity component
                 Vector3 outward = Ship.PlayerShip.transform.position.normalized;
-                if (Vector3.Dot(rb.linearVelocity, outward) > 0f)
-                    rb.linearVelocity = Vector3.ProjectOnPlane(rb.linearVelocity, outward) * 0.6f;
+                Vector3 vel     = rb.linearVelocity;
+                float   dotOut  = Vector3.Dot(vel, outward);
+                if (dotOut > 0f)
+                    rb.linearVelocity = vel - outward * dotOut; // remove outward component entirely
 
-                rb.AddForce(-outward * PushForce, ForceMode.Force);
+                // Strong inward push so the wall feels solid
+                rb.AddForce(-outward * PushForce, ForceMode.Impulse);
             }
         }
     }

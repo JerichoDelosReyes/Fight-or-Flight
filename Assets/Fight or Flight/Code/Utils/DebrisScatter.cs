@@ -36,9 +36,10 @@ public class DebrisScatter : MonoBehaviour
     // ── Config ────────────────────────────────────────────────────────────────
 
     private const float ArenaR        = 12000f; // matches ScriptsReference.ArenaRadius
-    private const float ClearRadius   = 1200f;  // keep area around origin clear
-    private const int   BoundaryRocks = 80;     // dense outer ring
-    private const int   MidRocks      = 60;     // mid-arena scatter
+    private const float ClearRadius   = 1500f;  // keep area around origin clear
+    private const int   BoundaryRocks = 120;    // dense outer ring
+    private const int   MidRocks      = 100;    // mid-arena scatter
+    private const int   ClusterRocks  = 60;     // small concentrated clusters
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -87,17 +88,42 @@ public class DebrisScatter : MonoBehaviour
             int tries = 0;
             do
             {
-                pos = Random.insideUnitSphere * (ArenaR * 0.78f);
+                pos = Random.insideUnitSphere * (ArenaR * 0.75f);
                 tries++;
             }
             while (pos.magnitude < ClearRadius && tries < 20);
 
-            if (pos.magnitude < ClearRadius) continue; // skip if still too close
+            if (pos.magnitude < ClearRadius) continue;
 
-            SpawnRock(templates, pos,
-                      scaleMin: 0.5f, scaleMax: 2.0f);
+            SpawnRock(templates, pos, scaleMin: 0.4f, scaleMax: 1.8f);
             spawned++;
             if (spawned % 10 == 0) yield return null;
+        }
+
+        // ── Phase 3: Concentrated clusters (combat cover) ────────────────────
+        int numClusters = 8;
+        int rocksPerCluster = ClusterRocks / numClusters;
+        for (int c = 0; c < numClusters; c++)
+        {
+            // Pick a cluster centre in the mid-arena band
+            float clusterAngle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float clusterR     = Random.Range(ArenaR * 0.25f, ArenaR * 0.68f);
+            float clusterY     = Random.Range(-ArenaR * 0.10f, ArenaR * 0.10f);
+            Vector3 clusterCenter = new Vector3(
+                Mathf.Cos(clusterAngle) * clusterR, clusterY,
+                Mathf.Sin(clusterAngle) * clusterR);
+
+            if (clusterCenter.magnitude < ClearRadius) continue;
+
+            for (int r = 0; r < rocksPerCluster; r++)
+            {
+                Vector3 offset = Random.insideUnitSphere * 1200f;
+                Vector3 pos    = clusterCenter + offset;
+                if (pos.magnitude < ClearRadius) continue;
+                SpawnRock(templates, pos, scaleMin: 0.6f, scaleMax: 2.2f);
+                spawned++;
+                if (spawned % 10 == 0) yield return null;
+            }
         }
     }
 

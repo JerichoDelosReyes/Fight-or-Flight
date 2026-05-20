@@ -106,21 +106,6 @@ public class Radar : MonoBehaviour
             if (g != null && g != gameObject) Destroy(g);
         }
 
-        // Destroy any Canvas with a solid green or greenish background colour
-        // that might have been left in the scene from an old setup.
-        foreach (var img in Object.FindObjectsByType<Image>(FindObjectsSortMode.None))
-        {
-            if (img == null) continue;
-            Color c = img.color;
-            // Heuristic: clearly green panels (G channel dominant, not a blip/text colour)
-            if (c.g > 0.4f && c.g > c.r * 1.5f && c.g > c.b * 1.5f && c.a > 0.3f)
-            {
-                var canvas = img.GetComponentInParent<Canvas>();
-                if (canvas != null && canvas.gameObject != gameObject)
-                    Destroy(canvas.gameObject);
-            }
-        }
-
         // Also nuke any canvases parented to this object (old scene setup)
         for (int i = transform.childCount - 1; i >= 0; i--)
         {

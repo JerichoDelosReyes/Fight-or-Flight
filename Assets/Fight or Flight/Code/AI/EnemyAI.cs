@@ -58,6 +58,7 @@ public class EnemyAI : MonoBehaviour
     private void Awake()
     {
         physics = GetComponent<ShipPhysics>();
+        _rb     = GetComponent<Rigidbody>();
     }
 
     private void OnEnable()
@@ -244,8 +245,13 @@ public class EnemyAI : MonoBehaviour
 
     private void PickNewPatrolTarget()
     {
-        Vector3 offset = Random.insideUnitSphere * patrolRadius;
-        Vector3 candidate = transform.position + offset;
+        // Patrol around the player so enemies feel present and threatening.
+        // When no player is available, fall back to roaming near current position.
+        Vector3 center = (player != null) ? player.position : transform.position;
+        float   radius = patrolRadius * 0.45f; // tighter orbit around player
+        Vector3 offset = Random.insideUnitSphere * radius;
+        Vector3 candidate = center + offset;
+
         float limit = EnemyRoamRadius * 0.9f;
         if (candidate.magnitude > limit)
             candidate = candidate.normalized * limit;
@@ -290,21 +296,23 @@ public class EnemyAI : MonoBehaviour
         return dir;
     }
 
+    private Rigidbody _rb;
+
     private void EnforceBoundary()
     {
         float dist = transform.position.magnitude;
         if (dist <= ScriptsReference.ArenaRadius) return;
 
-        // Clamp position to the arena surface
         transform.position = transform.position.normalized * ScriptsReference.ArenaRadius;
 
-        // Kill any outward velocity component
-        var rb = GetComponent<Rigidbody>();
-        if (rb != null)
+        if (_rb == null) _rb = GetComponent<Rigidbody>();
+        if (_rb != null)
         {
             Vector3 outward = transform.position.normalized;
-            if (Vector3.Dot(rb.linearVelocity, outward) > 0f)
-                rb.linearVelocity = Vector3.ProjectOnPlane(rb.linearVelocity, outward) * 0.3f;
+            float   dotOut  = Vector3.Dot(_rb.linearVelocity, outward);
+            if (dotOut > 0f)
+                _rb.linearVelocity -= outward * dotOut; // zero out outward component
+            _rb.AddForce(-outward * 3000f, ForceMode.Impulse);
         }
     }
 

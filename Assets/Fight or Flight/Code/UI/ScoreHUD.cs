@@ -85,18 +85,18 @@ public class ScoreHUD : MonoBehaviour
         panelRt.anchorMax        = new Vector2(1f, 1f);
         panelRt.pivot            = new Vector2(1f, 1f);
         panelRt.anchoredPosition = new Vector2(-18f, -18f);
-        panelRt.sizeDelta        = new Vector2(220f, 85f);
+        panelRt.sizeDelta        = new Vector2(260f, 105f);
         panelGo.AddComponent<Image>().color = PanelBG;
 
         // Score
         _scoreText = AddLine(panelGo.transform, font, "SCORE  000000",
-                             ScoreColor, 16, FontStyle.Bold, -16f);
+                             ScoreColor, 22, FontStyle.Bold, -20f);
         // Kill counter
         _killText  = AddLine(panelGo.transform, font, "KILLS  0",
-                             KillColor,  13, FontStyle.Normal, -42f);
+                             KillColor,  17, FontStyle.Normal, -52f);
         // Wave
         _waveText  = AddLine(panelGo.transform, font, "WAVE  1",
-                             WaveColor,  13, FontStyle.Normal, -62f);
+                             WaveColor,  17, FontStyle.Normal, -78f);
     }
 
     private Text AddLine(Transform parent, Font font, string initial,

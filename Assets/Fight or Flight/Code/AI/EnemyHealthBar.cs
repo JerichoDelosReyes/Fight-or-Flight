@@ -2,64 +2,72 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// World-space health bar that floats above each enemy ship.
-/// Added programmatically by EnemyAI.Start() — no prefab changes required.
-/// Hidden while at full health; fades in on first hit.
-/// Billboard: canvas faces the camera every frame.
+/// Screen-space health bar that follows each enemy ship on the HUD.
+/// Uses a ScreenSpaceOverlay canvas parented to the enemy so it auto-destroys
+/// when the enemy is destroyed.  No WorldSpace depth issues — always visible.
+/// Hidden while at full health; appears after the first hit.
 /// </summary>
 [RequireComponent(typeof(ShipHealth))]
 public class EnemyHealthBar : MonoBehaviour
 {
     // ── Config ────────────────────────────────────────────────────────────────
 
-    private const float BarWidth     = 220f;   // world-unit width of the bar rect
-    private const float BarHeight    = 18f;
-    private const float YOffset      = 280f;   // height above the ship's transform origin
-    private const float CanvasScale  = 0.5f;   // scales the canvas in world space
+    private const float WorldYOffset  = 250f;   // world units above ship origin
+    private const float BarWidthPx    = 160f;   // reference-resolution pixels
+    private const float BarHeightPx   = 14f;
+    private const float LabelHeightPx = 14f;
+    private const float ScaleAtDist   = 2000f;  // distance at which scale = 1.0
 
     // ── Runtime ───────────────────────────────────────────────────────────────
 
-    private ShipHealth  health;
-    private Canvas      canvas;
-    private Transform   canvasRoot;
-    private Image       fill;
-    private CanvasGroup group;
-
-    private float maxHealthAtSpawn;
-    private bool  everDamaged;
+    private ShipHealth   _health;
+    private Canvas       _canvas;
+    private RectTransform _root;
+    private Image        _fill;
+    private CanvasGroup  _group;
+    private bool         _everDamaged;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
-        health          = GetComponent<ShipHealth>();
-        maxHealthAtSpawn = health != null ? health.maxHealth : 100f;
+        _health = GetComponent<ShipHealth>();
         BuildUI();
     }
 
     private void LateUpdate()
     {
-        if (health == null || canvasRoot == null) return;
-        if (Camera.main == null) return;
+        if (_health == null || _root == null || Camera.main == null)
+            return;
 
-        // Lazy-assign worldCamera so the canvas sorts correctly against 3D objects
-        if (canvas != null && canvas.worldCamera == null)
-            canvas.worldCamera = Camera.main;
+        // Reveal after first hit
+        if (!_everDamaged && _health.currentHealth < _health.maxHealth)
+            _everDamaged = true;
 
-        // Billboard: align canvas to camera's orientation
-        canvasRoot.rotation = Camera.main.transform.rotation;
+        _group.alpha = _everDamaged ? 1f : 0f;
+        if (!_everDamaged) return;
 
-        float fraction = Mathf.Clamp01(health.currentHealth / Mathf.Max(1f, health.maxHealth));
+        // Project the world position to screen space
+        Vector3 worldPos  = transform.position + Vector3.up * WorldYOffset;
+        Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPos);
 
-        // Reveal on first damage
-        if (!everDamaged && health.currentHealth < health.maxHealth)
-            everDamaged = true;
+        // Behind camera — hide
+        if (screenPos.z < 0f) { _group.alpha = 0f; return; }
 
-        group.alpha = everDamaged ? 1f : 0f;
+        // Convert screen px → reference-resolution coords (1920×1080)
+        float refX = (screenPos.x / Screen.width  - 0.5f) * 1920f;
+        float refY = (screenPos.y / Screen.height - 0.5f) * 1080f;
+        _root.anchoredPosition = new Vector2(refX, refY);
 
-        // Scale fill bar horizontally
-        fill.rectTransform.localScale = new Vector3(fraction, 1f, 1f);
-        fill.color = Color.Lerp(new Color(0.9f, 0.1f, 0.1f), new Color(0.1f, 0.9f, 0.1f), fraction);
+        // Scale with distance so bars don't look huge up close
+        float dist  = Vector3.Distance(transform.position, Camera.main.transform.position);
+        float scale = Mathf.Clamp(ScaleAtDist / Mathf.Max(1f, dist), 0.35f, 1.8f);
+        _root.localScale = Vector3.one * scale;
+
+        // Update fill
+        float frac = Mathf.Clamp01(_health.currentHealth / Mathf.Max(1f, _health.maxHealth));
+        _fill.fillAmount = frac;
+        _fill.color = Color.Lerp(new Color(0.9f, 0.1f, 0.1f), new Color(0.15f, 0.9f, 0.15f), frac);
     }
 
     // ── UI Construction ───────────────────────────────────────────────────────
@@ -68,68 +76,73 @@ public class EnemyHealthBar : MonoBehaviour
     {
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        // World-space canvas parented to this ship
-        var canvasGo = new GameObject("HealthBarCanvas");
+        // ScreenSpaceOverlay canvas parented to the enemy — destroys with it
+        var canvasGo = new GameObject("EnemyHPCanvas");
         canvasGo.transform.SetParent(transform, false);
-        canvasGo.transform.localPosition = new Vector3(0f, YOffset, 0f);
-        canvasGo.transform.localScale    = Vector3.one * CanvasScale;
-        canvasRoot = canvasGo.transform;
 
-        canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode     = RenderMode.WorldSpace;
-        canvas.worldCamera    = Camera.main; // assign now; re-assigned lazily in LateUpdate if null
-        canvas.overrideSorting = true;
-        canvas.sortingOrder   = 100;
+        _canvas = canvasGo.AddComponent<Canvas>();
+        _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+        _canvas.sortingOrder = 50;
 
         var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.dynamicPixelsPerUnit = 10f;
+        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution  = new Vector2(1920f, 1080f);
+        scaler.matchWidthOrHeight  = 0.5f;
 
-        group       = canvasGo.AddComponent<CanvasGroup>();
-        group.alpha = 0f;
-        group.blocksRaycasts = false;
+        canvasGo.AddComponent<GraphicRaycaster>();
 
-        // Root rect — centred
-        var rootRt = canvasGo.GetComponent<RectTransform>();
-        rootRt.sizeDelta = new Vector2(BarWidth + 20f, BarHeight + 30f);
+        // Root container — centred on screen; re-positioned in LateUpdate
+        var rootGo = new GameObject("HPRoot");
+        rootGo.transform.SetParent(canvasGo.transform, false);
+        _root = rootGo.AddComponent<RectTransform>();
+        _root.anchorMin = _root.anchorMax = new Vector2(0.5f, 0.5f);
+        _root.pivot            = new Vector2(0.5f, 0.5f);
+        _root.sizeDelta        = new Vector2(BarWidthPx, BarHeightPx + LabelHeightPx + 4f);
+        _root.anchoredPosition = new Vector2(0f, 3000f); // off-screen initially
 
-        // "DRONE" label above the bar
-        var labelGo = new GameObject("TypeLabel");
-        labelGo.transform.SetParent(canvasGo.transform, false);
+        _group               = rootGo.AddComponent<CanvasGroup>();
+        _group.alpha         = 0f;
+        _group.blocksRaycasts = false;
+
+        // "ENEMY" label
+        var labelGo = new GameObject("Label");
+        labelGo.transform.SetParent(rootGo.transform, false);
         var labelRt = labelGo.AddComponent<RectTransform>();
-        labelRt.anchorMin = labelRt.anchorMax = new Vector2(0.5f, 0.5f);
-        labelRt.anchoredPosition = new Vector2(0f, BarHeight * 0.5f + 12f);
-        labelRt.sizeDelta        = new Vector2(BarWidth, 20f);
-
+        labelRt.anchorMin = labelRt.anchorMax = new Vector2(0.5f, 1f);
+        labelRt.pivot            = new Vector2(0.5f, 0f);
+        labelRt.anchoredPosition = new Vector2(0f, 0f);
+        labelRt.sizeDelta        = new Vector2(BarWidthPx, LabelHeightPx);
         var labelTxt = labelGo.AddComponent<Text>();
-        labelTxt.text      = "DRONE";
+        labelTxt.text      = "ENEMY";
         labelTxt.font      = font;
-        labelTxt.fontSize  = 14;
-        labelTxt.color     = new Color(0.85f, 0.85f, 0.85f);
+        labelTxt.fontSize  = 11;
         labelTxt.fontStyle = FontStyle.Bold;
+        labelTxt.color     = new Color(0.85f, 0.85f, 0.85f, 0.9f);
         labelTxt.alignment = TextAnchor.MiddleCenter;
         labelTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
         labelTxt.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Bar background (dark)
+        // Bar background
         var bgGo = new GameObject("BarBg");
-        bgGo.transform.SetParent(canvasGo.transform, false);
+        bgGo.transform.SetParent(rootGo.transform, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
-        bgRt.anchorMin = bgRt.anchorMax = new Vector2(0.5f, 0.5f);
-        bgRt.pivot             = new Vector2(0.5f, 0.5f);
-        bgRt.anchoredPosition  = new Vector2(0f, -4f);
-        bgRt.sizeDelta         = new Vector2(BarWidth, BarHeight);
+        bgRt.anchorMin = bgRt.anchorMax = new Vector2(0.5f, 0f);
+        bgRt.pivot            = new Vector2(0.5f, 1f);
+        bgRt.anchoredPosition = new Vector2(0f, 0f);
+        bgRt.sizeDelta        = new Vector2(BarWidthPx, BarHeightPx);
         bgGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.08f, 0.9f);
 
-        // Fill bar — left-pivoted so it shrinks from the right
+        // Fill bar
         var fillGo = new GameObject("BarFill");
-        fillGo.transform.SetParent(canvasGo.transform, false);
+        fillGo.transform.SetParent(bgGo.transform, false);
         var fillRt = fillGo.AddComponent<RectTransform>();
-        fillRt.anchorMin = fillRt.anchorMax = new Vector2(0.5f, 0.5f);
-        fillRt.pivot              = new Vector2(0f, 0.5f);
-        fillRt.anchoredPosition   = new Vector2(-BarWidth * 0.5f, -4f);
-        fillRt.sizeDelta          = new Vector2(BarWidth, BarHeight - 2f);
-
-        fill       = fillGo.AddComponent<Image>();
-        fill.color = new Color(0.1f, 0.9f, 0.1f);
+        fillRt.anchorMin = Vector2.zero;
+        fillRt.anchorMax = Vector2.one;
+        fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
+        _fill = fillGo.AddComponent<Image>();
+        _fill.type       = Image.Type.Filled;
+        _fill.fillMethod = Image.FillMethod.Horizontal;
+        _fill.fillAmount = 1f;
+        _fill.color      = new Color(0.15f, 0.9f, 0.15f, 1f);
     }
 }

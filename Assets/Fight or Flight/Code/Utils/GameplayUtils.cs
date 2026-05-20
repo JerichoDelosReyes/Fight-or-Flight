@@ -91,14 +91,21 @@ public class ScreenFlash : MonoBehaviour
         _overlay.raycastTarget = false;
     }
 
+    public static void Clear()
+    {
+        if (_instance != null && _instance._overlay != null)
+            _instance._overlay.color = new Color(1f, 1f, 1f, 0f);
+    }
+
     private IEnumerator DoFlash(Color colour, float duration)
     {
+        if (duration <= 0f) { _overlay.color = new Color(1f, 1f, 1f, 0f); yield break; }
         colour.a = 0.45f;
         _overlay.color = colour;
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime; // works even when time is paused
             Color c = _overlay.color;
             c.a = Mathf.Lerp(0.45f, 0f, elapsed / duration);
             _overlay.color = c;
