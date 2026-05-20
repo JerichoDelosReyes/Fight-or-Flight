@@ -5,9 +5,14 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Self-building circular radar shown at bottom-right.
-/// Enemies: red dots. Pickups: yellow dots (if any exist with tag "Pickup").
-/// Player: white triangle at center that rotates with horizontal facing.
 /// Auto-creates itself in MainScene — no scene wiring required.
+///
+/// Enemies: red arrow (▲ = above player, ▼ = below, ◆ = same height) + distance.
+/// Pickups: yellow dots (GameObjects tagged "Pickup").
+/// Player : white ▲ at center, rotates with horizontal heading.
+///
+/// On Awake the script destroys any old green-square radar canvas that was
+/// wired into the scene before this rewrite.
 /// </summary>
 public class Radar : MonoBehaviour
 {
@@ -21,7 +26,10 @@ public class Radar : MonoBehaviour
         TryCreate(SceneManager.GetActiveScene());
     }
 
-    private static void OnSceneLoadedStatic(Scene scene, LoadSceneMode mode) => TryCreate(scene);
+    private static void OnSceneLoadedStatic(Scene scene, LoadSceneMode mode)
+    {
+        TryCreate(scene);
+    }
 
     private static void TryCreate(Scene scene)
     {
@@ -32,30 +40,35 @@ public class Radar : MonoBehaviour
 
     // ── Config ────────────────────────────────────────────────────────────────
 
-    private const float RadarDiameterPx = 200f; // UI size at 1920×1080
-    private const float RadarRange      = 10000f; // world units → radar edge
-    private const float DotSizePx       = 10f;
-    private const float PlayerArrowSize = 18f;
+    private const float RadarDiameterPx  = 200f;   // UI size at 1920×1080 reference
+    private const float RadarRange       = 10000f;  // world units shown at radar edge
+    private const float MaxEnemiesShown  = 8;       // cap on concurrent enemy blips
+    private const float HeightThreshold  = 10f;     // ±Y units to be considered "same height"
 
     // ── Runtime UI ────────────────────────────────────────────────────────────
 
     private RectTransform  dotContainer;
     private RectTransform  playerArrowRt;
-    private readonly List<RectTransform> activeDots = new List<RectTransform>();
-    private readonly Stack<RectTransform> dotPool   = new Stack<RectTransform>();
 
-    // Cached textures — created once, reused.
+    private readonly List<RectTransform>  activeDots = new List<RectTransform>();
+    private readonly Stack<RectTransform> dotPool    = new Stack<RectTransform>();
+
     private Texture2D bgTex;
     private Texture2D dotTex;
+    private Font      uiFont;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
+    private void Awake()
+    {
+        DestroyOldRadarUI();
+    }
+
     private void Start()
     {
-        bgTex  = MakeCircleTex(256, new Color(0f, 0f, 0f, 0.55f),
-                               8, new Color(0.6f, 0.6f, 0.6f, 0.9f));
-        dotTex = MakeCircleTex(32, Color.white, 0, Color.white);
-
+        uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        bgTex  = MakeCircleTex(256, new Color(0f, 0f, 0f, 0.60f), 6, new Color(0.7f, 0.7f, 0.7f, 0.95f));
+        dotTex = MakeCircleTex(32,  Color.white, 0, Color.white);
         BuildUI();
     }
 
@@ -67,32 +80,50 @@ public class Radar : MonoBehaviour
 
     private void Update()
     {
-        if (Ship.PlayerShip == null) return;
-        UpdateRadar();
+        if (Ship.PlayerShip != null) UpdateRadar();
+    }
+
+    // ── Old Radar Cleanup ─────────────────────────────────────────────────────
+
+    private void DestroyOldRadarUI()
+    {
+        // Destroy any scene-wired canvas or panel from the legacy green-square radar.
+        string[] suspects = { "RadarContainer", "RadarPanel", "RadarCanvas", "Radar Panel",
+                              "MiniMap", "Minimap", "RadarRoot" };
+        foreach (string n in suspects)
+        {
+            var g = GameObject.Find(n);
+            if (g != null && g != gameObject) Destroy(g);
+        }
+
+        // Also nuke any canvases parented to this object (old scene setup)
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+            if (child.name != "RadarCanvas")
+                Destroy(child.gameObject);
+        }
     }
 
     // ── UI Construction ───────────────────────────────────────────────────────
 
     private void BuildUI()
     {
-        // Canvas — sits above HUD elements
         var canvasGo = new GameObject("RadarCanvas");
         canvasGo.transform.SetParent(transform, false);
 
         var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 120;
 
         var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode       = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.uiScaleMode        = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution  = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight  = 0.5f;
 
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        float half = RadarDiameterPx * 0.5f;
-
-        // Root container — anchored bottom-right
+        // Root — anchored bottom-right
         var rootGo = new GameObject("RadarRoot");
         rootGo.transform.SetParent(canvasGo.transform, false);
         var rootRt = rootGo.AddComponent<RectTransform>();
@@ -102,42 +133,40 @@ public class Radar : MonoBehaviour
         rootRt.anchoredPosition = new Vector2(-18f, 18f);
         rootRt.sizeDelta        = new Vector2(RadarDiameterPx + 20f, RadarDiameterPx + 20f);
 
-        // Background circle
+        // Circular background
         var bgGo = new GameObject("BgCircle");
         bgGo.transform.SetParent(rootGo.transform, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
         bgRt.anchorMin = bgRt.anchorMax = new Vector2(0.5f, 0.5f);
         bgRt.sizeDelta        = new Vector2(RadarDiameterPx, RadarDiameterPx);
         bgRt.anchoredPosition = Vector2.zero;
-        var bgImg = bgGo.AddComponent<RawImage>();
-        bgImg.texture = bgTex;
+        bgGo.AddComponent<RawImage>().texture = bgTex;
 
-        // Dot container (centered, same size as the circle — no mask needed; dots clamp to circle)
-        var dotContGo = new GameObject("DotContainer");
-        dotContGo.transform.SetParent(rootGo.transform, false);
-        dotContainer = dotContGo.AddComponent<RectTransform>();
+        // Dot / label container (center-anchored, clips via position math — no Mask needed)
+        var dcGo = new GameObject("DotContainer");
+        dcGo.transform.SetParent(rootGo.transform, false);
+        dotContainer = dcGo.AddComponent<RectTransform>();
         dotContainer.anchorMin = dotContainer.anchorMax = new Vector2(0.5f, 0.5f);
         dotContainer.sizeDelta        = new Vector2(RadarDiameterPx, RadarDiameterPx);
         dotContainer.anchoredPosition = Vector2.zero;
 
-        // Player arrow ("▲" text rotates with ship's horizontal heading)
+        // Player arrow
         var arrowGo = new GameObject("PlayerArrow");
         arrowGo.transform.SetParent(rootGo.transform, false);
         playerArrowRt = arrowGo.AddComponent<RectTransform>();
         playerArrowRt.anchorMin = playerArrowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        playerArrowRt.sizeDelta        = new Vector2(PlayerArrowSize * 2f, PlayerArrowSize * 2f);
+        playerArrowRt.sizeDelta        = new Vector2(20f, 20f);
         playerArrowRt.anchoredPosition = Vector2.zero;
 
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        var arrowText = arrowGo.AddComponent<Text>();
-        arrowText.text      = "▲";
-        arrowText.font      = font;
-        arrowText.fontSize  = (int)PlayerArrowSize;
-        arrowText.color     = Color.white;
-        arrowText.fontStyle = FontStyle.Bold;
-        arrowText.alignment = TextAnchor.MiddleCenter;
-        arrowText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        arrowText.verticalOverflow   = VerticalWrapMode.Overflow;
+        var arrowTxt = arrowGo.AddComponent<Text>();
+        arrowTxt.text      = "▲";
+        arrowTxt.font      = uiFont;
+        arrowTxt.fontSize  = 16;
+        arrowTxt.color     = Color.white;
+        arrowTxt.fontStyle = FontStyle.Bold;
+        arrowTxt.alignment = TextAnchor.MiddleCenter;
+        arrowTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+        arrowTxt.verticalOverflow   = VerticalWrapMode.Overflow;
     }
 
     // ── Radar Update ──────────────────────────────────────────────────────────
@@ -148,21 +177,36 @@ public class Radar : MonoBehaviour
 
         Vector3 playerPos = Ship.PlayerShip.transform.position;
 
-        // Rotate player arrow to match horizontal facing (yaw only)
+        // Rotate player arrow (horizontal yaw only)
         Vector3 fwd   = Ship.PlayerShip.transform.forward;
         float   angle = Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg;
         playerArrowRt.localEulerAngles = new Vector3(0f, 0f, -angle);
 
-        // Enemy dots (red)
-        foreach (var enemy in EnemyAI.allEnemies)
+        // ── Enemies ───────────────────────────────────────────────────────────
+        // Collect, sort by distance, clamp to MaxEnemiesShown
+        var enemies = new List<EnemyAI>(EnemyAI.allEnemies.Count);
+        foreach (var e in EnemyAI.allEnemies)
+            if (e != null) enemies.Add(e);
+
+        enemies.Sort((a, b) =>
+            Vector3.Distance(a.transform.position, playerPos)
+                .CompareTo(Vector3.Distance(b.transform.position, playerPos)));
+
+        int shown = Mathf.Min(enemies.Count, (int)MaxEnemiesShown);
+        for (int i = 0; i < shown; i++)
         {
-            if (enemy == null) continue;
-            PlaceDot(ToRadarPos(enemy.transform.position, playerPos),
-                     new Color(1f, 0.18f, 0.18f, 1f));
+            Transform et   = enemies[i].transform;
+            float     dist = Vector3.Distance(et.position, playerPos);
+            float     dy   = et.position.y - playerPos.y;
+
+            string symbol = dy > HeightThreshold ? "▲" : dy < -HeightThreshold ? "▼" : "◆";
+            string label  = symbol + "\n" + Mathf.RoundToInt(dist / 100f);
+
+            PlaceLabel(ToRadarPos(et.position, playerPos), label,
+                       new Color(1f, 0.18f, 0.18f, 1f));
         }
 
-        // Pickup dots — scan for any GameObjects tagged "Pickup"
-        // (cheap enough at low pickup counts; can be replaced with a static list if needed)
+        // ── Pickups ───────────────────────────────────────────────────────────
         var pickups = GameObject.FindGameObjectsWithTag("Pickup");
         foreach (var p in pickups)
         {
@@ -178,37 +222,81 @@ public class Radar : MonoBehaviour
     {
         Vector3 diff = worldPos - playerPos;
         float   half = RadarDiameterPx * 0.5f;
-        var     pos  = new Vector2(diff.x / RadarRange * half, diff.z / RadarRange * half);
-
-        // Clamp to the radar circle edge so off-range objects sit on the perimeter.
-        float limit = half - DotSizePx * 0.5f - 1f;
-        if (pos.magnitude > limit)
-            pos = pos.normalized * limit;
-
+        var     pos  = new Vector2(diff.x / RadarRange * half,
+                                   diff.z / RadarRange * half);
+        float limit = half - 6f;
+        if (pos.magnitude > limit) pos = pos.normalized * limit;
         return pos;
     }
 
     private void PlaceDot(Vector2 radarPos, Color colour)
     {
-        RectTransform dot;
-        if (dotPool.Count > 0)
-        {
-            dot = dotPool.Pop();
-            dot.gameObject.SetActive(true);
-        }
-        else
-        {
-            var go = new GameObject("Dot");
-            go.transform.SetParent(dotContainer, false);
-            dot = go.AddComponent<RectTransform>();
-            dot.sizeDelta = new Vector2(DotSizePx, DotSizePx);
-            var img = go.AddComponent<RawImage>();
-            img.texture = dotTex;
-        }
-
+        var dot = AcquireDot();
         dot.GetComponent<RawImage>().color = colour;
         dot.anchoredPosition = radarPos;
         activeDots.Add(dot);
+    }
+
+    private void PlaceLabel(Vector2 radarPos, string text, Color colour)
+    {
+        RectTransform rt;
+        Text          txt;
+
+        if (dotPool.Count > 0)
+        {
+            rt  = dotPool.Pop();
+            txt = rt.GetComponent<Text>();
+            if (txt == null)
+            {
+                // Pool item was a dot (RawImage) — can't reuse as label; return it and get fresh
+                dotPool.Push(rt);
+                rt = null; txt = null;
+            }
+        }
+        else { rt = null; txt = null; }
+
+        if (rt == null)
+        {
+            var go = new GameObject("Label");
+            go.transform.SetParent(dotContainer, false);
+            rt  = go.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(50f, 28f);
+            txt = go.AddComponent<Text>();
+            txt.font      = uiFont;
+            txt.fontSize  = 9;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            txt.verticalOverflow   = VerticalWrapMode.Overflow;
+        }
+
+        rt.gameObject.SetActive(true);
+        txt.text  = text;
+        txt.color = colour;
+        rt.anchoredPosition = radarPos;
+        activeDots.Add(rt);
+    }
+
+    private RectTransform AcquireDot()
+    {
+        // Only reuse pool items that have RawImage (dot), not Text (label)
+        while (dotPool.Count > 0)
+        {
+            var rt = dotPool.Pop();
+            if (rt.GetComponent<RawImage>() != null)
+            {
+                rt.gameObject.SetActive(true);
+                return rt;
+            }
+            dotPool.Push(rt); break; // leave mismatched item, fall through to create
+        }
+
+        var go = new GameObject("Dot");
+        go.transform.SetParent(dotContainer, false);
+        var r = go.AddComponent<RectTransform>();
+        r.sizeDelta = new Vector2(8f, 8f);
+        var img = go.AddComponent<RawImage>();
+        img.texture = dotTex;
+        return r;
     }
 
     private void ReturnAllDots()
@@ -234,12 +322,7 @@ public class Radar : MonoBehaviour
         {
             float dx = x - r + 0.5f, dy = y - r + 0.5f;
             float d  = Mathf.Sqrt(dx * dx + dy * dy);
-
-            Color c;
-            if      (d > r)  c = Color.clear;
-            else if (d > br) c = border;
-            else             c = fill;
-
+            Color c  = d > r ? Color.clear : d > br ? border : fill;
             tex.SetPixel(x, y, c);
         }
 

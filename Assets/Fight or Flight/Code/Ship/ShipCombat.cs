@@ -89,10 +89,26 @@ AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
             }
         }
 
-        // Aim toward a far point along the ship's own forward so both side-offset
-        // gun barrels converge at the same target instead of firing parallel beams
-        // that appear offset from the crosshair.
-        Vector3 aimTarget = transform.position + transform.forward * 10000f;
+        // Aim target derived from the camera's view — independent of fire-point rotation,
+        // which may be incorrectly set up in the prefab.
+        //
+        // Mouse+KB: camera is locked at screen center = crosshair; cast from camera forward.
+        // Keyboard:  use Ship.PlayerShip.transform.forward (same axis HUDController uses for
+        //            the projected crosshair), not this.transform.forward which may differ.
+        Vector3 aimTarget;
+        if (ControlSchemeManager.IsMouseKeyboard && Camera.main != null)
+        {
+            Ray camRay = Camera.main.ScreenPointToRay(
+                new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+            aimTarget = camRay.origin + camRay.direction * 15000f;
+        }
+        else
+        {
+            Ship ps = Ship.PlayerShip;
+            Vector3 origin = ps != null ? ps.transform.position : transform.position;
+            Vector3 fwd    = ps != null ? ps.transform.forward  : transform.forward;
+            aimTarget = origin + fwd * 15000f;
+        }
 
         foreach (Transform point in firePoints)
         {

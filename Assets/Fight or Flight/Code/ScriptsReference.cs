@@ -6,7 +6,12 @@ using UnityEngine;
 public static class ScriptsReference
 {
     // Boundary Settings
-    public const float BoundaryLimit = 24000f; // Stay within the expanded background
+    public const float BoundaryLimit = 24000f; // Hard kill plane — ship gets clamped here
+    /// <summary>
+    /// Visible arena radius: asteroid wall lives here, player/enemy boundary warnings trigger.
+    /// With MaxSpeed=1500 it takes ~8 s to cross. Adjust to taste — must be &lt; BoundaryLimit.
+    /// </summary>
+    public const float ArenaRadius = 12000f;
 
     // Ship Movement Settings
     public static readonly Vector3 DefaultLinearForce = new Vector3(500f, 500f, 2000f);

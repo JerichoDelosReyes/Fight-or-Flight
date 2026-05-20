@@ -87,6 +87,8 @@ public class EnemyAI : MonoBehaviour
         PickNewPatrolTarget();
         SetupVisuals();
         ApplyDifficulty();
+        if (GetComponent<EnemyHealthBar>() == null)
+            gameObject.AddComponent<EnemyHealthBar>();
     }
 
     private void ApplyDifficulty()
@@ -235,9 +237,8 @@ public class EnemyAI : MonoBehaviour
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // Enemies roam within this sphere regardless of BoundaryLimit.
-    // Keeps them inside the asteroid play area rather than fleeing to open space.
-    private const float EnemyRoamRadius = 10000f;
+    // Mirrors ScriptsReference.ArenaRadius — keeps enemies inside the asteroid wall.
+    private static float EnemyRoamRadius => ScriptsReference.ArenaRadius;
 
     private void PickNewPatrolTarget()
     {
