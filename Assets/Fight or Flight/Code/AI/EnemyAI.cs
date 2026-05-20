@@ -19,9 +19,9 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Desired orbit radius around the player when attacking")]
     public float orbitRadius = 1800f;
     [Tooltip("Base turn speed multiplier")]
-    public float turnSpeedFactor = 1.8f;
+    public float turnSpeedFactor = 1.1f;
     [Tooltip("Throttle applied while chasing/orbiting")]
-    public float throttleFactor = 0.22f;
+    public float throttleFactor = 0.14f;
     [Tooltip("How fast the enemy strafes laterally during attack")]
     public float strafeSpeed = 0.35f;
     [Tooltip("Direction the enemy is currently circling (+1 or -1)")]
@@ -80,6 +80,9 @@ public class EnemyAI : MonoBehaviour
         circleDir = (Random.value > 0.5f) ? 1f : -1f;
         strafeSign = circleDir;
         nextStrafeFlip = Time.time + Random.Range(2f, 5f);
+
+        // Slightly larger enemies — more visible and easier to read at range.
+        transform.localScale *= 1.4f;
 
         PickNewPatrolTarget();
         SetupVisuals();

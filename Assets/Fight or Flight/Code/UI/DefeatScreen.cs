@@ -5,43 +5,45 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Builds and shows the Game Over / Defeat overlay entirely in code — no prefab or scene
-/// setup required. Called statically by ShipHealth when the player dies.
+/// Builds and shows the Game Over overlay entirely in code — no prefab or scene setup required.
+/// Called statically by ShipHealth when the player dies.
 /// </summary>
 public class DefeatScreen : MonoBehaviour
 {
-    // ── Static entry point ────────────────────────────────────────────────────
-
     private static DefeatScreen instance;
 
+    /// <summary>
+    /// Instantiate and show the defeat screen with the player's final score and kill count.
+    /// </summary>
     public static void Show(int score, int kills)
     {
-        if (instance != null) return; // already showing
+        if (instance != null) return;
 
         var go = new GameObject("DefeatScreen");
+        // AddComponent triggers Awake immediately — do NOT read score/kills there.
         instance = go.AddComponent<DefeatScreen>();
-        instance.score = score;
-        instance.kills = kills;
+        // Assign values and build UI after Awake has finished.
+        instance.Init(score, kills);
     }
 
-    // ── Instance state ────────────────────────────────────────────────────────
+    // ── Instance ──────────────────────────────────────────────────────────────
 
     private int score;
     private int kills;
-
-    private Text scoreText;
-    private Text killText;
-
     private Font uiFont;
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()
     {
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         EnsureEventSystem();
-        BuildUI();
         Time.timeScale = 0f;
+    }
+
+    private void Init(int s, int k)
+    {
+        score = s;
+        kills = k;
+        BuildUI();
     }
 
     private void OnDestroy()
@@ -49,8 +51,6 @@ public class DefeatScreen : MonoBehaviour
         instance = null;
     }
 
-    // The defeat screen survives scene reload via its own coroutine, so it
-    // owns the timeScale reset to make sure gameplay resumes in MainScene.
     private static void EnsureEventSystem()
     {
         if (EventSystem.current != null) return;
@@ -63,7 +63,6 @@ public class DefeatScreen : MonoBehaviour
 
     private void BuildUI()
     {
-        // Root canvas — renders on top of everything.
         var canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 200;
@@ -75,34 +74,29 @@ public class DefeatScreen : MonoBehaviour
 
         gameObject.AddComponent<GraphicRaycaster>();
 
-        // Semi-transparent dark overlay covering the whole screen.
         MakeImage(gameObject, new Color(0f, 0f, 0f, 0.78f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        // Centred panel.
         var panel = MakePanel(new Vector2(0, 40), new Vector2(860, 600));
 
-        // "GAME OVER" big red header.
         MakeText(panel, "GAME OVER", 110, new Color(0.95f, 0.1f, 0.1f), FontStyle.Bold,
                  new Vector2(0, 200), new Vector2(800, 130));
 
-        // "DEFEATED" subtitle.
         MakeText(panel, "DEFEATED", 56, new Color(1f, 0.8f, 0.2f), FontStyle.Bold,
                  new Vector2(0, 110), new Vector2(700, 70));
 
-        // Divider line.
         var line = MakeImage(panel, new Color(1f, 1f, 1f, 0.25f));
         SetRect(line, new Vector2(0, 55), new Vector2(700, 3));
 
-        // Score and kill readouts — updated with real values below.
-        scoreText = MakeText(panel, "", 46, Color.white, FontStyle.Normal,
-                             new Vector2(0, 0), new Vector2(700, 60));
-        killText  = MakeText(panel, "", 42, new Color(0.8f, 0.8f, 0.8f), FontStyle.Normal,
-                             new Vector2(0, -60), new Vector2(700, 55));
+        var scoreText = MakeText(panel, string.Format("FINAL SCORE:  {0:D6}", score),
+                                 46, Color.white, FontStyle.Normal,
+                                 new Vector2(0, 0), new Vector2(700, 60));
+        scoreText.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-        scoreText.text = string.Format("FINAL SCORE:  {0:D6}", score);
-        killText.text  = string.Format("ENEMIES KILLED:  {0}", kills);
+        var killText = MakeText(panel, string.Format("ENEMIES KILLED:  {0}", kills),
+                                42, new Color(0.8f, 0.8f, 0.8f), FontStyle.Normal,
+                                new Vector2(0, -60), new Vector2(700, 55));
+        killText.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-        // Buttons.
         MakeButton(panel, "TRY AGAIN",  new Color(0.13f, 0.40f, 0.80f),
                    new Vector2(-170, -195), new Vector2(300, 70),
                    () => StartCoroutine(LoadScene("MainScene")));
@@ -119,7 +113,7 @@ public class DefeatScreen : MonoBehaviour
         SceneManager.LoadScene(name);
     }
 
-    // ── UI helper methods ─────────────────────────────────────────────────────
+    // ── UI helpers ────────────────────────────────────────────────────────────
 
     private Image MakeImage(GameObject parent, Color colour,
                             Vector2 anchorMin, Vector2 anchorMax,
@@ -128,16 +122,13 @@ public class DefeatScreen : MonoBehaviour
         var go = new GameObject("Img");
         go.transform.SetParent(parent.transform, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.anchoredPosition = anchoredPos;
-        rt.sizeDelta = sizeDelta;
+        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
+        rt.anchoredPosition = anchoredPos; rt.sizeDelta = sizeDelta;
         var img = go.AddComponent<Image>();
         img.color = colour;
         return img;
     }
 
-    // Overload that anchors to centre and uses SetRect helper.
     private Image MakeImage(GameObject parent, Color colour)
     {
         var go = new GameObject("Img");
@@ -171,14 +162,10 @@ public class DefeatScreen : MonoBehaviour
         go.transform.SetParent(parent.transform, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = anchoredPos;
-        rt.sizeDelta = size;
+        rt.anchoredPosition = anchoredPos; rt.sizeDelta = size;
         var t = go.AddComponent<Text>();
-        t.text = content;
-        t.font = uiFont;
-        t.fontSize = fontSize;
-        t.color = colour;
-        t.fontStyle = style;
+        t.text = content; t.font = uiFont; t.fontSize = fontSize;
+        t.color = colour; t.fontStyle = style;
         t.alignment = TextAnchor.MiddleCenter;
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow = VerticalWrapMode.Overflow;
@@ -193,8 +180,6 @@ public class DefeatScreen : MonoBehaviour
         SetRect(img, anchoredPos, size);
 
         var btn = img.gameObject.AddComponent<Button>();
-
-        // Colour-tint transition.
         var cols = btn.colors;
         cols.normalColor      = bgColour;
         cols.highlightedColor = bgColour * 1.35f;
@@ -202,10 +187,8 @@ public class DefeatScreen : MonoBehaviour
         cols.colorMultiplier  = 1f;
         btn.colors = cols;
         btn.targetGraphic = img;
-
         btn.onClick.AddListener(onClick);
 
-        MakeText(img.gameObject, label, 32, Color.white, FontStyle.Bold,
-                 Vector2.zero, size);
+        MakeText(img.gameObject, label, 32, Color.white, FontStyle.Bold, Vector2.zero, size);
     }
 }

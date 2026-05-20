@@ -91,6 +91,10 @@ public class WaveManager : MonoBehaviour
 
     private void OnGameStart()
     {
+        // Reset score/kills here as a static call so it always happens regardless
+        // of whether a ScoreManager MonoBehaviour instance is present in the scene.
+        ScoreManager.ResetScore();
+
         // Grab enemy prefab from the scene's EnemySpawner and shut it down so we
         // don't have two systems spawning enemies at the same time.
         var spawner = Object.FindAnyObjectByType<EnemySpawner>();

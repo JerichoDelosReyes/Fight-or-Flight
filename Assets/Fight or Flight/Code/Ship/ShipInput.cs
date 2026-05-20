@@ -5,9 +5,6 @@
 
 using UnityEngine;
 
-/// <summary>
-/// Class specifically to deal with input.
-/// </summary>
 public class ShipInput : MonoBehaviour
 {
     [Header("Sensitivity Settings")]
@@ -20,12 +17,15 @@ public class ShipInput : MonoBehaviour
     public float movementSensitivity = 1.0f;
 
     [Header("Mouse + Keyboard")]
-    [Tooltip("Multiplier applied to throttle while Left Shift is held in Mouse+Keyboard mode.")]
+    [Tooltip("Multiplier applied to throttle while Left Shift is held.")]
     public float boostMultiplier = 1.75f;
-    [Tooltip("Mouse look sensitivity in Mouse+Keyboard mode. Scales raw Input.GetAxis(\"Mouse X/Y\") delta.")]
-    public float mouseSensitivity = 0.002f;
+    [Tooltip("Degrees of rotation per raw mouse-delta unit. Increase for higher sensitivity.")]
+    public float directMouseSensitivity = 1.5f;
+    [Tooltip("Roll speed in degrees per second when Q/E is held in Mouse+Keyboard mode.")]
+    public float rollSpeed = 80f;
 
     private const float SensitivityScale = 0.0001f;
+    private Rigidbody cachedRb;
 
     [Header("Input Values")]
     public float pitch;
@@ -35,6 +35,11 @@ public class ShipInput : MonoBehaviour
     public float throttle;
 
     public Vector2 VirtualMousePosition { get; private set; }
+
+    private void Awake()
+    {
+        cachedRb = GetComponent<Rigidbody>();
+    }
 
     private void OnEnable()
     {
@@ -77,7 +82,7 @@ public class ShipInput : MonoBehaviour
 
     private void UpdateMouseKeyboard()
     {
-        // WASD = throttle/strafe, Shift = boost
+        // WASD = throttle / strafe, Shift = boost
         float wsAxis = Input.GetAxisRaw("Vertical");
         float adAxis = Input.GetAxisRaw("Horizontal");
 
@@ -91,24 +96,29 @@ public class ShipInput : MonoBehaviour
                 throttle = boostMultiplier * movementSensitivity;
         }
 
-        // FPS-style mouse: cursor is locked, raw deltas drive yaw and pitch.
-        // No screen-edge spinning, no cursor visible, works exactly like Valorant/FPS.
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
+        // Direct transform rotation — bypasses physics torque entirely for zero-lag FPS feel.
+        // GetAxisRaw gives unsmoothed per-frame delta.
+        float mouseX = Input.GetAxisRaw("Mouse X");
+        float mouseY = Input.GetAxisRaw("Mouse Y");
 
-        yaw = mouseX * mouseSensitivity;
+        // Mouse up → nose up: negate mouseY because positive local-X rotation tilts nose down.
+        float pitchAngle = -mouseY * directMouseSensitivity;
+        if (ControlSchemeManager.InvertY) pitchAngle = -pitchAngle;
+        float yawAngle   =  mouseX * directMouseSensitivity;
 
-        // Positive pitch = nose down in this engine's convention, so negate
-        // mouse Y so dragging up tilts the nose up (natural FPS feel).
-        pitch = -mouseY * mouseSensitivity;
-        if (ControlSchemeManager.InvertY) pitch = -pitch;
+        float rollAngle = 0f;
+        if (Input.GetKey(KeyCode.Q)) rollAngle =  rollSpeed * Time.deltaTime;
+        if (Input.GetKey(KeyCode.E)) rollAngle = -rollSpeed * Time.deltaTime;
 
-        // Q/E for manual roll
-        if (Input.GetKey(KeyCode.E)) roll = -1f * rollSensitivity * SensitivityScale;
-        if (Input.GetKey(KeyCode.Q)) roll =  1f * rollSensitivity * SensitivityScale;
+        transform.Rotate(pitchAngle, yawAngle, rollAngle, Space.Self);
+
+        // Zero angular velocity so the Rigidbody can't fight our direct rotation.
+        if (cachedRb != null) cachedRb.angularVelocity = Vector3.zero;
+
+        // Leave pitch/yaw/roll at zero — no physics torque for rotation in this mode.
+        // throttle and strafe still flow through physics for translation.
     }
 
-    // Called by PauseManager on resume to re-lock the cursor.
     public void ApplyCursorState()
     {
         if (ControlSchemeManager.IsMouseKeyboard)

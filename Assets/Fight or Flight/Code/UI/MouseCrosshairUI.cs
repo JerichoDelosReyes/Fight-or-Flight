@@ -7,8 +7,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Updates the position of this GameObject to reflect the position of the mouse
-/// when the player ship is using mouse input. Otherwise, it just hides it.
+/// Shows a centered crosshair when Mouse+Keyboard mode is active.
+/// In that mode the cursor is locked, so the crosshair stays at screen center —
+/// exactly where the ship is aiming. ShipInput manages cursor lock state; this
+/// script intentionally does not touch Cursor.lockState or Cursor.visible.
 /// </summary>
 public class MouseCrosshairUI : MonoBehaviour
 {
@@ -21,26 +23,15 @@ public class MouseCrosshairUI : MonoBehaviour
 
     private void Update()
     {
-        if (crosshair != null && Ship.PlayerShip != null)
-        {
-            crosshair.enabled = Ship.PlayerShip.UsingMouseInput;
+        if (crosshair == null) return;
 
-            if (crosshair.enabled)
-            {
-                ShipInput input = Ship.PlayerShip.GetComponent<ShipInput>();
-                if (input != null)
-                {
-                    crosshair.transform.position = input.VirtualMousePosition;
-                }
-                
-                Cursor.visible = false;
-                Cursor.lockState = CursorLockMode.Confined;
-            }
-            else
-            {
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
-            }
+        bool show = ControlSchemeManager.IsMouseKeyboard;
+        crosshair.enabled = show;
+
+        if (show)
+        {
+            // Screen center — the cursor is locked so this is always where the ship aims.
+            crosshair.transform.position = new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
         }
     }
 }
