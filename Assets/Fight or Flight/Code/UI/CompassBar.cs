@@ -37,8 +37,8 @@ public class CompassBar : MonoBehaviour
 
     // ── Layout ────────────────────────────────────────────────────────────────
 
-    private const float BarWidth  = 800f;
-    private const float BarHeight = 36f;
+    private const float BarWidth  = 920f;
+    private const float BarHeight = 52f;
     private const float VisibleSpanDeg = 110f;   // total degrees visible across the bar
     private const int   TickStepDeg    = 5;      // tick mark every N degrees
     private const int   DegLabelStepDeg = 30;    // numeric label every N degrees
@@ -157,7 +157,7 @@ public class CompassBar : MonoBehaviour
             if (isCardinal)
             {
                 text     = CardinalLetter(deg);
-                fontSize = 22;
+                fontSize = 30;
                 col      = (deg == 0)
                     ? new Color(1f, 0.45f, 0.45f, 1f)   // red North
                     : new Color(1f, 1f, 1f, 1f);
@@ -165,13 +165,13 @@ public class CompassBar : MonoBehaviour
             else if (isInterCardinal)
             {
                 text     = InterCardinalLetter(deg);
-                fontSize = 16;
+                fontSize = 22;
                 col      = new Color(0.85f, 0.85f, 0.85f, 1f);
             }
             else if (isDegLabel)
             {
                 text     = deg.ToString();
-                fontSize = 12;
+                fontSize = 16;
                 col      = new Color(0.75f, 0.75f, 0.75f, 1f);
             }
             else // minor tick — vertical line, no text
@@ -201,10 +201,10 @@ public class CompassBar : MonoBehaviour
         hnRt.anchorMax        = new Vector2(0.5f, 1f);
         hnRt.pivot            = new Vector2(0.5f, 1f);
         hnRt.anchoredPosition = new Vector2(0f, -10f - BarHeight - 2f);
-        hnRt.sizeDelta        = new Vector2(120f, 24f);
+        hnRt.sizeDelta        = new Vector2(160f, 32f);
         _headingNum = hnGo.AddComponent<Text>();
         _headingNum.font      = font;
-        _headingNum.fontSize  = 16;
+        _headingNum.fontSize  = 22;
         _headingNum.fontStyle = FontStyle.Bold;
         _headingNum.color     = new Color(1f, 0.85f, 0.2f, 1f);
         _headingNum.alignment = TextAnchor.MiddleCenter;
@@ -220,7 +220,7 @@ public class CompassBar : MonoBehaviour
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot            = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta        = new Vector2(40f, BarHeight);
+            rt.sizeDelta        = new Vector2(56f, BarHeight);
             rt.anchoredPosition = Vector2.zero;
             var txt = go.AddComponent<Text>();
             txt.text      = text;

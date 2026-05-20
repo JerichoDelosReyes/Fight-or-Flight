@@ -31,16 +31,16 @@ public class PlayerHUD : MonoBehaviour
 
     // ── Layout config ─────────────────────────────────────────────────────────
 
-    private const float PanelW  = 320f;
-    private const float PanelH  = 160f;
+    private const float PanelW  = 420f;
+    private const float PanelH  = 220f;
     private const float MarginX = 18f;
     // Anchored to the bottom-left corner (radar now lives at bottom-right).
     private const float MarginY = 18f;
 
-    private const float BarW    = 230f;
-    private const float BarH    = 22f;
-    private const float LabelW  = 68f;
-    private const float RowGap  = 36f;
+    private const float BarW    = 290f;
+    private const float BarH    = 30f;
+    private const float LabelW  = 100f;
+    private const float RowGap  = 48f;
 
     private static readonly Color PanelBG     = new Color(0f,    0f,    0f,    0.70f);
     private static readonly Color HealthFull  = new Color(0.15f, 0.85f, 0.15f, 1f);
@@ -153,20 +153,20 @@ public class PlayerHUD : MonoBehaviour
         _panelBg = panelGo.AddComponent<Image>();
         _panelBg.color = PanelBG;
 
-        float firstRowY = PanelH - 44f;  // top row y-offset from panel bottom
+        float firstRowY = PanelH - 60f;  // top row y-offset from panel bottom
 
         // Row 0 — HEALTH
-        AddLabel(panelGo.transform, font, "HEALTH", 10f, firstRowY, HealthFull);
+        AddLabel(panelGo.transform, font, "HEALTH", 14f, firstRowY, HealthFull);
         (_healthFill, _healthVal) = AddBarRow(panelGo.transform, font, firstRowY, BarH, HealthFull);
 
         // Row 1 — SHIELD
         float r1y = firstRowY - RowGap;
-        AddLabel(panelGo.transform, font, "SHIELD", 10f, r1y, ShieldFull);
+        AddLabel(panelGo.transform, font, "SHIELD", 14f, r1y, ShieldFull);
         (_shieldFill, _shieldVal) = AddBarRow(panelGo.transform, font, r1y, BarH - 4f, ShieldFull);
 
         // Row 2 — AMMO
         float r2y = r1y - RowGap;
-        AddLabel(panelGo.transform, font, "AMMO", 10f, r2y, AmmoFull);
+        AddLabel(panelGo.transform, font, "AMMO", 14f, r2y, AmmoFull);
         (_ammoFill, _ammoVal) = AddBarRow(panelGo.transform, font, r2y, BarH, AmmoFull);
 
         // Reload indicator — reuses the ammo value text (text changes to "RELOADING...")
@@ -181,11 +181,11 @@ public class PlayerHUD : MonoBehaviour
         rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot            = new Vector2(0f, 0.5f);
         rt.anchoredPosition = new Vector2(x, y + BarH * 0.5f);
-        rt.sizeDelta        = new Vector2(LabelW, 20f);
+        rt.sizeDelta        = new Vector2(LabelW, 26f);
         var t = go.AddComponent<Text>();
         t.text      = text;
         t.font      = font;
-        t.fontSize  = 14;
+        t.fontSize  = 20;
         t.fontStyle = FontStyle.Bold;
         t.color     = col;
         t.alignment = TextAnchor.MiddleLeft;
@@ -196,7 +196,7 @@ public class PlayerHUD : MonoBehaviour
     // Returns (fillImage, valueText-inside-bar)
     private (Image, Text) AddBarRow(Transform parent, Font font, float yBase, float h, Color initialCol)
     {
-        float barX = LabelW + 14f; // starts right after the label
+        float barX = LabelW + 18f; // starts right after the label
 
         // Background
         var bgGo = new GameObject("BarBg");
@@ -231,7 +231,7 @@ public class PlayerHUD : MonoBehaviour
         var val = valGo.AddComponent<Text>();
         val.text      = "—";
         val.font      = font;
-        val.fontSize  = 13;
+        val.fontSize  = 18;
         val.fontStyle = FontStyle.Bold;
         val.color     = Color.white;
         val.alignment = TextAnchor.MiddleCenter;

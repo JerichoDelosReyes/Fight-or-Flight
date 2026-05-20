@@ -87,12 +87,13 @@ public static class LegacyHudCleanupTool
         // (the user may have deliberately staged it for testing).
         "RadarCanvas", "HeadingStripCanvas",
         "PlayerHUDCanvas", "ScoreHUDCanvas",
-        "WaveHUD", "BoundaryVignetteCanvas",
+        "WaveHUD",
         "EnemyHPCanvas",
         "DefeatScreen", "SettingsMenu",
         "ScreenFlash",
         "CenterCrosshairCanvas",
         "CompassBarCanvas",
+        "PauseCanvas",
     };
 
     private static readonly HashSet<string> SafeRootNames = new HashSet<string>
@@ -100,6 +101,7 @@ public static class LegacyHudCleanupTool
         "PlayerHUD", "ScoreHUD", "Radar", "WaveManager",
         "ArenaBoundary", "ScreenFlash", "DefeatScreen", "SettingsMenu",
         "CenterCrosshair", "CompassBar",
+        "PauseManager",
     };
 
     /// <summary>

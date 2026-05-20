@@ -27,22 +27,20 @@ public class SettingsMenu : MonoBehaviour
     private const string KeyVolMaster     = "VolMaster";
     private const string KeyVolMusic      = "VolMusic";
     private const string KeyVolSFX        = "VolSFX";
-    private const string KeyQuality       = "Quality";
 
     // ── Selection state ───────────────────────────────────────────────────────
 
     private int selectedScheme;     // 0 = Keyboard Only, 1 = Mouse + Keyboard
-    private int selectedQuality;    // 0/1/2 = Low/Medium/High
 
     // ── Widget refs ───────────────────────────────────────────────────────────
 
-    private Button[] schemeButtons     = new Button[2];
-    private Button[] qualityButtons    = new Button[3];
+    private Button[] schemeButtons = new Button[2];
     private Color[]  schemeColors;
-    private Color[]  qualityColors;
 
     private GameObject invertYRow;
     private Toggle invertYToggle;
+    private GameObject invertPitchKbRow;
+    private Toggle invertPitchKbToggle;
     private Slider masterSlider;
     private Slider musicSlider;
     private Slider sfxSlider;
@@ -78,8 +76,7 @@ public class SettingsMenu : MonoBehaviour
 
     private void LoadCurrent()
     {
-        selectedScheme  = PlayerPrefs.GetInt(KeyControlScheme, 0);
-        selectedQuality = Mathf.Clamp(PlayerPrefs.GetInt(KeyQuality, 1), 0, 2);
+        selectedScheme = PlayerPrefs.GetInt(KeyControlScheme, 0);
     }
 
     // ── UI construction ───────────────────────────────────────────────────────
@@ -136,10 +133,23 @@ public class SettingsMenu : MonoBehaviour
         rowRt.anchoredPosition = new Vector2(0, 120);
         rowRt.sizeDelta = new Vector2(840, 50);
 
-        MakeLabel(invertYRow, "INVERT Y-AXIS", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
+        MakeLabel(invertYRow, "INVERT Y-AXIS (MOUSE)", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
                   new Vector2(-120, 0), new Vector2(500, 40));
         invertYToggle = MakeToggle(invertYRow, new Vector2(210, 0));
         invertYToggle.isOn = PlayerPrefs.GetInt(KeyInvertY, 0) == 1;
+
+        // ── Invert Pitch (only visible in Keyboard Only) ──────────────────────
+        invertPitchKbRow = new GameObject("InvertPitchKbRow");
+        invertPitchKbRow.transform.SetParent(panel.transform, false);
+        var ipRowRt = invertPitchKbRow.AddComponent<RectTransform>();
+        ipRowRt.anchorMin = ipRowRt.anchorMax = new Vector2(0.5f, 0.5f);
+        ipRowRt.anchoredPosition = new Vector2(0, 120);
+        ipRowRt.sizeDelta = new Vector2(840, 50);
+
+        MakeLabel(invertPitchKbRow, "INVERT PITCH (KEYBOARD)", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
+                  new Vector2(-120, 0), new Vector2(500, 40));
+        invertPitchKbToggle = MakeToggle(invertPitchKbRow, new Vector2(210, 0));
+        invertPitchKbToggle.isOn = PlayerPrefs.GetInt("InvertPitchKeyboard", 0) == 1;
 
         // ── Volume sliders ────────────────────────────────────────────────────
         MakeLabel(panel, "MASTER VOLUME", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
@@ -154,37 +164,15 @@ public class SettingsMenu : MonoBehaviour
                   new Vector2(-170, -65), new Vector2(380, 40));
         sfxSlider = MakeSlider(panel, new Vector2(200, -65), PlayerPrefs.GetFloat(KeyVolSFX, 1f));
 
-        // ── Graphics quality ──────────────────────────────────────────────────
-        MakeLabel(panel, "GRAPHICS QUALITY", 30, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(0, -130), new Vector2(840, 40));
-
-        string[] qualNames = { "Low", "Medium", "High" };
-        qualityColors = new[]
-        {
-            new Color(0.30f, 0.30f, 0.35f),
-            new Color(0.20f, 0.45f, 0.55f),
-            new Color(0.20f, 0.65f, 0.40f),
-        };
-        for (int i = 0; i < 3; i++)
-        {
-            int idx = i;
-            float xOff = (i - 1) * 220f;
-            var btn = MakeButton(panel, qualNames[i], qualityColors[i],
-                                 new Vector2(xOff, -185), new Vector2(190, 60),
-                                 () => SelectQuality(idx));
-            qualityButtons[i] = btn.GetComponent<Button>();
-        }
-
         // ── Apply / Back ──────────────────────────────────────────────────────
-        MakeDivider(panel, new Vector2(0, -250));
+        MakeDivider(panel, new Vector2(0, -150));
         MakeButton(panel, "APPLY", new Color(0.13f, 0.40f, 0.80f),
-                   new Vector2(-180, -325), new Vector2(320, 70), ApplySettings);
+                   new Vector2(-180, -225), new Vector2(320, 70), ApplySettings);
         MakeButton(panel, "BACK", new Color(0.25f, 0.25f, 0.25f),
-                   new Vector2( 180, -325), new Vector2(320, 70), Close);
+                   new Vector2( 180, -225), new Vector2(320, 70), Close);
 
         // Highlight current selections.
         SelectScheme(selectedScheme);
-        SelectQuality(selectedQuality);
     }
 
     // ── Selection actions (visual highlight + state) ──────────────────────────
@@ -194,12 +182,6 @@ public class SettingsMenu : MonoBehaviour
         selectedScheme = idx;
         ApplyButtonHighlight(schemeButtons, schemeColors, idx);
         RefreshInvertYVisibility();
-    }
-
-    private void SelectQuality(int idx)
-    {
-        selectedQuality = idx;
-        ApplyButtonHighlight(qualityButtons, qualityColors, idx);
     }
 
     private void ApplyButtonHighlight(Button[] buttons, Color[] baseColors, int selectedIdx)
@@ -218,19 +200,20 @@ public class SettingsMenu : MonoBehaviour
 
     private void RefreshInvertYVisibility()
     {
-        if (invertYRow == null) return;
-        bool show = selectedScheme == 1; // Mouse + Keyboard
-        invertYRow.SetActive(show);
+        bool mouseMode = selectedScheme == 1;
+        if (invertYRow != null) invertYRow.SetActive(mouseMode);
+        if (invertPitchKbRow != null) invertPitchKbRow.SetActive(!mouseMode);
     }
 
     // ── Apply / Close ─────────────────────────────────────────────────────────
 
     private void ApplySettings()
     {
-        // Control scheme + invert Y → routed through ControlSchemeManager so the
-        // static caches stay in sync with PlayerPrefs without a scene reload.
+        // Control scheme + invert toggles → routed through ControlSchemeManager so
+        // the static caches stay in sync with PlayerPrefs without a scene reload.
         ControlSchemeManager.SetScheme((ControlSchemeManager.Scheme)selectedScheme);
         ControlSchemeManager.SetInvertY(invertYToggle.isOn);
+        ControlSchemeManager.SetInvertPitchKeyboard(invertPitchKbToggle.isOn);
 
         // Volume — master applies live via AudioListener; music/SFX are persisted
         // for AudioSource components / future mixers to read.
@@ -238,12 +221,6 @@ public class SettingsMenu : MonoBehaviour
         PlayerPrefs.SetFloat(KeyVolMusic,  musicSlider.value);
         PlayerPrefs.SetFloat(KeyVolSFX,    sfxSlider.value);
         AudioListener.volume = masterSlider.value;
-
-        // Graphics quality — clamp the button index to the project's available levels.
-        int maxLevel = Mathf.Max(0, QualitySettings.names.Length - 1);
-        int qualityLevel = Mathf.Clamp(selectedQuality, 0, maxLevel);
-        PlayerPrefs.SetInt(KeyQuality, selectedQuality);
-        QualitySettings.SetQualityLevel(qualityLevel);
 
         PlayerPrefs.Save();
         Close();

@@ -23,12 +23,13 @@ public class LegacyHUDCleanup : MonoBehaviour
     {
         "RadarCanvas", "HeadingStripCanvas",
         "PlayerHUDCanvas", "ScoreHUDCanvas",
-        "WaveHUD", "BoundaryVignetteCanvas",
+        "WaveHUD",
         "EnemyHPCanvas",
         "DefeatScreen", "SettingsMenu",
         "ScreenFlash",
         "CenterCrosshairCanvas",
         "CompassBarCanvas",
+        "PauseCanvas",
     };
 
     // GameObject names (containers of the canvases above). Anything parented
@@ -38,6 +39,7 @@ public class LegacyHUDCleanup : MonoBehaviour
         "PlayerHUD", "ScoreHUD", "Radar", "WaveManager",
         "ArenaBoundary", "ScreenFlash", "DefeatScreen", "SettingsMenu",
         "CenterCrosshair", "CompassBar",
+        "PauseManager",
     };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

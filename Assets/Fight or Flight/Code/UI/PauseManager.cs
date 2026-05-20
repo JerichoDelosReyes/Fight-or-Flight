@@ -144,7 +144,7 @@ public class PauseManager : MonoBehaviour
         rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
         rt.anchoredPosition = new Vector2(20f, -20f);
-        rt.sizeDelta = new Vector2(70f, 50f);
+        rt.sizeDelta = new Vector2(90f, 70f);
 
         var img = go.AddComponent<Image>();
         img.color = new Color(0f, 0f, 0f, 0.55f);
@@ -165,7 +165,7 @@ public class PauseManager : MonoBehaviour
         labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
         var labelText = labelGo.AddComponent<Text>();
         labelText.font = font;
-        labelText.fontSize = 26;
+        labelText.fontSize = 36;
         labelText.fontStyle = FontStyle.Bold;
         labelText.color = Color.white;
         labelText.alignment = TextAnchor.MiddleCenter;

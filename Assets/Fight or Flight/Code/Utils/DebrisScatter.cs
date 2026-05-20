@@ -46,12 +46,13 @@ public class DebrisScatter : MonoBehaviour
     private const float ShellOuterFrac   = 1.10f;  // user "200"
 
     private const int   ShellRocks       = 220;    // dense boundary shell
-    private const int   InteriorRocks    = 480;    // mid-arena fill
-    private const int   ClusterCount     = 10;
-    private const int   RocksPerCluster  = 12;
+    private const int   InteriorRocks    = 900;    // mid-arena fill (was 480 — much denser)
+    private const int   DeepInteriorRocks = 400;   // extra pass in the inner 0-50% band
+    private const int   ClusterCount     = 18;     // was 10
+    private const int   RocksPerCluster  = 14;     // was 12
 
     private const float ScaleMin = 0.5f;
-    private const float ScaleMax = 3.0f;
+    private const float ScaleMax = 4.0f;           // was 3.0 — bigger boulders for variety
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ public class DebrisScatter : MonoBehaviour
             if (spawned % 12 == 0) yield return null;
         }
 
-        // ── Pass 2: Interior scatter ──────────────────────────────────────────
+        // ── Pass 2: Interior scatter (full 0.08x – 0.89x ArenaRadius) ─────────
         for (int i = 0; i < InteriorRocks; i++)
         {
             Vector3 pos;
@@ -108,6 +109,27 @@ public class DebrisScatter : MonoBehaviour
             if (pos.magnitude < clear) continue;
 
             SpawnRock(templates, pos, ScaleMin, ScaleMax * 0.75f);
+            spawned++;
+            if (spawned % 14 == 0) yield return null;
+        }
+
+        // ── Pass 2b: Deep-interior pass — denser fill in the inner band ──────
+        // Concentrates rocks in the 0.08x – 0.50x region so the player isn't
+        // staring at empty space anywhere inside the arena.
+        float deepMax = arenaR * 0.50f;
+        for (int i = 0; i < DeepInteriorRocks; i++)
+        {
+            Vector3 pos;
+            int tries = 0;
+            do
+            {
+                pos = Random.insideUnitSphere * deepMax;
+                tries++;
+            }
+            while (pos.magnitude < clear && tries < 25);
+            if (pos.magnitude < clear) continue;
+
+            SpawnRock(templates, pos, ScaleMin, ScaleMax * 0.6f);
             spawned++;
             if (spawned % 14 == 0) yield return null;
         }

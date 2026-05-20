@@ -69,8 +69,12 @@ public class ShipInput : MonoBehaviour
 
     private void UpdateKeyboardOnly()
     {
-        // W/S = pitch (W tilts nose down per original convention), A/D = yaw, Q/E = roll
-        pitch = Input.GetAxis("Vertical")   * pitchSensitivity * SensitivityScale;
+        // W/S = pitch, A/D = yaw, Q/E = roll.
+        // Default behaviour: W = nose UP (forward/climb). The InvertPitchKeyboard
+        // toggle restores the old W = nose DOWN convention for players who prefer it.
+        float verticalInput = Input.GetAxis("Vertical");
+        if (!ControlSchemeManager.InvertPitchKeyboard) verticalInput = -verticalInput;
+        pitch = verticalInput * pitchSensitivity * SensitivityScale;
         yaw   = Input.GetAxis("Horizontal") * yawSensitivity   * SensitivityScale;
 
         if (Input.GetKey(KeyCode.E)) roll = -1f * rollSensitivity * SensitivityScale;

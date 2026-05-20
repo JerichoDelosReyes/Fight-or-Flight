@@ -85,18 +85,18 @@ public class ScoreHUD : MonoBehaviour
         panelRt.anchorMax        = new Vector2(1f, 1f);
         panelRt.pivot            = new Vector2(1f, 1f);
         panelRt.anchoredPosition = new Vector2(-18f, -18f);
-        panelRt.sizeDelta        = new Vector2(260f, 105f);
+        panelRt.sizeDelta        = new Vector2(340f, 150f);
         panelGo.AddComponent<Image>().color = PanelBG;
 
         // Score
         _scoreText = AddLine(panelGo.transform, font, "SCORE  000000",
-                             ScoreColor, 22, FontStyle.Bold, -20f);
+                             ScoreColor, 32, FontStyle.Bold, -28f);
         // Kill counter
         _killText  = AddLine(panelGo.transform, font, "KILLS  0",
-                             KillColor,  17, FontStyle.Normal, -52f);
+                             KillColor,  24, FontStyle.Bold, -74f);
         // Wave
         _waveText  = AddLine(panelGo.transform, font, "WAVE  1",
-                             WaveColor,  17, FontStyle.Normal, -78f);
+                             WaveColor,  24, FontStyle.Bold, -110f);
     }
 
     private Text AddLine(Transform parent, Font font, string initial,
@@ -107,8 +107,8 @@ public class ScoreHUD : MonoBehaviour
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot            = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-10f, yOffset);
-        rt.sizeDelta        = new Vector2(200f, 22f);
+        rt.anchoredPosition = new Vector2(-14f, yOffset);
+        rt.sizeDelta        = new Vector2(280f, 36f);
 
         var txt = go.AddComponent<Text>();
         txt.text      = initial;

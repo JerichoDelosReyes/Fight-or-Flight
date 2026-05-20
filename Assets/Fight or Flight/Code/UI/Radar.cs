@@ -38,7 +38,7 @@ public class Radar : MonoBehaviour
 
     // ── Config ────────────────────────────────────────────────────────────────
 
-    private const float RadarDiameterPx  = 200f;
+    private const float RadarDiameterPx  = 280f;
     private const float RadarRange       = 10000f;
     private const float MaxEnemiesShown  = 8;
     private const float HeightThreshold  = 10f;
@@ -167,7 +167,7 @@ public class Radar : MonoBehaviour
         dotContainer.anchoredPosition = Vector2.zero;
 
         // Compass labels inside the rotating container
-        float labelRadius = RadarDiameterPx * 0.5f - 12f;
+        float labelRadius = RadarDiameterPx * 0.5f - 18f;
         AddCompassLabel(dcGo.transform, "N",  new Vector2(0f,  labelRadius));
         AddCompassLabel(dcGo.transform, "E",  new Vector2( labelRadius, 0f));
         AddCompassLabel(dcGo.transform, "S",  new Vector2(0f, -labelRadius));
@@ -178,14 +178,14 @@ public class Radar : MonoBehaviour
         arrowGo.transform.SetParent(rootGo.transform, false);
         playerArrowRt = arrowGo.AddComponent<RectTransform>();
         playerArrowRt.anchorMin = playerArrowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        playerArrowRt.sizeDelta        = new Vector2(20f, 20f);
+        playerArrowRt.sizeDelta        = new Vector2(44f, 44f);
         playerArrowRt.anchoredPosition = Vector2.zero;
         playerArrowRt.localEulerAngles = Vector3.zero; // never rotated
 
         var arrowTxt = arrowGo.AddComponent<Text>();
         arrowTxt.text      = "▲";
         arrowTxt.font      = uiFont;
-        arrowTxt.fontSize  = 16;
+        arrowTxt.fontSize  = 36;
         arrowTxt.color     = Color.white;
         arrowTxt.fontStyle = FontStyle.Bold;
         arrowTxt.alignment = TextAnchor.MiddleCenter;
@@ -199,15 +199,15 @@ public class Radar : MonoBehaviour
         go.transform.SetParent(parent, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta        = new Vector2(20f, 14f);
+        rt.sizeDelta        = new Vector2(32f, 24f);
         rt.anchoredPosition = pos;
 
         var txt = go.AddComponent<Text>();
         txt.text      = text;
         txt.font      = uiFont;
-        txt.fontSize  = 9;
+        txt.fontSize  = 20;
         txt.fontStyle = FontStyle.Bold;
-        txt.color     = new Color(0.9f, 0.9f, 0.9f, 0.85f);
+        txt.color     = new Color(1f, 1f, 1f, 0.95f);
         txt.alignment = TextAnchor.MiddleCenter;
         txt.horizontalOverflow = HorizontalWrapMode.Overflow;
         txt.verticalOverflow   = VerticalWrapMode.Overflow;
@@ -417,10 +417,11 @@ public class Radar : MonoBehaviour
             var go = new GameObject("Label");
             go.transform.SetParent(dotContainer, false);
             rt  = go.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(50f, 28f);
+            rt.sizeDelta = new Vector2(80f, 44f);
             txt = go.AddComponent<Text>();
             txt.font      = uiFont;
-            txt.fontSize  = 9;
+            txt.fontSize  = 18;
+            txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.horizontalOverflow = HorizontalWrapMode.Overflow;
             txt.verticalOverflow   = VerticalWrapMode.Overflow;
@@ -449,7 +450,7 @@ public class Radar : MonoBehaviour
         var go = new GameObject("Dot");
         go.transform.SetParent(dotContainer, false);
         var r = go.AddComponent<RectTransform>();
-        r.sizeDelta = new Vector2(8f, 8f);
+        r.sizeDelta = new Vector2(14f, 14f);
         var img = go.AddComponent<RawImage>();
         img.texture = dotTex;
         return r;
