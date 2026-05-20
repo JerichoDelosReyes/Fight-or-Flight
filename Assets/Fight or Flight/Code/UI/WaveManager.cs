@@ -253,14 +253,15 @@ public class WaveManager : MonoBehaviour
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         // Persistent top-center "WAVE X" header — with dark panel background.
+        // Positioned BELOW the compass bar (which occupies the top 10-72 px).
         var headerBgGo = new GameObject("WaveHeaderBG");
         headerBgGo.transform.SetParent(canvasGo.transform, false);
         var headerBgRt = headerBgGo.AddComponent<RectTransform>();
         headerBgRt.anchorMin = new Vector2(0.5f, 1f);
         headerBgRt.anchorMax = new Vector2(0.5f, 1f);
         headerBgRt.pivot     = new Vector2(0.5f, 1f);
-        headerBgRt.anchoredPosition = new Vector2(0f, -22f);
-        headerBgRt.sizeDelta = new Vector2(280f, 60f);
+        headerBgRt.anchoredPosition = new Vector2(0f, -90f);
+        headerBgRt.sizeDelta = new Vector2(260f, 52f);
         headerBgGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
 
         var headerGo = new GameObject("WaveHeader");
@@ -276,7 +277,7 @@ public class WaveManager : MonoBehaviour
 
         headerText = headerGo.AddComponent<Text>();
         headerText.font = font;
-        headerText.fontSize = 36;
+        headerText.fontSize = 30;
         headerText.fontStyle = FontStyle.Bold;
         headerText.color = new Color(1f, 0.95f, 0.5f);
         headerText.alignment = TextAnchor.MiddleCenter;
