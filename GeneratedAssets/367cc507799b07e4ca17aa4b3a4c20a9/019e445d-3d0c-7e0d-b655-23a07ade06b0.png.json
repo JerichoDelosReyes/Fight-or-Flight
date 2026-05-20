@@ -1,0 +1,38 @@
+{
+    "asset": "367cc507799b07e4ca17aa4b3a4c20a9",
+    "fileName": "019e445d-3d0c-7e0d-b655-23a07ade06b0.png",
+    "prompt": "A high-resolution 1920x1080 minimalist space background for a game main menu. It features a deep dark blue and black gradient, sparse faint stars, and a few large blurred planets or moons in the distance. The overall aesthetic is clean, cinematic, and futuristic, exactly matching the art style and color palette of the provided reference image. No text or UI elements.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "ddcd776dfadf37b4391116d0a36f0dae",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 2048,
+        "height": 1152
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}
