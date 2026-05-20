@@ -18,8 +18,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OpenSettings()
     {
-        Debug.Log("Settings clicked");
-        // Add logic to show settings panel
+        SettingsMenu.Show();
     }
 
     public void QuitGame()

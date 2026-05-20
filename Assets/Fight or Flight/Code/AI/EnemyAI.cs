@@ -83,6 +83,38 @@ public class EnemyAI : MonoBehaviour
 
         PickNewPatrolTarget();
         SetupVisuals();
+        ApplyDifficulty();
+    }
+
+    private void ApplyDifficulty()
+    {
+        var m = DifficultyManager.GetMultipliers();
+
+        // Health — must reset currentHealth too because ShipHealth.Awake already
+        // snapped it to maxHealth before we got here.
+        var health = GetComponent<ShipHealth>();
+        if (health != null)
+        {
+            health.maxHealth     *= m.health;
+            health.currentHealth  = health.maxHealth;
+        }
+
+        // Speed — scale both linear and angular force so Easy enemies feel sluggish
+        // and Hard enemies turn/accelerate harder.
+        if (physics != null)
+        {
+            physics.linearForce  *= m.speed;
+            physics.angularForce *= m.speed;
+        }
+
+        // Fire rate — m.fireRate multiplies the INTERVAL, so >1 = slower shots.
+        fireRate *= m.fireRate;
+
+        // Aggression — push Hard enemies into tighter orbits, faster turns, and
+        // more throttle so they actively close on the player.
+        turnSpeedFactor *= m.aggression;
+        throttleFactor  *= m.aggression;
+        orbitRadius     /= Mathf.Max(0.01f, m.aggression);
     }
 
     private void SetupVisuals()

@@ -7,6 +7,7 @@ public class GameEventManager : MonoBehaviour
     public static PlayGameDelegate OnStartGame;
     public static PlayGameDelegate OnRespawnPickup;
     public static PlayGameDelegate OnPlayerDestroyed;
+    public static PlayGameDelegate OnEnemyDestroyed;
 
     public delegate void UpdateGameUIDelegate(int amount);
     public static UpdateGameUIDelegate OnUpdateHealthBar;
@@ -51,6 +52,14 @@ public class GameEventManager : MonoBehaviour
         if (OnPlayerDestroyed != null) // Check for subscribers
         {
             OnPlayerDestroyed();
+        }
+    }
+
+    public static void EnemyDestroyed()
+    {
+        if (OnEnemyDestroyed != null) // Check for subscribers
+        {
+            OnEnemyDestroyed();
         }
     }
 

@@ -7,6 +7,10 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float _spawnRadius = 3000f;
     [SerializeField] private int _maxEnemies = 15;
 
+    /// <summary>Public read-only access to the enemy prefab so the WaveManager
+    /// can take it over when it disables the legacy spawner.</summary>
+    public GameObject EnemyPrefab { get { return _enemyPrefab; } }
+
     private int _currentEnemyCount = 0;
 
     private void OnEnable()

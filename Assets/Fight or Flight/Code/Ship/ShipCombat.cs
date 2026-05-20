@@ -28,7 +28,11 @@ public class ShipCombat : MonoBehaviour
 
         if (isOverheated && heat <= 0) isOverheated = false;
 
-        bool fireInput = Input.GetKey(KeyCode.Space) || Input.GetButton("Fire1");
+        // Space always fires. Left mouse fires only in Mouse+Keyboard mode so a stray
+        // click in keyboard-only mode (e.g. clicking off-screen UI) doesn't shoot.
+        bool fireInput = Input.GetKey(KeyCode.Space);
+        if (ControlSchemeManager.IsMouseKeyboard)
+            fireInput |= Input.GetMouseButton(0);
 
         if (fireInput && Time.time >= _nextFireTime && !isOverheated)
         {

@@ -106,12 +106,24 @@ public AudioClip explosionSound;
         {
             Debug.Log("Player Ship Destroyed!");
             GameEventManager.PlayerDestroyed(); // Inform legacy systems
+            DefeatScreen.Show(ScoreManager.Score, ScoreManager.Kills);
+
+            // Disable the ship so it can't keep firing / shaking the camera while
+            // the defeat screen is up, but leave the GameObject around in case other
+            // systems (HUD, etc.) still reference it.
+            foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
+            foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = false;
+            var rb = GetComponent<Rigidbody>();
+            if (rb != null) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
+            var input = GetComponent<ShipInput>(); if (input != null) input.enabled = false;
+            var combat = GetComponent<ShipCombat>(); if (combat != null) combat.enabled = false;
         }
         else
         {
             // Enemy destroyed
             EnemySpawner spawner = Object.FindAnyObjectByType<EnemySpawner>();
             if (spawner != null) spawner.OnEnemyDestroyed();
+            GameEventManager.EnemyDestroyed();
             
             // AddKillScore increments both Score and the Kills counter.
             // Pickup.cs uses the legacy GameEventManager.IncrementScore path which calls
