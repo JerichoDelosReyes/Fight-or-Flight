@@ -47,9 +47,12 @@ public class MainMenuController : MonoBehaviour
 
     private void RepositionButtons()
     {
-        // Vertical layout: Start higher up, more spacing between all 4 buttons.
-        float startY = 60f;
-        float spacing = 150f;
+        // Vertical layout: Lowered position with equal spacing between all 4 buttons.
+        // Screen center is 0, bottom is -540.
+        // Using startY=-130 and spacing=120 ensures the bottom button (Quit) 
+        // stays just above the screen edge.
+        float startY = -30f;
+        float spacing = 130f;
 
         SetButtonY("StartButton",        startY);
         SetButtonY("InstructionsButton", startY - spacing);
@@ -110,9 +113,17 @@ public class MainMenuController : MonoBehaviour
 
     private void TryAddTitlePulse()
     {
+        // 1. Check for the specific V2 image title
+        var v2Title = GameObject.Find("TitleFightOrFlight_V2");
+        if (v2Title != null && v2Title.GetComponent<TitlePulse>() == null)
+        {
+            v2Title.AddComponent<TitlePulse>();
+        }
+
+        // 2. Fallback for any other text titles containing FIGHT/FLIGHT
         foreach (var t in Object.FindObjectsByType<Text>(FindObjectsInactive.Include))
         {
-if (t == null) continue;
+            if (t == null) continue;
             string up = (t.text ?? "").ToUpperInvariant();
             if (up.Contains("FIGHT") || up.Contains("FLIGHT"))
             {
