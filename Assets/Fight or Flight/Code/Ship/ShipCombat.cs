@@ -49,17 +49,57 @@ AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
 
     private void FireLasers()
     {
-        if (laserPrefab == null || firePoints == null || firePoints.Length == 0) return;
+        if (laserPrefab == null)
+        {
+            Debug.LogWarning("ShipCombat: Laser Prefab is not assigned!");
+            return;
+        }
+
+        if (firePoints == null || firePoints.Length == 0)
+        {
+            // Try to find any child transforms whose name contains "FirePoint" (case-insensitive)
+            var children = GetComponentsInChildren<Transform>(true);
+            var found = new System.Collections.Generic.List<Transform>();
+            foreach (var t in children)
+            {
+                if (t == this.transform) continue;
+                if (t.name.ToLower().Contains("firepoint"))
+                    found.Add(t);
+            }
+
+            if (found.Count > 0)
+            {
+                firePoints = found.ToArray();
+                string names = "";
+                for (int i = 0; i < found.Count; i++)
+                {
+                    if (i > 0) names += ", ";
+                    names += found[i].name;
+                }
+                Debug.Log("ShipCombat: Automatically found and assigned fire points: " + names);
+            }
+            else
+            {
+                Debug.LogWarning("ShipCombat: No fire points assigned and couldn't find children named like 'FirePoint' (e.g. FirePoint_L). ");
+                return;
+            }
+        }
 
         foreach (Transform point in firePoints)
         {
             if (point == null) continue;
-            GameObject laser = Instantiate(laserPrefab, point.position, point.rotation);
-            var script = laser.GetComponent<ShipLaserProjectile>();
+
+            Vector3 shotDirection = point.forward;
+            Quaternion shotRotation = point.rotation;
+
+            GameObject laser = Instantiate(laserPrefab, point.position, shotRotation);
+            // Ensure the instantiated prefab is not parented to anything (safety)
+            laser.transform.SetParent(null);
+            ShipLaserProjectile script = laser.GetComponent<ShipLaserProjectile>();
             if (script != null)
             {
                 script.targetTag = "Enemy";
-                script.Initialize(Vector3.zero);
+                script.Initialize(shotDirection);
             }
         }
     }

@@ -2,27 +2,37 @@ using UnityEngine;
 
 public class ShipLaserProjectile : MonoBehaviour
 {
-    public float speed = 7000f; 
+    public float speed = 1000f; 
     public float lifeTime = 3f;
     public float damage = 8f;
     public string targetTag = "Enemy";
 
     public AudioClip shotSound;
     private AudioSource audioSource;
-    private Vector3 movementDirection;
+    private Vector3 movementDirection = Vector3.zero;
 
-    public void Initialize(Vector3 shipVelocity)
+    // Initialize with explicit firing direction (world space). shipVelocity is ignored.
+    public void Initialize(Vector3 initialDirection)
     {
-        // Ignore velocity inheritance as requested
+        if (initialDirection != Vector3.zero)
+            movementDirection = initialDirection.normalized;
+        // Align visual rotation to movement direction immediately
+        if (movementDirection != Vector3.zero)
+        {
+            transform.rotation = Quaternion.LookRotation(movementDirection, Vector3.up);
+        }
     }
 
     private void Start()
     {
-        // Cache direction immediately on spawn
-        movementDirection = transform.forward;
-        Destroy(gameObject, lifeTime);
-        
+        // If Initialize wasn't called or passed zero, fall back to current transform.forward
+        if (movementDirection == Vector3.zero)
+            movementDirection = transform.forward;
+
+        // Ensure it's not parented to the ship so it doesn't follow its movement
         transform.SetParent(null);
+
+        Destroy(gameObject, lifeTime);
 
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
@@ -43,7 +53,15 @@ public class ShipLaserProjectile : MonoBehaviour
     private void Update()
     {
         // Straight movement in world space using cached direction
-        transform.position += (movementDirection * speed) * Time.deltaTime;
+        if (movementDirection != Vector3.zero)
+        {
+            transform.position += (movementDirection * speed) * Time.deltaTime;
+        }
+        else
+        {
+            // Fallback if forward was somehow zero
+            transform.position += (transform.forward * speed) * Time.deltaTime;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
