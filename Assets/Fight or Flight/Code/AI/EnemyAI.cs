@@ -146,13 +146,24 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
-        EnforceBoundary();
+        // HARD CLAMP runs first — before any AI logic can move the ship.
+        HardClampToArena();
 
         // Re-acquire player reference if lost.
         if (player == null)
         {
             if (Ship.PlayerShip != null) player = Ship.PlayerShip.transform;
             else { Patrol(); return; }
+        }
+
+        // If we're at or past the boundary, completely override AI behaviour
+        // and steer toward centre this frame so we can't keep thrusting outward.
+        if (transform.position.magnitude >= ScriptsReference.ArenaRadius * 0.97f)
+        {
+            Vector3 toCentre = -transform.position.normalized;
+            TurnToward(toCentre, turnSpeedFactor * 2f);
+            physics.SetPhysicsInput(new Vector3(0, 0, throttleFactor), Vector3.zero);
+            return;
         }
 
         float distToPlayer = Vector3.Distance(transform.position, player.position);
@@ -172,6 +183,13 @@ public class EnemyAI : MonoBehaviour
             case AIState.Chase:  Chase();  break;
             case AIState.Attack: Attack(); break;
         }
+    }
+
+    // Runs after ShipPhysics applies forward thrust (which happens in
+    // FixedUpdate too) — guarantees the clamp survives the physics step.
+    private void FixedUpdate()
+    {
+        HardClampToArena();
     }
 
     // ── States ────────────────────────────────────────────────────────────────
@@ -298,21 +316,39 @@ public class EnemyAI : MonoBehaviour
 
     private Rigidbody _rb;
 
-    private void EnforceBoundary()
+    /// <summary>
+    /// Guaranteed hard clamp at the arena radius — runs in both Update (before
+    /// AI logic) and FixedUpdate (after ShipPhysics applies force). Uses
+    /// Rigidbody.position so the physics engine doesn't snap the body back to
+    /// where it thinks it should be next step.
+    /// </summary>
+    private void HardClampToArena()
     {
-        float dist = transform.position.magnitude;
-        if (dist <= ScriptsReference.ArenaRadius) return;
+        float radius = ScriptsReference.ArenaRadius;
+        Vector3 pos = transform.position;
+        float dist = pos.magnitude;
+        if (dist <= radius) return;
 
-        transform.position = transform.position.normalized * ScriptsReference.ArenaRadius;
+        Vector3 outward = pos / dist; // = pos.normalized, already have |pos|
+        Vector3 clamped = outward * radius;
 
         if (_rb == null) _rb = GetComponent<Rigidbody>();
         if (_rb != null)
         {
-            Vector3 outward = transform.position.normalized;
-            float   dotOut  = Vector3.Dot(_rb.linearVelocity, outward);
+            _rb.position           = clamped;
+            transform.position     = clamped;
+            // Zero outward velocity component completely.
+            float dotOut = Vector3.Dot(_rb.linearVelocity, outward);
             if (dotOut > 0f)
-                _rb.linearVelocity -= outward * dotOut; // zero out outward component
-            _rb.AddForce(-outward * 3000f, ForceMode.Impulse);
+                _rb.linearVelocity -= outward * dotOut;
+            // Kill spin so the AI can't keep rotating outward.
+            _rb.angularVelocity = Vector3.zero;
+            // Big inward kick — has to dominate AI forward thrust this frame.
+            _rb.AddForce(-outward * 8000f, ForceMode.Impulse);
+        }
+        else
+        {
+            transform.position = clamped;
         }
     }
 

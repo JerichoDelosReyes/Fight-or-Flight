@@ -139,14 +139,14 @@ public class Radar : MonoBehaviour
 
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        // Root — anchored BOTTOM-LEFT
+        // Root — anchored BOTTOM-RIGHT
         var rootGo = new GameObject("RadarRoot");
         rootGo.transform.SetParent(canvasGo.transform, false);
         var rootRt = rootGo.AddComponent<RectTransform>();
-        rootRt.anchorMin        = new Vector2(0f, 0f);
-        rootRt.anchorMax        = new Vector2(0f, 0f);
-        rootRt.pivot            = new Vector2(0f, 0f);
-        rootRt.anchoredPosition = new Vector2(18f, 18f);
+        rootRt.anchorMin        = new Vector2(1f, 0f);
+        rootRt.anchorMax        = new Vector2(1f, 0f);
+        rootRt.pivot            = new Vector2(1f, 0f);
+        rootRt.anchoredPosition = new Vector2(-18f, 18f);
         rootRt.sizeDelta        = new Vector2(RadarDiameterPx + 20f, RadarDiameterPx + 20f);
 
         // Circular background

@@ -202,16 +202,22 @@ public class WaveManager : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        Vector3 pos = Random.insideUnitSphere * SpawnRadius;
+        // Always spawn well inside the arena — never close to the boundary wall.
+        float safeRadius = ScriptsReference.ArenaRadius * 0.55f;
+        float useRadius  = Mathf.Min(SpawnRadius, safeRadius);
+
+        Vector3 pos = Random.insideUnitSphere * useRadius;
         pos.y = 0f;
 
-        if (pos.magnitude > ScriptsReference.BoundaryLimit - 500f)
-            pos = pos.normalized * (ScriptsReference.BoundaryLimit - 500f);
+        if (pos.magnitude > safeRadius)
+            pos = pos.normalized * safeRadius;
 
         if (Ship.PlayerShip != null &&
             Vector3.Distance(pos, Ship.PlayerShip.transform.position) < MinPlayerDist)
         {
             pos += (pos - Ship.PlayerShip.transform.position).normalized * MinPlayerDist;
+            if (pos.magnitude > safeRadius)
+                pos = pos.normalized * safeRadius;
         }
 
         Instantiate(enemyPrefab, pos, Quaternion.identity);

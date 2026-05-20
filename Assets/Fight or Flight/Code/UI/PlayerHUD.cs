@@ -34,8 +34,8 @@ public class PlayerHUD : MonoBehaviour
     private const float PanelW  = 320f;
     private const float PanelH  = 160f;
     private const float MarginX = 18f;
-    // Radar sits at (18, 18) with height 220px — HUD goes above it with an 8px gap
-    private const float MarginY = 18f + 220f + 8f;
+    // Anchored to the bottom-left corner (radar now lives at bottom-right).
+    private const float MarginY = 18f;
 
     private const float BarW    = 230f;
     private const float BarH    = 22f;

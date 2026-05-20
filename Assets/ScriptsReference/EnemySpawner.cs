@@ -53,16 +53,22 @@ public class EnemySpawner : MonoBehaviour
         if (_enemyPrefab == null) return;
         if (_currentEnemyCount >= _maxEnemies) return;
 
-        Vector3 spawnPos = Random.insideUnitSphere * _spawnRadius;
-        
-        // Ensure within boundaries
-        if (spawnPos.magnitude > ScriptsReference.BoundaryLimit - 500f)
-            spawnPos = spawnPos.normalized * (ScriptsReference.BoundaryLimit - 500f);
+        // Spawn well inside the arena — never near the boundary wall.
+        float safeRadius = ScriptsReference.ArenaRadius * 0.55f;
+        float useRadius  = Mathf.Min(_spawnRadius, safeRadius);
+        Vector3 spawnPos = Random.insideUnitSphere * useRadius;
+
+        // Hard clamp inside the safe zone in case Random produced an edge value.
+        if (spawnPos.magnitude > safeRadius)
+            spawnPos = spawnPos.normalized * safeRadius;
 
         // Keep them away from player initially
         if (Ship.PlayerShip != null && Vector3.Distance(spawnPos, Ship.PlayerShip.transform.position) < 800f)
         {
             spawnPos += (spawnPos - Ship.PlayerShip.transform.position).normalized * 800f;
+            // Re-clamp after the player-push offset.
+            if (spawnPos.magnitude > safeRadius)
+                spawnPos = spawnPos.normalized * safeRadius;
         }
 
         Instantiate(_enemyPrefab, spawnPos, Quaternion.identity);
