@@ -34,11 +34,29 @@ public class WaveManager : MonoBehaviour
     private CanvasGroup headerGroup;
 
     // ── Auto-creation ─────────────────────────────────────────────────────────
+    // RuntimeInitializeOnLoadMethod fires once at game startup, NOT on every
+    // scene load. We need to react every time MainScene becomes active (e.g.
+    // after the player hits Play in the menu, or Try Again on defeat), so we
+    // subscribe to SceneManager.sceneLoaded instead.
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void AutoCreate()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void HookSceneLoad()
     {
-        if (SceneManager.GetActiveScene().name != "MainScene") return;
+        SceneManager.sceneLoaded -= OnSceneLoadedStatic;
+        SceneManager.sceneLoaded += OnSceneLoadedStatic;
+        // Also try once now in case the active scene is already MainScene (e.g.
+        // when pressing Play in the editor while MainScene is open).
+        TryCreate(SceneManager.GetActiveScene());
+    }
+
+    private static void OnSceneLoadedStatic(Scene scene, LoadSceneMode mode)
+    {
+        TryCreate(scene);
+    }
+
+    private static void TryCreate(Scene scene)
+    {
+        if (scene.name != "MainScene") return;
         if (Object.FindAnyObjectByType<WaveManager>() != null) return; // idempotent
         new GameObject("WaveManager").AddComponent<WaveManager>();
     }
