@@ -39,9 +39,8 @@ public class MainMenuController : MonoBehaviour
 
     // ── Settings button injection ─────────────────────────────────────────────
     // The MainMenu scene was authored with Play / Instructions / Quit buttons
-    // but no Settings button. Rather than require the user to wire one in the
-    // editor, we clone the Instructions button at runtime and place it in the
-    // same vertical stack so the menu visually matches.
+    // but no Settings button. At runtime we clone the Instructions button,
+    // move Quit to the bottom slot, and place Settings above it.
     private void EnsureSettingsButton()
     {
         // Already created? Bail.
@@ -51,12 +50,21 @@ public class MainMenuController : MonoBehaviour
         var instructions = GameObject.Find("InstructionsButton");
         if (instructions == null) return; // unexpected scene layout — give up quietly
 
+        // Push Quit to the bottom slot so Settings can sit above it.
+        // Scene order: Play=-40, Instructions=-160, Quit=-280 → Quit moves to -400.
+        var quit = GameObject.Find("QuitButton");
+        if (quit != null)
+        {
+            var qrt = quit.GetComponent<RectTransform>();
+            if (qrt != null) qrt.anchoredPosition = new Vector2(0, -400);
+        }
+
         var clone = Instantiate(instructions, instructions.transform.parent);
         clone.name = "SettingsButton";
 
-        // Slot it below Quit (Play=-40, Instructions=-160, Quit=-280) → Settings=-400.
+        // Settings sits where Quit used to be (y=-280), above the new Quit (y=-400).
         var rt = clone.GetComponent<RectTransform>();
-        if (rt != null) rt.anchoredPosition = new Vector2(0, -400);
+        if (rt != null) rt.anchoredPosition = new Vector2(0, -280);
 
         // Rename the visible label.
         foreach (var text in clone.GetComponentsInChildren<Text>(true))
