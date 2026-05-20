@@ -23,7 +23,9 @@ public class EnemySpawner : MonoBehaviour
 
     private void Start()
     {
-        StartSpawning();
+        // Do NOT spawn here — wait for the OnStartGame event.
+        // Calling StartSpawning() in Start() caused enemies to appear on the main menu
+        // because the spawner GameObject can be present before the game begins.
     }
 
     private void Update()

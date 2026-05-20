@@ -113,8 +113,10 @@ public AudioClip explosionSound;
             EnemySpawner spawner = Object.FindAnyObjectByType<EnemySpawner>();
             if (spawner != null) spawner.OnEnemyDestroyed();
             
-            // Update Score - use both systems for compatibility
-            ScoreManager.AddScore(100);
+            // AddKillScore increments both Score and the Kills counter.
+            // Pickup.cs uses the legacy GameEventManager.IncrementScore path which calls
+            // ScoreManager.AddScore (no kill counter) — keeping them distinct.
+            ScoreManager.AddKillScore(100);
             GameEventManager.IncrementScore(100);
             
             Debug.Log("Enemy Destroyed!");

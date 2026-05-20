@@ -58,7 +58,14 @@ public class ScoreManager : MonoBehaviour
         GameEventManager.OnStartGame -= ResetScore;
     }
 
+    /// <summary>Add points only — does NOT increment the kill counter. Use for pickups.</summary>
     public static void AddScore(int amount)
+    {
+        Score += amount;
+    }
+
+    /// <summary>Add points AND increment the kill counter. Use when an enemy is destroyed.</summary>
+    public static void AddKillScore(int amount)
     {
         Score += amount;
         Kills++;

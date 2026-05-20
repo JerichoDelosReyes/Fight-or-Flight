@@ -58,6 +58,12 @@ public class HUDManager : MonoBehaviour
             scoreText.text = string.Format("SCORE:\n{0:D6}", ScoreManager.Score);
         }
 
+        // Update Kill counter (separate from score — pickups don't increment this)
+        if (killText != null)
+        {
+            killText.text = string.Format("KILLS: {0}", ScoreManager.Kills);
+        }
+
         // Update Speed
         if (speedText != null && playerRb != null)
         {

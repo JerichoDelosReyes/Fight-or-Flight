@@ -41,6 +41,15 @@ public class GameUI : MonoBehaviour
     {
         _mainMenu.SetActive(false);
         _gameUI.SetActive(true);
+
+        // Guard against double-spawning if StartGame fires more than once (e.g. button
+        // pressed twice, or legacy + new systems both wired to the same event).
+        if (Ship.PlayerShip != null)
+        {
+            Debug.LogWarning("GameUI: Player ship already exists — skipping duplicate spawn.");
+            return;
+        }
+
         Instantiate(_playerPrefab, _playerSpawner.transform.position, _playerSpawner.transform.rotation);
     }
 
