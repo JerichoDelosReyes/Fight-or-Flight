@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class EnemyAI : MonoBehaviour
 {
@@ -8,30 +9,26 @@ public class EnemyAI : MonoBehaviour
     [Header("Combat")]
     public GameObject laserPrefab;
     public float fireRate = 0.8f;
-    public float attackRange = 8000f; // Significantly increased range
-    public float stopDistance = 2000f; // Larger stop distance to avoid collision
-    public float laserSpawnOffset = 2000f; // Spawn laser well in front of huge model
+    public float attackRange = 8000f;
+    public float stopDistanceOverride = 600f; // Closer
+    public float laserSpawnForwardOffset = 100f;
     
     [Header("Behavior")]
-    public float wanderRadius = 10000f;
-    public float turnSpeedFactor = 1.0f; // Faster turns
-    public float throttleFactor = 0.5f; // Faster movement
+    public float turnSpeedFactor = 1.0f;
+    public float throttleFactor = 0.15f; // Reasonable speed
     public float detectionRange = 15000f;
-    public float separationDistance = 1500f; // Larger separation for larger ships
     
     [Header("Obstacle Avoidance")]
-    public float avoidanceOffset = 400f; // Wider offset for huge ships
-    public float avoidanceRange = 4000f; // Longer avoidance range
+    public float avoidanceOffset = 400f;
+    public float avoidanceRange = 4000f;
     public float avoidanceStrength = 20f;
 
     [Header("Visuals")]
     public TrailRenderer trail;
     public Light glow;
 
-    private Vector3 targetPosition;
     private float nextFireTime;
-
-    private static System.Collections.Generic.List<EnemyAI> allEnemies = new System.Collections.Generic.List<EnemyAI>();
+    public static List<EnemyAI> allEnemies = new List<EnemyAI>();
 
     private void Awake()
     {
@@ -52,19 +49,20 @@ public class EnemyAI : MonoBehaviour
 
     private void OnPlayerDestroyed()
     {
-        if (Camera.main != null)
-        {
-            player = Camera.main.transform;
-            targetPosition = player.position;
-        }
+        if (Camera.main != null) player = Camera.main.transform;
     }
 
     private void Start()
     {
-        if (Ship.PlayerShip != null)
-            player = Ship.PlayerShip.transform;
-
+        if (Ship.PlayerShip != null) player = Ship.PlayerShip.transform;
         SetupVisuals();
+        
+        if (glow != null)
+        {
+            glow.range = 300f;
+            glow.intensity = 5f;
+            glow.color = Color.red;
+        }
     }
 
     private void SetupVisuals()
@@ -81,21 +79,15 @@ public class EnemyAI : MonoBehaviour
             else return;
         }
 
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        // Pathfinding & Movement
         PathfindingAndNavigate();
 
-        // Shooting
-        if (distanceToPlayer < attackRange)
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        if (distanceToPlayer < attackRange && TargetInfront())
         {
-            if (TargetInfront() && HaveRaycastLineOfSight())
+            if (Time.time >= nextFireTime)
             {
-                if (Time.time >= nextFireTime)
-                {
-                    FireLasers();
-                    nextFireTime = Time.time + fireRate;
-                }
+                FireLasers();
+                nextFireTime = Time.time + fireRate;
             }
         }
     }
@@ -104,104 +96,66 @@ public class EnemyAI : MonoBehaviour
     {
         Vector3 directionToTarget = (player.position - transform.position).normalized;
         
-        // Separation (Formation-like behavior)
-        Vector3 separationVector = Vector3.zero;
-        foreach (var enemy in allEnemies)
+        // Boundary check
+        float distanceToCenter = transform.position.magnitude;
+        if (distanceToCenter > ScriptsReference.BoundaryLimit * 0.8f)
         {
-            if (enemy == this || enemy == null) continue;
-            float dist = Vector3.Distance(transform.position, enemy.transform.position);
-            if (dist < separationDistance)
-            {
-                separationVector += (transform.position - enemy.transform.position).normalized * (separationDistance - dist);
-            }
+            Vector3 toCenter = -transform.position.normalized;
+            float factor = (distanceToCenter - ScriptsReference.BoundaryLimit * 0.8f) / (ScriptsReference.BoundaryLimit * 0.2f);
+            directionToTarget = Vector3.Slerp(directionToTarget, toCenter, factor).normalized;
         }
 
-        // Combine direction to player and separation
-        Vector3 finalDirection = (directionToTarget + separationVector * 0.5f).normalized;
-
-        // Raycast Obstacle Avoidance (Improved with more rays)
+        // Raycast Obstacle Avoidance
         RaycastHit hit;
         Vector3 avoidanceOffsetVector = Vector3.zero;
-
-        // Front rays in a cross pattern
-        Vector3[] rayOffsets = {
-            transform.right * avoidanceOffset,
-            -transform.right * avoidanceOffset,
-            transform.up * avoidanceOffset,
-            -transform.up * avoidanceOffset,
-            (transform.right + transform.up).normalized * avoidanceOffset,
-            (-transform.right + transform.up).normalized * avoidanceOffset,
-            (transform.right - transform.up).normalized * avoidanceOffset,
-            (-transform.right - transform.up).normalized * avoidanceOffset
-        };
+        Vector3[] rayOffsets = { transform.right * avoidanceOffset, -transform.right * avoidanceOffset, transform.up * avoidanceOffset, -transform.up * avoidanceOffset };
 
         foreach (var offset in rayOffsets)
         {
-            // Start rays forward to avoid own ship's collider
-            if (Physics.Raycast(transform.position + offset + transform.forward * laserSpawnOffset, transform.forward, out hit, avoidanceRange))
-            {
+            if (Physics.Raycast(transform.position + offset + transform.forward * 200f, transform.forward, out hit, avoidanceRange))
                 avoidanceOffsetVector -= offset.normalized;
-            }
-        }
-
-        // Additional center ray for direct obstacles
-        if (Physics.Raycast(transform.position + transform.forward * laserSpawnOffset, transform.forward, out hit, avoidanceRange * 1.5f))
-        {
-            avoidanceOffsetVector += transform.up; // Default to up-steer if directly in front
         }
 
         if (avoidanceOffsetVector != Vector3.zero)
         {
-            // Steer away from obstacles
-            transform.Rotate(avoidanceOffsetVector * avoidanceStrength * Time.deltaTime * 5f);
+            Vector3 avoidanceDir = (directionToTarget + avoidanceOffsetVector * 2f).normalized;
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(avoidanceDir, Vector3.up), turnSpeedFactor * Time.deltaTime * 5f);
         }
         else
         {
-            // Smoothly rotate towards target
-            Quaternion targetRotation = Quaternion.LookRotation(finalDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, turnSpeedFactor * Time.deltaTime * 2f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(directionToTarget, Vector3.up), turnSpeedFactor * Time.deltaTime * 2f);
         }
 
-        // Apply constant forward movement
-        float currentThrottle = (Vector3.Distance(transform.position, player.position) > stopDistance) ? throttleFactor : 0f;
+        float currentThrottle = (Vector3.Distance(transform.position, player.position) > stopDistanceOverride) ? throttleFactor : 0f;
         physics.SetPhysicsInput(new Vector3(0, 0, currentThrottle), Vector3.zero);
     }
 
     private bool TargetInfront()
     {
         if (player == null) return false;
-        Vector3 directionToTarget = player.position - transform.position;
-        float angle = Vector3.Angle(transform.forward, directionToTarget);
-        return angle < 60f; // Wider cone for better engagement
-    }
-
-    private bool HaveRaycastLineOfSight()
-    {
-        if (player == null) return false;
-        Vector3 startPoint = transform.position + transform.forward * laserSpawnOffset;
-        Vector3 directionToTarget = player.position - startPoint;
-        if (Physics.Raycast(startPoint, directionToTarget, out RaycastHit hit, attackRange))
-        {
-            return hit.transform.CompareTag("Player") || hit.transform.root.CompareTag("Player") || hit.transform.GetComponentInParent<Ship>()?.isPlayer == true;
-        }
-        // If it hit nothing, it might be the player is too far for the raycast but we still want to shoot?
-        // Actually, raycast is good for line of sight.
-        return false;
+        return Vector3.Angle(transform.forward, player.position - transform.position) < 45f;
     }
 
     private void FireLasers()
     {
         if (laserPrefab == null) return;
+        
+        // Spawn 2 lasers forward
+        Vector3 leftPos = transform.position + transform.forward * laserSpawnForwardOffset - transform.right * 60f;
+        Vector3 rightPos = transform.position + transform.forward * laserSpawnForwardOffset + transform.right * 60f;
 
-        GameObject laser = Instantiate(laserPrefab, transform.position + transform.forward * laserSpawnOffset, transform.rotation);
+        SpawnLaser(leftPos);
+        SpawnLaser(rightPos);
+    }
+
+    private void SpawnLaser(Vector3 pos)
+    {
+        GameObject laser = Instantiate(laserPrefab, pos, transform.rotation);
         var script = laser.GetComponent<ShipLaserProjectile>();
         if (script != null)
         {
             script.targetTag = "Player";
-            if (physics != null && physics.Rigidbody != null)
-            {
-                script.Initialize(physics.Rigidbody.linearVelocity);
-            }
+            script.Initialize(Vector3.zero);
         }
     }
-    }
+}

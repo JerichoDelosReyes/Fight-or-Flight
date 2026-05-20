@@ -5,7 +5,7 @@ public class HUDController : MonoBehaviour
 {
     public RectTransform fixedCrosshair;
     public RectTransform mouseCrosshair;
-    public float projectionDistance = 100f;
+    public float projectionDistance = 1000f; // Increased from 100 for better aiming
 
     private Camera mainCamera;
 

@@ -7,20 +7,38 @@ public class ShipHealth : MonoBehaviour
 
     public bool isPlayer = false;
 
+    [Header("Regeneration")]
+    public float regenRate = 2f;
+    public float regenDelay = 5f;
+    private float lastDamageTime;
+
     public GameObject explosionPrefab;
-    public AudioClip explosionSound;
+public AudioClip explosionSound;
 
     private void Awake()
     {
         currentHealth = maxHealth;
     }
 
+    private void Update()
+    {
+        if (isPlayer && currentHealth < maxHealth)
+        {
+            if (Time.time >= lastDamageTime + regenDelay)
+            {
+                currentHealth += regenRate * Time.deltaTime;
+                if (currentHealth > maxHealth) currentHealth = maxHealth;
+            }
+        }
+    }
+
     public void TakeDamage(float amount)
     {
         currentHealth -= amount;
+        lastDamageTime = Time.time;
         
         if (isPlayer)
-        {
+{
             // Screen shake on hit
             ScreenShake.Trigger(0.2f, 2f);
         }
