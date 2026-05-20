@@ -124,16 +124,18 @@ public AudioClip explosionSound;
         if (_hasDied) return;
         _hasDied = true;
 
-        // Play explosion
+        // Play explosion — scaled up for drama.
         if (explosionPrefab != null)
         {
-            Instantiate(explosionPrefab, transform.position, transform.rotation);
+            var ex = Instantiate(explosionPrefab, transform.position, transform.rotation);
+            ex.transform.localScale *= isPlayer ? 2.4f : 1.8f;
         }
 
         // Play poof on death (especially for enemies)
         if (poofPrefab != null)
         {
-            Instantiate(poofPrefab, transform.position, transform.rotation);
+            var p = Instantiate(poofPrefab, transform.position, transform.rotation);
+            p.transform.localScale *= 1.5f;
         }
 
         // Sound - Use spatialized audio source if available, otherwise fallback
@@ -170,13 +172,17 @@ public AudioClip explosionSound;
             EnemySpawner spawner = Object.FindAnyObjectByType<EnemySpawner>();
             if (spawner != null) spawner.OnEnemyDestroyed();
             GameEventManager.EnemyDestroyed();
-            
+
             // AddKillScore increments both Score and the Kills counter.
             // Pickup.cs uses the legacy GameEventManager.IncrementScore path which calls
             // ScoreManager.AddScore (no kill counter) — keeping them distinct.
             ScoreManager.AddKillScore(100);
             GameEventManager.IncrementScore(100);
-            
+
+            // Brief white flash for game-feel impact.
+            ScreenFlash.Trigger(Color.white, 0.08f);
+            ScreenShake.Trigger(0.12f, 1.2f);
+
             Debug.Log("Enemy Destroyed!");
             Destroy(gameObject);
         }

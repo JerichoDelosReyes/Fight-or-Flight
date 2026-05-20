@@ -40,13 +40,16 @@ public class ScoreHUD : MonoBehaviour
     private Text _scoreText;
     private Text _killText;
     private Text _waveText;
+    private Transform _popupParent;
+    private Font _font;
+    private int _lastScore = -1;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        BuildHUD(font);
+        _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        BuildHUD(_font);
     }
 
     private void Update()
@@ -57,6 +60,48 @@ public class ScoreHUD : MonoBehaviour
             _killText.text  = string.Format("KILLS  {0}", ScoreManager.Kills);
         if (_waveText != null)
             _waveText.text  = string.Format("WAVE  {0}", WaveManager.CurrentWave);
+
+        // Score popup: spawn a floating "+N" whenever score increases.
+        if (_lastScore < 0) _lastScore = ScoreManager.Score; // initialise without popup
+        int delta = ScoreManager.Score - _lastScore;
+        if (delta > 0)
+        {
+            SpawnScorePopup(delta);
+            _lastScore = ScoreManager.Score;
+        }
+        else if (delta < 0)
+        {
+            // Score reset (e.g. retry) — re-sync without popup.
+            _lastScore = ScoreManager.Score;
+        }
+    }
+
+    private void SpawnScorePopup(int amount)
+    {
+        if (_popupParent == null || _font == null) return;
+
+        var go = new GameObject("ScorePopup");
+        go.transform.SetParent(_popupParent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot     = new Vector2(1f, 1f);
+        // Just below the score panel (which spans y=[-168, -18]); the popup
+        // rises 60px upward into the panel-side area and fades out.
+        rt.anchoredPosition = new Vector2(-22f, -185f);
+        rt.sizeDelta = new Vector2(220f, 40f);
+
+        var txt = go.AddComponent<Text>();
+        txt.font      = _font;
+        txt.fontSize  = 26;
+        txt.fontStyle = FontStyle.Bold;
+        txt.color     = new Color(1f, 0.95f, 0.35f, 1f);
+        txt.alignment = TextAnchor.MiddleRight;
+        txt.text      = "+" + amount;
+        txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+        txt.verticalOverflow   = VerticalWrapMode.Overflow;
+        txt.raycastTarget = false;
+
+        go.AddComponent<ScorePopupFloat>();
     }
 
     // ── HUD Construction ──────────────────────────────────────────────────────
@@ -87,6 +132,9 @@ public class ScoreHUD : MonoBehaviour
         panelRt.anchoredPosition = new Vector2(-18f, -18f);
         panelRt.sizeDelta        = new Vector2(340f, 150f);
         panelGo.AddComponent<Image>().color = PanelBG;
+        // Score popups float upward beneath the panel — siblings of the panel
+        // on the same canvas so they share the screen-space layer.
+        _popupParent = canvasGo.transform;
 
         // Score
         _scoreText = AddLine(panelGo.transform, font, "SCORE  000000",

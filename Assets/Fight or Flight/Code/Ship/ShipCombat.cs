@@ -55,6 +55,9 @@ public class ShipCombat : MonoBehaviour
             if (laserShotSound != null)
                 AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
 
+            // Tiny camera shake — adds weight to firing without being distracting.
+            ScreenShake.Trigger(0.05f, 0.4f);
+
             heat += heatPerShot;
             if (heat >= overheatThreshold)
             {

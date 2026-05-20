@@ -30,6 +30,7 @@ public class LegacyHUDCleanup : MonoBehaviour
         "CenterCrosshairCanvas",
         "CompassBarCanvas",
         "PauseCanvas",
+        "ScanlineCanvas",
     };
 
     // GameObject names (containers of the canvases above). Anything parented
@@ -39,7 +40,7 @@ public class LegacyHUDCleanup : MonoBehaviour
         "PlayerHUD", "ScoreHUD", "Radar", "WaveManager",
         "ArenaBoundary", "ScreenFlash", "DefeatScreen", "SettingsMenu",
         "CenterCrosshair", "CompassBar",
-        "PauseManager",
+        "PauseManager", "HudScanlines",
     };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

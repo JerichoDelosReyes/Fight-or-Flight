@@ -154,6 +154,7 @@ public class WaveManager : MonoBehaviour
     private IEnumerator BeginNextWave()
     {
         yield return null; // one frame so the scene is settled
+        yield return StartCoroutine(PreWaveCountdown());
         StartWave(CurrentWave + 1);
     }
 
@@ -165,7 +166,95 @@ public class WaveManager : MonoBehaviour
             if (headerText != null) headerText.text = WaveStatusText;
             yield return new WaitForSeconds(1f);
         }
+        yield return StartCoroutine(PreWaveCountdown());
         StartWave(CurrentWave + 1);
+    }
+
+    // "3... 2... 1... FIGHT!" countdown plus a brief dark edge-vignette as
+    // the screen-wide cue that a wave is incoming.
+    private IEnumerator PreWaveCountdown()
+    {
+        var vignette = SpawnDarkVignette();
+
+        string[] msgs = { "3", "2", "1", "FIGHT!" };
+        foreach (var m in msgs)
+        {
+            if (announcementText != null)
+            {
+                announcementText.text = m;
+                announcementText.fontSize = (m == "FIGHT!") ? 170 : 140;
+            }
+            if (announcementGroup != null) announcementGroup.alpha = 1f;
+            yield return new WaitForSeconds(0.55f);
+            if (announcementGroup != null) announcementGroup.alpha = 0f;
+            yield return new WaitForSeconds(0.05f);
+        }
+
+        if (vignette != null) Destroy(vignette);
+    }
+
+    // One-shot dark edge vignette: opaque-corner / transparent-center.
+    // The image's alpha decays over 1s thanks to FadeOutGameObject.
+    private GameObject SpawnDarkVignette()
+    {
+        var canvasGo = new GameObject("WaveStartVignette");
+        canvasGo.transform.SetParent(transform, false);
+        var canvas = canvasGo.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 95;
+
+        var scaler = canvasGo.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+
+        canvasGo.AddComponent<GraphicRaycaster>();
+
+        var imgGo = new GameObject("Vig");
+        imgGo.transform.SetParent(canvasGo.transform, false);
+        var rt = imgGo.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+
+        var img = imgGo.AddComponent<RawImage>();
+        img.texture = MakeDarkVignetteTex(256);
+        img.color = new Color(0f, 0f, 0f, 0.85f);
+        img.raycastTarget = false;
+
+        StartCoroutine(FadeOutImage(img, 1.0f));
+        return canvasGo;
+    }
+
+    private IEnumerator FadeOutImage(RawImage img, float duration)
+    {
+        float t = 0f;
+        while (t < duration && img != null)
+        {
+            t += Time.deltaTime;
+            var c = img.color;
+            c.a = Mathf.Lerp(0.85f, 0f, t / duration);
+            img.color = c;
+            yield return null;
+        }
+    }
+
+    private static Texture2D MakeDarkVignetteTex(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        float r = size * 0.5f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float dx = (x - r + 0.5f) / r;
+            float dy = (y - r + 0.5f) / r;
+            float d  = Mathf.Sqrt(dx * dx + dy * dy);
+            float a  = Mathf.Clamp01((d - 0.35f) / 0.65f);
+            a = a * a; // softer inner falloff
+            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+        }
+        tex.Apply();
+        tex.filterMode = FilterMode.Bilinear;
+        return tex;
     }
 
     private void StartWave(int wave)
@@ -202,32 +291,17 @@ public class WaveManager : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        // Spawn 30-80 units (user scale) from the player — i.e. between the
-        // orbit distance and chase-trigger distance, scaled to ArenaRadius.
-        // Falls back to a random spot well inside the arena if no player.
-        float arenaR  = ScriptsReference.ArenaRadius;
-        float safeMax = arenaR * 0.85f;
+        // Spawn within 60 user units of Vector3.zero (= ArenaRadius * 0.5).
+        // The AI immediately switches to chase mode and hunts the player from
+        // there, so spawn POSITION doesn't need to be near the player.
+        float arenaR     = ScriptsReference.ArenaRadius;
+        float spawnLimit = arenaR * 0.5f;
 
-        Vector3 pos;
-        if (Ship.PlayerShip != null)
-        {
-            Vector3 playerPos = Ship.PlayerShip.transform.position;
-            float   minDist   = arenaR * 0.17f;  // user "30"
-            float   maxDist   = arenaR * 0.45f;  // user "80"
-            Vector3 dir       = Random.onUnitSphere;
-            dir.y *= 0.35f;
-            dir = dir.normalized;
-            float dist = Random.Range(minDist, maxDist);
-            pos = playerPos + dir * dist;
-        }
-        else
-        {
-            pos = Random.insideUnitSphere * (arenaR * 0.55f);
-        }
+        Vector3 pos = Random.insideUnitSphere * spawnLimit;
+        pos.y *= 0.5f; // pinch vertical so enemies aren't all stacked above/below
 
-        // Keep inside the arena.
-        if (pos.magnitude > safeMax)
-            pos = pos.normalized * safeMax;
+        if (pos.magnitude > spawnLimit)
+            pos = pos.normalized * spawnLimit;
 
         Instantiate(enemyPrefab, pos, Quaternion.identity);
     }

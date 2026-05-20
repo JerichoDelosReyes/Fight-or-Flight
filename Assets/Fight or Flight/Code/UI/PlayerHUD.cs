@@ -62,6 +62,16 @@ public class PlayerHUD : MonoBehaviour
     private ShipHealth   _health;
     private ShipCombat   _combat;
 
+    // Damage / regen / low-ammo flash state
+    private float _lastHealth = -1f;
+    private float _lastShield = -1f;
+    private float _damageFlashUntil;
+    private float _shieldFullFlashUntil;
+    private Vector2 _healthRowBaseAnchor;
+    private RectTransform _healthRowRt;
+    private RectTransform _shieldRowRt;
+    private RectTransform _ammoRowRt;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
@@ -82,9 +92,29 @@ public class PlayerHUD : MonoBehaviour
             float hFrac = Mathf.Clamp01(_health.currentHealth / Mathf.Max(1f, _health.maxHealth));
             float sFrac = Mathf.Clamp01(_health.currentShield  / Mathf.Max(1f, _health.maxShield));
 
+            // Damage detection — set a brief flash window when health drops.
+            if (_lastHealth >= 0f && _health.currentHealth < _lastHealth - 0.01f)
+                _damageFlashUntil = Time.unscaledTime + 0.3f;
+            _lastHealth = _health.currentHealth;
+
+            // Shield-full flash — fires once on the frame shield refills to max.
+            if (_lastShield >= 0f && _lastShield < _health.maxShield - 0.01f
+                && _health.currentShield >= _health.maxShield - 0.01f)
+            {
+                _shieldFullFlashUntil = Time.unscaledTime + 0.5f;
+            }
+            _lastShield = _health.currentShield;
+
+            bool damageFlash = Time.unscaledTime < _damageFlashUntil;
+
             // Low HP pulse: bar flashes between red and darker red
             Color hCol;
-            if (hFrac < 0.30f)
+            if (damageFlash)
+            {
+                // Hard red flash — brighter than the regular pulse.
+                hCol = new Color(1f, 0.15f, 0.15f, 1f);
+            }
+            else if (hFrac < 0.30f)
             {
                 float pulse = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f));
                 hCol = Color.Lerp(HealthLow, new Color(0.5f, 0f, 0f, 1f), pulse);
@@ -94,10 +124,34 @@ public class PlayerHUD : MonoBehaviour
                 hCol = Color.Lerp(HealthEmpty, HealthFull, hFrac);
             }
 
+            // Shake the health row briefly on damage.
+            if (_healthRowRt != null)
+            {
+                if (damageFlash)
+                {
+                    float remaining = (_damageFlashUntil - Time.unscaledTime) / 0.3f; // 0..1
+                    Vector2 jitter = new Vector2(
+                        (Random.value - 0.5f) * 6f * remaining,
+                        (Random.value - 0.5f) * 6f * remaining);
+                    _healthRowRt.anchoredPosition = _healthRowBaseAnchor + jitter;
+                }
+                else
+                {
+                    _healthRowRt.anchoredPosition = _healthRowBaseAnchor;
+                }
+            }
+
             if (_healthFill != null) { _healthFill.fillAmount = hFrac; _healthFill.color = hCol; }
             if (_healthVal  != null) _healthVal.text = (int)_health.currentHealth + " / " + (int)_health.maxHealth;
 
-            if (_shieldFill != null) { _shieldFill.fillAmount = sFrac; _shieldFill.color = Color.Lerp(ShieldEmpty, ShieldFull, sFrac); }
+            // Shield bar — normal interpolation + brief white/blue flash when fully restored.
+            Color shieldCol = Color.Lerp(ShieldEmpty, ShieldFull, sFrac);
+            if (Time.unscaledTime < _shieldFullFlashUntil)
+            {
+                float t = (_shieldFullFlashUntil - Time.unscaledTime) / 0.5f;
+                shieldCol = Color.Lerp(shieldCol, Color.white, t);
+            }
+            if (_shieldFill != null) { _shieldFill.fillAmount = sFrac; _shieldFill.color = shieldCol; }
             if (_shieldVal  != null) _shieldVal.text = (int)_health.currentShield + " / " + (int)_health.maxShield;
 
             // Pulse panel border red at low HP
@@ -118,7 +172,19 @@ public class PlayerHUD : MonoBehaviour
         if (_combat != null)
         {
             float aFrac = _combat.maxAmmo > 0 ? Mathf.Clamp01((float)_combat.ammoCount / _combat.maxAmmo) : 0f;
-            if (_ammoFill != null) { _ammoFill.fillAmount = aFrac; _ammoFill.color = Color.Lerp(AmmoEmpty, AmmoFull, aFrac); }
+
+            // Low-ammo warning — flash between yellow and red when ammo < 5 (and not reloading).
+            Color aCol = Color.Lerp(AmmoEmpty, AmmoFull, aFrac);
+            bool lowAmmo = !_combat.isReloading && _combat.ammoCount < 5;
+            if (lowAmmo)
+            {
+                float pulse = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f));
+                aCol = Color.Lerp(new Color(1f, 0.85f, 0.10f, 1f),
+                                  new Color(1f, 0.10f, 0.10f, 1f),
+                                  pulse);
+            }
+
+            if (_ammoFill != null) { _ammoFill.fillAmount = aFrac; _ammoFill.color = aCol; }
             if (_ammoVal  != null) _ammoVal.text = _combat.isReloading ? "RELOADING..." : _combat.ammoCount + " / " + _combat.maxAmmo;
         }
     }
@@ -157,17 +223,18 @@ public class PlayerHUD : MonoBehaviour
 
         // Row 0 — HEALTH
         AddLabel(panelGo.transform, font, "HEALTH", 14f, firstRowY, HealthFull);
-        (_healthFill, _healthVal) = AddBarRow(panelGo.transform, font, firstRowY, BarH, HealthFull);
+        (_healthFill, _healthVal, _healthRowRt) = AddBarRow(panelGo.transform, font, firstRowY, BarH, HealthFull);
+        _healthRowBaseAnchor = _healthRowRt.anchoredPosition;
 
         // Row 1 — SHIELD
         float r1y = firstRowY - RowGap;
         AddLabel(panelGo.transform, font, "SHIELD", 14f, r1y, ShieldFull);
-        (_shieldFill, _shieldVal) = AddBarRow(panelGo.transform, font, r1y, BarH - 4f, ShieldFull);
+        (_shieldFill, _shieldVal, _shieldRowRt) = AddBarRow(panelGo.transform, font, r1y, BarH - 4f, ShieldFull);
 
         // Row 2 — AMMO
         float r2y = r1y - RowGap;
         AddLabel(panelGo.transform, font, "AMMO", 14f, r2y, AmmoFull);
-        (_ammoFill, _ammoVal) = AddBarRow(panelGo.transform, font, r2y, BarH, AmmoFull);
+        (_ammoFill, _ammoVal, _ammoRowRt) = AddBarRow(panelGo.transform, font, r2y, BarH, AmmoFull);
 
         // Reload indicator — reuses the ammo value text (text changes to "RELOADING...")
         _reloadText = _ammoVal; // same text object, just changes content
@@ -193,8 +260,9 @@ public class PlayerHUD : MonoBehaviour
         t.verticalOverflow   = VerticalWrapMode.Overflow;
     }
 
-    // Returns (fillImage, valueText-inside-bar)
-    private (Image, Text) AddBarRow(Transform parent, Font font, float yBase, float h, Color initialCol)
+    // Returns (fillImage, valueText-inside-bar, barBgRectTransform).
+    // The bg RT is needed so we can shake it on damage.
+    private (Image, Text, RectTransform) AddBarRow(Transform parent, Font font, float yBase, float h, Color initialCol)
     {
         float barX = LabelW + 18f; // starts right after the label
 
@@ -238,6 +306,6 @@ public class PlayerHUD : MonoBehaviour
         val.horizontalOverflow = HorizontalWrapMode.Overflow;
         val.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        return (fill, val);
+        return (fill, val, bgRt);
     }
 }

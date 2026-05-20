@@ -53,28 +53,12 @@ public class EnemySpawner : MonoBehaviour
         if (_enemyPrefab == null) return;
         if (_currentEnemyCount >= _maxEnemies) return;
 
-        // Spawn in a 30–80 unit ring (user scale) around the player.
-        float arenaR  = ScriptsReference.ArenaRadius;
-        float safeMax = arenaR * 0.85f;
-
-        Vector3 spawnPos;
-        if (Ship.PlayerShip != null)
-        {
-            Vector3 playerPos = Ship.PlayerShip.transform.position;
-            float   minDist   = arenaR * 0.17f;
-            float   maxDist   = arenaR * 0.45f;
-            Vector3 dir       = Random.onUnitSphere;
-            dir.y *= 0.35f;
-            dir = dir.normalized;
-            spawnPos = playerPos + dir * Random.Range(minDist, maxDist);
-        }
-        else
-        {
-            spawnPos = Random.insideUnitSphere * (arenaR * 0.55f);
-        }
-
-        if (spawnPos.magnitude > safeMax)
-            spawnPos = spawnPos.normalized * safeMax;
+        // Spawn within 60 user units of Vector3.zero (= ArenaRadius * 0.5).
+        float spawnLimit = ScriptsReference.ArenaRadius * 0.5f;
+        Vector3 spawnPos = Random.insideUnitSphere * spawnLimit;
+        spawnPos.y *= 0.5f;
+        if (spawnPos.magnitude > spawnLimit)
+            spawnPos = spawnPos.normalized * spawnLimit;
 
         Instantiate(_enemyPrefab, spawnPos, Quaternion.identity);
         _currentEnemyCount++;

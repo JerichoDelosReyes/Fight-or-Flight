@@ -12,14 +12,12 @@ public class EnemyAI : MonoBehaviour
     public float fireRate = 1.2f;
     public float laserSpawnForwardOffset = 100f;
 
-    // ── Behaviour ranges (in game units; ArenaRadius = 12,000) ────────────────
-    // User-scale 180 maps to ArenaRadius; the constants below are the
-    // corresponding fractions: 80 (chase), 30 (orbit), 100 (return-patrol),
-    // 175 (hard clamp).
-    private static float ChaseTriggerDist => ScriptsReference.ArenaRadius * 0.45f; // ~5400
-    private static float OrbitDist        => ScriptsReference.ArenaRadius * 0.17f; // ~2040
-    private static float ReturnPatrolDist => ScriptsReference.ArenaRadius * 0.55f; // ~6600
-    private static float HardClampDist    => ScriptsReference.ArenaRadius * 0.97f; // ~11640
+    // ── Behaviour ranges (game units; ArenaRadius = 120 user units = 12,000) ──
+    // > ChaseTriggerDist  : Chase   (fly straight at player at full throttle)
+    // ≤ ChaseTriggerDist  : Attack  (circle + strafe + shoot)
+    // < BackAwayDist      : Attack  (still shooting, but reverse-thrust)
+    private static float ChaseTriggerDist => ScriptsReference.ArenaRadius * 0.50f; // user "60"
+    private static float BackAwayDist     => ScriptsReference.ArenaRadius * 0.17f; // user "20"
 
     [Header("Behavior")]
     [Tooltip("Base turn speed multiplier")]
@@ -30,11 +28,6 @@ public class EnemyAI : MonoBehaviour
     public float strafeSpeed = 0.35f;
     [Tooltip("Direction the enemy is currently circling (+1 or -1)")]
     private float circleDir = 1f;
-
-    // ── Patrol ─────────────────────────────────────────────────────────────────
-    // Random-direction patrol: every 3-5 s the enemy picks a new direction.
-    private Vector3 patrolDir;
-    private float   patrolDirTimer;
 
     // ── Obstacle Avoidance ──────────────────────────────────────────────────────
     [Header("Obstacle Avoidance")]
@@ -47,12 +40,13 @@ public class EnemyAI : MonoBehaviour
     public Light glow;
 
     // ── State ──────────────────────────────────────────────────────────────────
-    private enum AIState { Patrol, Chase, Attack }
-    private AIState state = AIState.Patrol;
+    private enum AIState { Chase, Attack }
+    private AIState state = AIState.Chase;
 
     private float nextFireTime;
     private float strafeSign = 1f;
     private float nextStrafeFlip;
+    private float playerReacquireTimer; // refresh player ref every 0.5s
 
     public static List<EnemyAI> allEnemies = new List<EnemyAI>();
 
@@ -91,7 +85,6 @@ public class EnemyAI : MonoBehaviour
         // Slightly larger enemies — more visible and easier to read at range.
         transform.localScale *= 1.4f;
 
-        PickRandomPatrolDir();
         SetupVisuals();
         ApplyDifficulty();
         if (GetComponent<EnemyHealthBar>() == null)
@@ -154,48 +147,28 @@ public class EnemyAI : MonoBehaviour
         // HARD CLAMP runs first — before any AI logic can move the ship.
         HardClampToArena();
 
-        // Re-acquire player reference if lost.
-        if (player == null)
+        // Re-acquire the player every 0.5s so enemies never lose track.
+        playerReacquireTimer -= Time.deltaTime;
+        if (player == null || playerReacquireTimer <= 0f)
         {
+            playerReacquireTimer = 0.5f;
             if (Ship.PlayerShip != null) player = Ship.PlayerShip.transform;
-            else { Patrol(); return; }
         }
 
-        // If we're at or past the boundary, completely override AI behaviour
-        // and steer toward centre this frame so we can't keep thrusting outward.
-        if (transform.position.magnitude >= HardClampDist)
+        // No player alive — idle.
+        if (player == null)
         {
-            Vector3 toCentre = -transform.position.normalized;
-            TurnToward(toCentre, turnSpeedFactor * 2f);
-            physics.SetPhysicsInput(new Vector3(0, 0, throttleFactor), Vector3.zero);
+            physics.SetPhysicsInput(Vector3.zero, Vector3.zero);
             return;
         }
 
         float distToPlayer = Vector3.Distance(transform.position, player.position);
 
-        // ── State transitions (with hysteresis so enemies don't flicker) ─────
-        switch (state)
-        {
-            case AIState.Patrol:
-                if (distToPlayer < ChaseTriggerDist) state = AIState.Chase;
-                break;
-            case AIState.Chase:
-                if (distToPlayer < OrbitDist)            state = AIState.Attack;
-                else if (distToPlayer > ReturnPatrolDist) state = AIState.Patrol;
-                break;
-            case AIState.Attack:
-                if (distToPlayer > ReturnPatrolDist)     state = AIState.Patrol;
-                else if (distToPlayer > OrbitDist * 2f)  state = AIState.Chase;
-                break;
-        }
+        // Two-state machine: always hunting.
+        state = (distToPlayer > ChaseTriggerDist) ? AIState.Chase : AIState.Attack;
 
-        // ── Execute state ──────────────────────────────────────────────────────
-        switch (state)
-        {
-            case AIState.Patrol: Patrol(); break;
-            case AIState.Chase:  Chase();  break;
-            case AIState.Attack: Attack(); break;
-        }
+        if (state == AIState.Chase) Chase();
+        else                        Attack();
     }
 
     // Runs after ShipPhysics applies forward thrust (which happens in
@@ -207,42 +180,14 @@ public class EnemyAI : MonoBehaviour
 
     // ── States ────────────────────────────────────────────────────────────────
 
-    private void Patrol()
-    {
-        // Count down the current direction's lifetime; pick new one when it expires.
-        patrolDirTimer -= Time.deltaTime;
-        if (patrolDirTimer <= 0f) PickRandomPatrolDir();
-
-        Vector3 dir = patrolDir;
-
-        // If we're getting close to the wall, flip the patrol direction inward
-        // immediately rather than waiting for the timer.
-        if (transform.position.magnitude > ScriptsReference.ArenaRadius * 0.75f)
-        {
-            Vector3 inward = -transform.position.normalized;
-            if (Vector3.Dot(patrolDir, inward) < 0f)
-            {
-                PickRandomPatrolDir();
-                // Bias the new direction inward.
-                patrolDir = Vector3.Slerp(patrolDir, inward, 0.7f).normalized;
-                dir = patrolDir;
-            }
-        }
-
-        dir = ApplyBoundaryCorrection(dir);
-        dir = ApplyObstacleAvoidance(dir);
-
-        TurnToward(dir, turnSpeedFactor * 0.7f);
-        physics.SetPhysicsInput(new Vector3(0, 0, throttleFactor * 0.6f), Vector3.zero);
-    }
-
     private void Chase()
     {
+        // Fly straight at the player at full throttle.
         Vector3 dir = (player.position - transform.position).normalized;
         dir = ApplyBoundaryCorrection(dir);
         dir = ApplyObstacleAvoidance(dir);
 
-        TurnToward(dir, turnSpeedFactor);
+        TurnToward(dir, turnSpeedFactor * 1.1f);
         physics.SetPhysicsInput(new Vector3(0, 0, throttleFactor), Vector3.zero);
     }
 
@@ -269,11 +214,10 @@ public class EnemyAI : MonoBehaviour
         desiredDir = ApplyObstacleAvoidance(desiredDir);
         TurnToward(desiredDir, turnSpeedFactor * 1.2f);
 
-        // Throttle: close the gap if too far, hold orbit distance if inside it.
-        float throttle = (distToPlayer > OrbitDist * 1.1f) ? throttleFactor : throttleFactor * 0.4f;
-        // Back off slightly if too close.
-        if (distToPlayer < OrbitDist * 0.5f) throttle = -throttleFactor * 0.3f;
-
+        // Throttle: back away if very close to the player, otherwise hold orbit.
+        float throttle;
+        if (distToPlayer < BackAwayDist) throttle = -throttleFactor * 0.7f;  // reverse
+        else                              throttle =  throttleFactor * 0.5f;  // gentle forward
         physics.SetPhysicsInput(new Vector3(0, 0, throttle), Vector3.zero);
 
         // ── Fire ───────────────────────────────────────────────────────────────
@@ -288,16 +232,6 @@ public class EnemyAI : MonoBehaviour
 
     // Mirrors ScriptsReference.ArenaRadius — keeps enemies inside the asteroid wall.
     private static float EnemyRoamRadius => ScriptsReference.ArenaRadius;
-
-    private void PickRandomPatrolDir()
-    {
-        // Random unit direction; pinch the vertical component so enemies don't
-        // patrol straight up or straight down (looks weird in a spaceship sim).
-        Vector3 dir = Random.onUnitSphere;
-        dir.y *= 0.35f;
-        patrolDir      = dir.normalized;
-        patrolDirTimer = Random.Range(3f, 5f);
-    }
 
     private Vector3 PredictPlayerPosition()
     {
@@ -340,10 +274,13 @@ public class EnemyAI : MonoBehaviour
     private Rigidbody _rb;
 
     /// <summary>
-    /// Guaranteed hard clamp at the arena radius — runs in both Update (before
-    /// AI logic) and FixedUpdate (after ShipPhysics applies force). Uses
-    /// Rigidbody.position so the physics engine doesn't snap the body back to
-    /// where it thinks it should be next step.
+    /// Absolute hard clamp at the arena boundary — runs in both Update (before
+    /// AI logic) and FixedUpdate (after ShipPhysics applies force).
+    ///
+    /// User-spec: if the enemy gets further than 120 user units (ArenaRadius)
+    /// from origin, snap to 119 user units (ArenaRadius * 119/120) along the
+    /// outward direction, and ZERO both linear and angular velocity entirely
+    /// so the ship cannot drift any further outward.
     /// </summary>
     private void HardClampToArena()
     {
@@ -352,22 +289,17 @@ public class EnemyAI : MonoBehaviour
         float dist = pos.magnitude;
         if (dist <= radius) return;
 
-        Vector3 outward = pos / dist; // = pos.normalized, already have |pos|
-        Vector3 clamped = outward * radius;
+        // Snap to 119/120 of the radius — keeps the enemy strictly inside.
+        Vector3 outward = pos / dist;
+        Vector3 clamped = outward * (radius * (119f / 120f));
 
         if (_rb == null) _rb = GetComponent<Rigidbody>();
         if (_rb != null)
         {
-            _rb.position           = clamped;
-            transform.position     = clamped;
-            // Zero outward velocity component completely.
-            float dotOut = Vector3.Dot(_rb.linearVelocity, outward);
-            if (dotOut > 0f)
-                _rb.linearVelocity -= outward * dotOut;
-            // Kill spin so the AI can't keep rotating outward.
+            _rb.position        = clamped;
+            transform.position  = clamped;
+            _rb.linearVelocity  = Vector3.zero; // total velocity wipe, not just outward
             _rb.angularVelocity = Vector3.zero;
-            // Big inward kick — has to dominate AI forward thrust this frame.
-            _rb.AddForce(-outward * 8000f, ForceMode.Impulse);
         }
         else
         {

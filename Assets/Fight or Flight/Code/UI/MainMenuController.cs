@@ -11,6 +11,158 @@ public class MainMenuController : MonoBehaviour
     private void Start()
     {
         EnsureSettingsButton();
+        ApplyMenuPolish();
+    }
+
+    // ── Polish pass ───────────────────────────────────────────────────────────
+    //
+    // The scene-baked main menu has flat un-styled buttons and a plain title.
+    // We patch it at runtime: resize buttons (Start bigger than the rest),
+    // tweak hover colors, add a subtle dark gradient at screen edges, a
+    // pulsing glow on the FIGHT OR FLIGHT title, and a "v1.0" tag bottom-right.
+
+    private const string Version = "v1.0";
+
+    private void ApplyMenuPolish()
+    {
+        // 1. Background gradient (vignette-style darkening at the screen edges)
+        AddBackgroundGradient();
+
+        // 2. Resize + restyle the buttons. Start gets larger to set hierarchy.
+        StyleButton("PlayButton",         new Vector2(420f, 96f), 36, new Color(0.16f, 0.50f, 0.95f), new Color(0.30f, 0.65f, 1.00f));
+        StyleButton("InstructionsButton", new Vector2(340f, 68f), 26, new Color(0.20f, 0.20f, 0.30f), new Color(0.38f, 0.38f, 0.55f));
+        StyleButton("SettingsButton",     new Vector2(340f, 68f), 26, new Color(0.20f, 0.20f, 0.30f), new Color(0.38f, 0.38f, 0.55f));
+        StyleButton("QuitButton",         new Vector2(340f, 68f), 26, new Color(0.35f, 0.15f, 0.18f), new Color(0.55f, 0.25f, 0.30f));
+
+        // 3. Title pulse (search for the FIGHT title text anywhere in the scene)
+        TryAddTitlePulse();
+
+        // 4. Version tag bottom-right
+        AddVersionLabel();
+    }
+
+    private static void StyleButton(string goName, Vector2 size, int fontSize,
+                                    Color normal, Color highlighted)
+    {
+        var go = GameObject.Find(goName);
+        if (go == null) return;
+
+        // Resize
+        var rt = go.GetComponent<RectTransform>();
+        if (rt != null) rt.sizeDelta = size;
+
+        // Bigger, rounder visual via a procedurally rounded sprite + recolour
+        var img = go.GetComponent<Image>();
+        if (img != null)
+        {
+            img.sprite = RoundedRectSprite.Get();
+            img.type   = Image.Type.Sliced;
+            img.color  = normal;
+        }
+
+        // Hover / pressed colors
+        var btn = go.GetComponent<Button>();
+        if (btn != null)
+        {
+            var cols = btn.colors;
+            cols.normalColor      = Color.white;
+            cols.highlightedColor = new Color(highlighted.r / normal.r, highlighted.g / normal.g, highlighted.b / normal.b, 1f);
+            cols.pressedColor     = new Color(0.7f, 0.7f, 0.7f, 1f);
+            cols.colorMultiplier  = 1f;
+            cols.fadeDuration     = 0.1f;
+            btn.colors = cols;
+            btn.transition = Selectable.Transition.ColorTint;
+            btn.targetGraphic = img;
+        }
+
+        // Make the child Text reflect the requested font size
+        foreach (var t in go.GetComponentsInChildren<Text>(true))
+        {
+            t.fontSize = fontSize;
+            t.fontStyle = FontStyle.Bold;
+            t.color = Color.white;
+        }
+    }
+
+    private void AddBackgroundGradient()
+    {
+        // Find any Canvas already in the scene to host the gradient.
+        var canvas = Object.FindAnyObjectByType<Canvas>();
+        if (canvas == null) return;
+
+        var go = new GameObject("MenuGradient");
+        go.transform.SetParent(canvas.transform, false);
+        go.transform.SetSiblingIndex(1); // second child — above bg image, below buttons
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+
+        var img = go.AddComponent<RawImage>();
+        img.texture = MakeEdgeGradientTex(256);
+        img.color   = new Color(0f, 0f, 0f, 1f); // texture controls alpha
+        img.raycastTarget = false;
+    }
+
+    // Edges dark, center transparent — focus the eye on the title/buttons.
+    private static Texture2D MakeEdgeGradientTex(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        float r = size * 0.5f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float dx = (x - r + 0.5f) / r;
+            float dy = (y - r + 0.5f) / r;
+            float d  = Mathf.Sqrt(dx * dx + dy * dy);
+            // 0 alpha at center, ramps to ~0.7 at the corners
+            float a = Mathf.Clamp01((d - 0.30f) / 0.85f);
+            a *= 0.70f;
+            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+        }
+        tex.Apply();
+        tex.filterMode = FilterMode.Bilinear;
+        return tex;
+    }
+
+    private void TryAddTitlePulse()
+    {
+        foreach (var t in Object.FindObjectsByType<Text>(FindObjectsSortMode.None))
+        {
+            if (t == null) continue;
+            string up = (t.text ?? "").ToUpperInvariant();
+            if (up.Contains("FIGHT") || up.Contains("FLIGHT"))
+            {
+                if (t.GetComponent<TitlePulse>() == null)
+                    t.gameObject.AddComponent<TitlePulse>();
+            }
+        }
+    }
+
+    private void AddVersionLabel()
+    {
+        var canvas = Object.FindAnyObjectByType<Canvas>();
+        if (canvas == null) return;
+
+        // Don't double-add on scene reload.
+        if (GameObject.Find("VersionLabel") != null) return;
+
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var go = new GameObject("VersionLabel");
+        go.transform.SetParent(canvas.transform, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+        rt.pivot = new Vector2(1f, 0f);
+        rt.anchoredPosition = new Vector2(-22f, 18f);
+        rt.sizeDelta = new Vector2(120f, 26f);
+        var t = go.AddComponent<Text>();
+        t.font = font;
+        t.fontSize = 18;
+        t.fontStyle = FontStyle.Bold;
+        t.color = new Color(1f, 1f, 1f, 0.55f);
+        t.alignment = TextAnchor.MiddleRight;
+        t.text = Version;
+        t.raycastTarget = false;
     }
 
     public void StartGame()
@@ -107,7 +259,7 @@ public class MainMenuController : MonoBehaviour
         string generalHeader = "GENERAL";
         string generalBody   =
             "Escape / Pause button    Pause game\n" +
-            "Difficulty & controls can be changed in Settings from the main menu.";
+            "Volume and control options can be changed in Settings from the main menu.";
 
         // Left column
         AddLabel(panelGo.transform, font, leftHeader, 26, new Color(0.5f, 0.8f, 1f),

@@ -30,6 +30,9 @@ public class CenterCrosshair : MonoBehaviour
     }
 
     private Canvas _canvas;
+    private Image[] _bars;
+    private static readonly Color IdleColor = new Color(1f, 1f, 1f, 0.7f);
+    private static readonly Color AimColor  = new Color(1f, 0.2f, 0.2f, 0.95f);
 
     private void Start()
     {
@@ -38,8 +41,35 @@ public class CenterCrosshair : MonoBehaviour
 
     private void Update()
     {
-        if (_canvas != null)
-            _canvas.enabled = ControlSchemeManager.IsMouseKeyboard;
+        if (_canvas == null) return;
+        _canvas.enabled = ControlSchemeManager.IsMouseKeyboard;
+        if (!_canvas.enabled) return;
+
+        // Raycast from the camera through the screen centre — if the hit is on
+        // an Enemy, switch the crosshair colour to red.
+        bool aimingAtEnemy = false;
+        var cam = Camera.main;
+        if (cam != null)
+        {
+            Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width * 0.5f,
+                                                       Screen.height * 0.5f, 0f));
+            if (Physics.Raycast(ray, out var hit, 15000f))
+            {
+                // Walk up the hit hierarchy to find an Enemy tag / EnemyAI.
+                Transform t = hit.transform;
+                while (t != null && !aimingAtEnemy)
+                {
+                    if (t.CompareTag("Enemy") || t.GetComponent<EnemyAI>() != null)
+                        aimingAtEnemy = true;
+                    t = t.parent;
+                }
+            }
+        }
+
+        Color col = aimingAtEnemy ? AimColor : IdleColor;
+        if (_bars != null)
+            for (int i = 0; i < _bars.Length; i++)
+                if (_bars[i] != null) _bars[i].color = col;
     }
 
     private void Build()
@@ -58,13 +88,13 @@ public class CenterCrosshair : MonoBehaviour
 
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        Color col = new Color(1f, 1f, 1f, 0.7f);
-        AddBar(canvasGo.transform, new Vector2(0,   0), new Vector2(22, 2), col); // horiz
-        AddBar(canvasGo.transform, new Vector2(0,   0), new Vector2(2, 22), col); // vert
-        AddBar(canvasGo.transform, new Vector2(0,   0), new Vector2(3,  3), col); // centre dot
+        _bars = new Image[3];
+        _bars[0] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(22, 2), IdleColor); // horiz
+        _bars[1] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(2, 22), IdleColor); // vert
+        _bars[2] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(3,  3), IdleColor); // centre dot
     }
 
-    private static void AddBar(Transform parent, Vector2 pos, Vector2 size, Color col)
+    private static Image AddBar(Transform parent, Vector2 pos, Vector2 size, Color col)
     {
         var go = new GameObject("Bar");
         go.transform.SetParent(parent, false);
@@ -75,5 +105,6 @@ public class CenterCrosshair : MonoBehaviour
         var img = go.AddComponent<Image>();
         img.color = col;
         img.raycastTarget = false;
+        return img;
     }
 }
