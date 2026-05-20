@@ -7,13 +7,11 @@ using UnityEngine.UI;
 /// Manages the visible arena boundary.
 ///
 /// At runtime:
-///  • Spawns a ring of asteroid objects at ScriptsReference.ArenaRadius
-///    (tries cloning an existing scene asteroid first; falls back to primitive spheres).
-///  • Shows a flashing red "BOUNDARY WARNING" HUD text when the player is within
-///    15 % of the boundary edge.
+///  • Spawns a ring of asteroid objects at ScriptsReference.ArenaRadius.
+///  • Shows a red vignette at the screen edges when the player is near the boundary.
+///  • Displays a pulsing cyan force-field sphere at the boundary when the player gets close.
 ///  • Hard-stops and pushes the player back when they cross ArenaRadius.
-///  • Enemies are kept inside by EnemyAI.ApplyBoundaryCorrection() (already respects
-///    EnemyRoamRadius which equals ArenaRadius).
+///  • Enemies are kept inside by EnemyAI.ApplyBoundaryCorrection + EnforceBoundary().
 ///
 /// Auto-creates itself in MainScene — no scene setup required.
 /// </summary>
@@ -40,46 +38,69 @@ public class ArenaBoundary : MonoBehaviour
 
     // ── Config ────────────────────────────────────────────────────────────────
 
-    private const int   AsteroidCount   = 120;
-    private const float AsteroidScaleMult = 2.5f; // makes wall rocks visibly large
-    private const float WarnThreshold  = 0.85f;   // fraction of ArenaRadius to start warning
-    private const float PushForce      = 8000f;
+    private const int   AsteroidCount    = 120;
+    private const float AsteroidScaleMult = 2.5f;
+    private const float WarnThreshold    = 0.82f;  // fraction of ArenaRadius to start warning
+    private const float PushForce        = 8000f;
 
     // ── Runtime state ─────────────────────────────────────────────────────────
 
-    private Text        warningText;
-    private CanvasGroup warningGroup;
-    private bool        warningVisible;
-    private float       warnFlashTimer;
+    private CanvasGroup vignetteGroup;
+    private Texture2D   vignetteTex;
+
+    private Renderer    forceFieldRenderer;
+    private Material    forceFieldMat;
+
+    private AudioSource boundaryAudio;
+    private bool        wasOutside;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
-        BuildWarningHUD();
+        BuildVignetteHUD();
+        BuildForceField();
         StartCoroutine(SpawnAsteroidWall());
+    }
+
+    private void OnDestroy()
+    {
+        if (vignetteTex  != null) Destroy(vignetteTex);
+        if (forceFieldMat != null) Destroy(forceFieldMat);
     }
 
     private void Update()
     {
         if (Ship.PlayerShip == null) return;
 
-        float dist = Ship.PlayerShip.transform.position.magnitude;
-        float warn = ScriptsReference.ArenaRadius * WarnThreshold;
+        float dist  = Ship.PlayerShip.transform.position.magnitude;
+        float warn  = ScriptsReference.ArenaRadius * WarnThreshold;
+        float t     = Mathf.InverseLerp(warn, ScriptsReference.ArenaRadius, dist);
 
-        // ── Warning flash ─────────────────────────────────────────────────────
-        bool shouldWarn = dist > warn;
-        if (shouldWarn != warningVisible)
-        {
-            warningVisible = shouldWarn;
-            if (!warningVisible && warningGroup != null)
-                warningGroup.alpha = 0f;
-        }
+        // ── Vignette ──────────────────────────────────────────────────────────
+        if (vignetteGroup != null)
+            vignetteGroup.alpha = Mathf.Clamp01(t * 1.4f);
 
-        if (warningVisible && warningGroup != null)
+        // ── Force field ───────────────────────────────────────────────────────
+        if (forceFieldMat != null)
         {
-            warnFlashTimer += Time.deltaTime * 3.5f;
-            warningGroup.alpha = Mathf.Abs(Mathf.Sin(warnFlashTimer));
+            float baseAlpha  = t * 0.22f;
+            float pulseAlpha = dist > warn
+                ? baseAlpha + Mathf.Abs(Mathf.Sin(Time.time * 3f)) * 0.08f
+                : 0f;
+
+            // Flash brighter when the player actually hits the wall
+            bool isOutside = dist >= ScriptsReference.ArenaRadius;
+            if (isOutside && !wasOutside)
+            {
+                pulseAlpha = 0.7f;
+                PlayBoundaryHitSound();
+            }
+            wasOutside = isOutside;
+
+            Color col = forceFieldMat.color;
+            col.a = Mathf.MoveTowards(col.a, pulseAlpha, Time.deltaTime * 3f);
+            forceFieldMat.color = col;
         }
 
         // ── Hard boundary push-back ───────────────────────────────────────────
@@ -88,30 +109,132 @@ public class ArenaBoundary : MonoBehaviour
             var rb = Ship.PlayerShip.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                // Clamp position to boundary surface
                 Ship.PlayerShip.transform.position =
                     Ship.PlayerShip.transform.position.normalized * ScriptsReference.ArenaRadius;
 
-                // Kill outward velocity component
                 Vector3 outward = Ship.PlayerShip.transform.position.normalized;
                 if (Vector3.Dot(rb.linearVelocity, outward) > 0f)
                     rb.linearVelocity = Vector3.ProjectOnPlane(rb.linearVelocity, outward) * 0.6f;
 
-                // Push inward
                 rb.AddForce(-outward * PushForce, ForceMode.Force);
             }
         }
+    }
+
+    // ── Vignette HUD ─────────────────────────────────────────────────────────
+
+    private void BuildVignetteHUD()
+    {
+        vignetteTex = MakeVignetteTex(256);
+
+        var canvasGo = new GameObject("BoundaryVignetteCanvas");
+        canvasGo.transform.SetParent(transform, false);
+
+        var canvas = canvasGo.AddComponent<Canvas>();
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 190;
+
+        var scaler = canvasGo.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution  = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight  = 0.5f;
+
+        canvasGo.AddComponent<GraphicRaycaster>();
+
+        var vigGo = new GameObject("VignetteOverlay");
+        vigGo.transform.SetParent(canvasGo.transform, false);
+        var rt = vigGo.AddComponent<RectTransform>();
+        rt.anchorMin        = Vector2.zero;
+        rt.anchorMax        = Vector2.one;
+        rt.offsetMin        = Vector2.zero;
+        rt.offsetMax        = Vector2.zero;
+
+        vignetteGroup               = vigGo.AddComponent<CanvasGroup>();
+        vignetteGroup.alpha         = 0f;
+        vignetteGroup.blocksRaycasts = false;
+        vignetteGroup.interactable  = false;
+
+        var img = vigGo.AddComponent<RawImage>();
+        img.texture = vignetteTex;
+        img.color   = new Color(1f, 0.08f, 0.08f, 1f);
+    }
+
+    // Creates a radial gradient: transparent at centre, opaque at edges.
+    private static Texture2D MakeVignetteTex(int size)
+    {
+        var   tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        float r   = size * 0.5f;
+
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float dx = (x - r + 0.5f) / r;
+            float dy = (y - r + 0.5f) / r;
+            float d  = Mathf.Sqrt(dx * dx + dy * dy);
+            // Alpha ramps from 0 (centre) to 1 (outer 20% of radius)
+            float a  = Mathf.Clamp01((d - 0.55f) / 0.45f);
+            a = a * a; // softer inner fall-off
+            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+        }
+
+        tex.Apply();
+        tex.filterMode = FilterMode.Bilinear;
+        return tex;
+    }
+
+    // ── Force Field Sphere ────────────────────────────────────────────────────
+
+    private void BuildForceField()
+    {
+        var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        sphere.name = "ForceFieldSphere";
+        sphere.transform.SetParent(transform, false);
+        sphere.transform.localScale = Vector3.one * (ScriptsReference.ArenaRadius * 2f);
+
+        // Remove the collider — the sphere is purely visual
+        var col = sphere.GetComponent<Collider>();
+        if (col != null) Destroy(col);
+
+        // Build a transparent, double-sided, additive-style material
+        forceFieldMat = new Material(Shader.Find("Standard"));
+        forceFieldMat.SetFloat("_Mode",     3f); // Transparent
+        forceFieldMat.SetFloat("_Glossiness", 0f);
+        forceFieldMat.SetFloat("_Metallic",   0f);
+        forceFieldMat.SetInt("_SrcBlend",   (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        forceFieldMat.SetInt("_DstBlend",   (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        forceFieldMat.SetInt("_ZWrite",     0);
+        forceFieldMat.SetInt("_Cull",       (int)UnityEngine.Rendering.CullMode.Off);
+        forceFieldMat.color = new Color(0f, 0.75f, 1f, 0f); // cyan, initially invisible
+        forceFieldMat.EnableKeyword("_ALPHABLEND_ON");
+        forceFieldMat.renderQueue = 3000;
+
+        forceFieldRenderer = sphere.GetComponent<Renderer>();
+        forceFieldRenderer.material     = forceFieldMat;
+        forceFieldRenderer.shadowCastingMode    = UnityEngine.Rendering.ShadowCastingMode.Off;
+        forceFieldRenderer.receiveShadows       = false;
+    }
+
+    // ── Boundary Sound ────────────────────────────────────────────────────────
+
+    private void PlayBoundaryHitSound()
+    {
+        if (boundaryAudio == null)
+        {
+            boundaryAudio = gameObject.AddComponent<AudioSource>();
+            boundaryAudio.spatialBlend = 0f;
+            boundaryAudio.volume       = 0.6f;
+        }
+        // Use ScreenShake as an additional tactile cue on boundary hit
+        ScreenShake.Trigger(0.3f, 4f);
     }
 
     // ── Asteroid Wall ─────────────────────────────────────────────────────────
 
     private IEnumerator SpawnAsteroidWall()
     {
-        // Wait two frames so the scene finishes loading (asteroids, etc.)
         yield return null;
         yield return null;
 
-        // Try to find a scene asteroid to clone; fall back to a sphere primitive.
         var templateAsteroid = Object.FindAnyObjectByType<Asteroid>();
         GameObject template = templateAsteroid != null ? templateAsteroid.gameObject : null;
 
@@ -119,11 +242,10 @@ public class ArenaBoundary : MonoBehaviour
 
         for (int i = 0; i < AsteroidCount; i++)
         {
-            // Evenly spaced + randomised along a ring in XZ, with vertical scatter
-            float baseAngle  = (360f / AsteroidCount) * i;
-            float jitter     = Random.Range(-180f / AsteroidCount, 180f / AsteroidCount);
-            float angleDeg   = baseAngle + jitter;
-            float angleRad   = angleDeg * Mathf.Deg2Rad;
+            float baseAngle = (360f / AsteroidCount) * i;
+            float jitter    = Random.Range(-180f / AsteroidCount, 180f / AsteroidCount);
+            float angleDeg  = baseAngle + jitter;
+            float angleRad  = angleDeg * Mathf.Deg2Rad;
 
             float radialR = r + Random.Range(-r * 0.05f, r * 0.05f);
             float yOffset = Random.Range(-r * 0.08f, r * 0.08f);
@@ -137,8 +259,6 @@ public class ArenaBoundary : MonoBehaviour
             if (template != null)
             {
                 rock = Instantiate(template, pos, Random.rotation);
-                // Remove Asteroid script so they don't register in AllAsteroids
-                // or self-destruct from laser hits (they're a permanent boundary)
                 var ast = rock.GetComponent<Asteroid>();
                 if (ast != null) Destroy(ast);
             }
@@ -149,57 +269,12 @@ public class ArenaBoundary : MonoBehaviour
                 rock.transform.rotation = Random.rotation;
             }
 
-            // Scale up so they look like a proper wall
             float s = Random.Range(0.8f, 1.4f) * AsteroidScaleMult;
             rock.transform.localScale = Vector3.one * s;
-
             rock.name = "BoundaryRock";
             rock.transform.SetParent(transform, true);
 
-            // Spread the spawning over a few frames to avoid a hitch
             if (i % 10 == 0) yield return null;
         }
-    }
-
-    // ── Warning HUD ───────────────────────────────────────────────────────────
-
-    private void BuildWarningHUD()
-    {
-        var canvasGo = new GameObject("BoundaryWarningCanvas");
-        canvasGo.transform.SetParent(transform, false);
-
-        var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 190;
-
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode        = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution  = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight   = 0.5f;
-
-        canvasGo.AddComponent<GraphicRaycaster>();
-
-        var warnGo = new GameObject("WarningText");
-        warnGo.transform.SetParent(canvasGo.transform, false);
-        var rt = warnGo.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.9f);
-        rt.pivot             = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition  = Vector2.zero;
-        rt.sizeDelta         = new Vector2(700f, 60f);
-
-        warningGroup               = warnGo.AddComponent<CanvasGroup>();
-        warningGroup.alpha         = 0f;
-        warningGroup.blocksRaycasts = false;
-
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        warningText            = warnGo.AddComponent<Text>();
-        warningText.text       = "⚠  BOUNDARY WARNING  ⚠";
-        warningText.font       = font;
-        warningText.fontSize   = 44;
-        warningText.fontStyle  = FontStyle.Bold;
-        warningText.color      = new Color(1f, 0.1f, 0.1f, 1f);
-        warningText.alignment  = TextAnchor.MiddleCenter;
-        warningText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        warningText.verticalOverflow   = VerticalWrapMode.Overflow;
     }
 }

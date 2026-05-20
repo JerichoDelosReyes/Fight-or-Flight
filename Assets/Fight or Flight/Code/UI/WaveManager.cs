@@ -237,23 +237,31 @@ public class WaveManager : MonoBehaviour
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        // Persistent top-center "WAVE X" header.
-        var headerGo = new GameObject("WaveHeader");
-        headerGo.transform.SetParent(canvasGo.transform, false);
-        var headerRt = headerGo.AddComponent<RectTransform>();
-        headerRt.anchorMin = new Vector2(0.5f, 1f);
-        headerRt.anchorMax = new Vector2(0.5f, 1f);
-        headerRt.pivot     = new Vector2(0.5f, 1f);
-        headerRt.anchoredPosition = new Vector2(0, -30);
-        headerRt.sizeDelta = new Vector2(600, 70);
+        // Persistent top-center "WAVE X" header — with dark panel background.
+        var headerBgGo = new GameObject("WaveHeaderBG");
+        headerBgGo.transform.SetParent(canvasGo.transform, false);
+        var headerBgRt = headerBgGo.AddComponent<RectTransform>();
+        headerBgRt.anchorMin = new Vector2(0.5f, 1f);
+        headerBgRt.anchorMax = new Vector2(0.5f, 1f);
+        headerBgRt.pivot     = new Vector2(0.5f, 1f);
+        headerBgRt.anchoredPosition = new Vector2(0f, -22f);
+        headerBgRt.sizeDelta = new Vector2(280f, 60f);
+        headerBgGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
 
-        headerGroup = headerGo.AddComponent<CanvasGroup>();
+        var headerGo = new GameObject("WaveHeader");
+        headerGo.transform.SetParent(headerBgGo.transform, false);
+        var headerRt = headerGo.AddComponent<RectTransform>();
+        headerRt.anchorMin = Vector2.zero;
+        headerRt.anchorMax = Vector2.one;
+        headerRt.offsetMin = headerRt.offsetMax = Vector2.zero;
+
+        headerGroup = headerBgGo.AddComponent<CanvasGroup>();
         headerGroup.alpha = 1f;
         headerGroup.blocksRaycasts = false;
 
         headerText = headerGo.AddComponent<Text>();
         headerText.font = font;
-        headerText.fontSize = 48;
+        headerText.fontSize = 36;
         headerText.fontStyle = FontStyle.Bold;
         headerText.color = new Color(1f, 0.95f, 0.5f);
         headerText.alignment = TextAnchor.MiddleCenter;
@@ -261,17 +269,33 @@ public class WaveManager : MonoBehaviour
         headerText.verticalOverflow = VerticalWrapMode.Overflow;
         headerText.text = "";
 
-        // Transient announcement (big "WAVE X" that fades).
-        var annGo = new GameObject("WaveAnnouncement");
-        annGo.transform.SetParent(canvasGo.transform, false);
-        var annRt = annGo.AddComponent<RectTransform>();
-        annRt.anchorMin = annRt.anchorMax = new Vector2(0.5f, 0.55f);
-        annRt.anchoredPosition = Vector2.zero;
-        annRt.sizeDelta = new Vector2(900, 160);
+        // Transient announcement (big "WAVE X" that fades) — wrapped in a container for BG.
+        var annContainer = new GameObject("AnnouncementContainer");
+        annContainer.transform.SetParent(canvasGo.transform, false);
+        var annContainerRt = annContainer.AddComponent<RectTransform>();
+        annContainerRt.anchorMin = annContainerRt.anchorMax = new Vector2(0.5f, 0.55f);
+        annContainerRt.anchoredPosition = Vector2.zero;
+        annContainerRt.sizeDelta = new Vector2(920f, 170f);
 
-        announcementGroup = annGo.AddComponent<CanvasGroup>();
+        announcementGroup = annContainer.AddComponent<CanvasGroup>();
         announcementGroup.alpha = 0f;
         announcementGroup.blocksRaycasts = false;
+
+        // Dark background behind the big text
+        var annBgGo = new GameObject("AnnouncementBG");
+        annBgGo.transform.SetParent(annContainer.transform, false);
+        var annBgRt = annBgGo.AddComponent<RectTransform>();
+        annBgRt.anchorMin = Vector2.zero;
+        annBgRt.anchorMax = Vector2.one;
+        annBgRt.offsetMin = annBgRt.offsetMax = Vector2.zero;
+        annBgGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
+
+        var annGo = new GameObject("WaveAnnouncement");
+        annGo.transform.SetParent(annContainer.transform, false);
+        var annRt = annGo.AddComponent<RectTransform>();
+        annRt.anchorMin = Vector2.zero;
+        annRt.anchorMax = Vector2.one;
+        annRt.offsetMin = annRt.offsetMax = Vector2.zero;
 
         announcementText = annGo.AddComponent<Text>();
         announcementText.font = font;

@@ -7,6 +7,13 @@ public class ShipHealth : MonoBehaviour
 
     public bool isPlayer = false;
 
+    [Header("Shield")]
+    public float maxShield    = 50f;
+    public float currentShield = 50f;
+    public float shieldRegenRate  = 5f;
+    public float shieldRegenDelay = 3f;
+    private float _shieldRegenTimer;
+
     [Header("Regeneration")]
     public float regenRate = 2f;
     public float regenDelay = 5f;
@@ -22,25 +29,44 @@ public AudioClip explosionSound;
 
     private void Update()
     {
-        if (isPlayer && currentHealth < maxHealth)
+        if (!isPlayer) return;
+
+        // Health regen
+        if (currentHealth < maxHealth && Time.time >= lastDamageTime + regenDelay)
         {
-            if (Time.time >= lastDamageTime + regenDelay)
-            {
-                currentHealth += regenRate * Time.deltaTime;
-                if (currentHealth > maxHealth) currentHealth = maxHealth;
-            }
+            currentHealth = Mathf.Min(maxHealth, currentHealth + regenRate * Time.deltaTime);
+        }
+
+        // Shield regen
+        if (currentShield < maxShield)
+        {
+            if (_shieldRegenTimer > 0f)
+                _shieldRegenTimer -= Time.deltaTime;
+            else
+                currentShield = Mathf.Min(maxShield, currentShield + shieldRegenRate * Time.deltaTime);
         }
     }
 
     public void TakeDamage(float amount)
     {
+        // Shield absorbs damage first
+        if (isPlayer && currentShield > 0f)
+        {
+            float absorbed = Mathf.Min(currentShield, amount);
+            currentShield -= absorbed;
+            amount        -= absorbed;
+            _shieldRegenTimer = shieldRegenDelay;
+        }
+
+        if (amount <= 0f) return; // fully absorbed by shield
+
         currentHealth -= amount;
         lastDamageTime = Time.time;
-        
+
         if (isPlayer)
-{
-            // Screen shake on hit
+        {
             ScreenShake.Trigger(0.2f, 2f);
+            ScreenFlash.Trigger(new Color(1f, 0.1f, 0.1f), 0.12f);
         }
 
         if (currentHealth <= 0)
@@ -50,30 +76,28 @@ public AudioClip explosionSound;
         }
     }
 
-    public float collisionDamage = 20f;
+    public float collisionDamage = 15f;
     public GameObject poofPrefab;
 
     private void OnCollisionEnter(Collision collision)
     {
+        bool hitObstacle = collision.gameObject.GetComponentInParent<Asteroid>() != null ||
+                           collision.gameObject.name.ToLower().Contains("rock") ||
+                           collision.gameObject.name.ToLower().Contains("asteroid") ||
+                           collision.gameObject.name.StartsWith("BoundaryRock");
+
+        if (!hitObstacle) return;
+
+        TakeDamage(collisionDamage);
+
         if (isPlayer)
         {
-            // Check if we hit an asteroid or rock
-            bool hitObstacle = collision.gameObject.GetComponentInParent<Asteroid>() != null || 
-                              collision.gameObject.name.ToLower().Contains("rock") ||
-                              collision.gameObject.name.ToLower().Contains("asteroid");
+            ScreenShake.Trigger(0.5f, 5f);
+            ScreenFlash.Trigger(new Color(1f, 0.4f, 0.1f), 0.2f);
 
-            if (hitObstacle)
-            {
-                ScreenShake.Trigger(0.5f, 5f); // Larger shake for collisions
-                TakeDamage(collisionDamage);
-                
-                if (poofPrefab != null)
-                {
-                    Instantiate(poofPrefab, collision.contacts[0].point, Quaternion.LookRotation(collision.contacts[0].normal));
-                }
-                
-                Debug.Log("Player ship hit an obstacle! Damage taken: " + collisionDamage);
-            }
+            if (poofPrefab != null && collision.contacts.Length > 0)
+                Instantiate(poofPrefab, collision.contacts[0].point,
+                            Quaternion.LookRotation(collision.contacts[0].normal));
         }
     }
 

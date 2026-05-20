@@ -1,10 +1,11 @@
+using System.Collections;
 using UnityEngine;
 
 public class ShipCombat : MonoBehaviour
 {
     public GameObject laserPrefab;
     public float fireRate = 0.15f;
-    public Transform[] firePoints; // Changed to public and renamed for immediate visibility
+    public Transform[] firePoints;
 
     [Header("Heat System")]
     public float heat = 0f;
@@ -12,6 +13,14 @@ public class ShipCombat : MonoBehaviour
     public float coolingRate = 0.5f;
     public bool isOverheated = false;
     public float overheatThreshold = 1.0f;
+
+    [Header("Ammo")]
+    public int  ammoCount  = 30;
+    public int  maxAmmo    = 30;
+    public bool isReloading = false;
+    private float _lastFireTime;
+    private const float ReloadDelay    = 2f;
+    private const float ReloadDuration = 1f;
 
     [Header("Audio")]
     public AudioClip laserShotSound;
@@ -28,20 +37,24 @@ public class ShipCombat : MonoBehaviour
 
         if (isOverheated && heat <= 0) isOverheated = false;
 
-        // Space always fires. Left mouse fires only in Mouse+Keyboard mode so a stray
-        // click in keyboard-only mode (e.g. clicking off-screen UI) doesn't shoot.
+        // Auto-reload after ReloadDelay seconds of not firing
+        if (!isReloading && ammoCount < maxAmmo && Time.time - _lastFireTime >= ReloadDelay)
+            StartCoroutine(AutoReload());
+
         bool fireInput = Input.GetKey(KeyCode.Space);
         if (ControlSchemeManager.IsMouseKeyboard)
             fireInput |= Input.GetMouseButton(0);
 
-        if (fireInput && Time.time >= _nextFireTime && !isOverheated)
+        if (fireInput && Time.time >= _nextFireTime && !isOverheated && ammoCount > 0 && !isReloading)
         {
             FireLasers();
             _nextFireTime = Time.time + fireRate;
+            _lastFireTime = Time.time;
+            ammoCount--;
 
             if (laserShotSound != null)
-AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
-            
+                AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
+
             heat += heatPerShot;
             if (heat >= overheatThreshold)
             {
@@ -49,6 +62,21 @@ AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
                 heat = overheatThreshold;
             }
         }
+    }
+
+    private IEnumerator AutoReload()
+    {
+        isReloading = true;
+        int startAmmo = ammoCount;
+        float elapsed = 0f;
+        while (elapsed < ReloadDuration)
+        {
+            elapsed    += Time.deltaTime;
+            ammoCount   = startAmmo + Mathf.FloorToInt((maxAmmo - startAmmo) * (elapsed / ReloadDuration));
+            yield return null;
+        }
+        ammoCount   = maxAmmo;
+        isReloading = false;
     }
 
     private void FireLasers()

@@ -20,6 +20,7 @@ public class EnemyHealthBar : MonoBehaviour
     // ── Runtime ───────────────────────────────────────────────────────────────
 
     private ShipHealth  health;
+    private Canvas      canvas;
     private Transform   canvasRoot;
     private Image       fill;
     private CanvasGroup group;
@@ -38,7 +39,12 @@ public class EnemyHealthBar : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (health == null || Camera.main == null) return;
+        if (health == null || canvasRoot == null) return;
+        if (Camera.main == null) return;
+
+        // Lazy-assign worldCamera so the canvas sorts correctly against 3D objects
+        if (canvas != null && canvas.worldCamera == null)
+            canvas.worldCamera = Camera.main;
 
         // Billboard: align canvas to camera's orientation
         canvasRoot.rotation = Camera.main.transform.rotation;
@@ -69,11 +75,14 @@ public class EnemyHealthBar : MonoBehaviour
         canvasGo.transform.localScale    = Vector3.one * CanvasScale;
         canvasRoot = canvasGo.transform;
 
-        var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
+        canvas = canvasGo.AddComponent<Canvas>();
+        canvas.renderMode     = RenderMode.WorldSpace;
+        canvas.worldCamera    = Camera.main; // assign now; re-assigned lazily in LateUpdate if null
+        canvas.overrideSorting = true;
+        canvas.sortingOrder   = 100;
 
         var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.dynamicPixelsPerUnit = 1f;
+        scaler.dynamicPixelsPerUnit = 10f;
 
         group       = canvasGo.AddComponent<CanvasGroup>();
         group.alpha = 0f;

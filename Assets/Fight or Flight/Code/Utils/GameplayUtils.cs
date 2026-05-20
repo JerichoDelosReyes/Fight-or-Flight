@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
 using System.Collections.Generic;
 
 public class ScreenShake : MonoBehaviour
@@ -38,6 +40,71 @@ public class ScreenShake : MonoBehaviour
         {
             transform.localPosition = originalPos;
         }
+    }
+}
+
+/// <summary>
+/// Full-screen colour flash overlay. Self-creates on first Trigger call.
+/// </summary>
+public class ScreenFlash : MonoBehaviour
+{
+    private static ScreenFlash _instance;
+    private Image     _overlay;
+    private Coroutine _active;
+
+    public static void Trigger(Color colour, float duration)
+    {
+        if (_instance == null)
+        {
+            var go = new GameObject("ScreenFlash");
+            DontDestroyOnLoad(go);
+            _instance = go.AddComponent<ScreenFlash>();
+            _instance.BuildOverlay();
+        }
+        if (_instance._active != null)
+            _instance.StopCoroutine(_instance._active);
+        _instance._active = _instance.StartCoroutine(_instance.DoFlash(colour, duration));
+    }
+
+    private void Awake()
+    {
+        if (_instance != null && _instance != this) { Destroy(gameObject); return; }
+        _instance = this;
+    }
+
+    private void BuildOverlay()
+    {
+        var canvas = gameObject.AddComponent<Canvas>();
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 999;
+        gameObject.AddComponent<CanvasScaler>();
+        gameObject.AddComponent<GraphicRaycaster>();
+
+        var imgGo = new GameObject("FlashOverlay");
+        imgGo.transform.SetParent(transform, false);
+        _overlay = imgGo.AddComponent<Image>();
+        var rt = _overlay.rectTransform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+        _overlay.color = new Color(1f, 1f, 1f, 0f);
+        _overlay.raycastTarget = false;
+    }
+
+    private IEnumerator DoFlash(Color colour, float duration)
+    {
+        colour.a = 0.45f;
+        _overlay.color = colour;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            Color c = _overlay.color;
+            c.a = Mathf.Lerp(0.45f, 0f, elapsed / duration);
+            _overlay.color = c;
+            yield return null;
+        }
+        _overlay.color = new Color(1f, 1f, 1f, 0f);
     }
 }
 

@@ -145,6 +145,8 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
+        EnforceBoundary();
+
         // Re-acquire player reference if lost.
         if (player == null)
         {
@@ -271,21 +273,39 @@ public class EnemyAI : MonoBehaviour
     private Vector3 ApplyBoundaryCorrection(Vector3 dir)
     {
         float distToCenter = transform.position.magnitude;
-        float softLimit = EnemyRoamRadius * 0.8f;
+        float softLimit = EnemyRoamRadius * 0.75f;
 
         if (distToCenter > softLimit)
         {
             Vector3 toCenter = -transform.position.normalized;
             // Ramp up strongly: at softLimit t=0 (no push), at EnemyRoamRadius t=1 (fully toward center).
             float t = Mathf.InverseLerp(softLimit, EnemyRoamRadius, distToCenter);
-            dir = Vector3.Slerp(dir, toCenter, Mathf.Clamp01(t * 2.5f)).normalized;
+            dir = Vector3.Slerp(dir, toCenter, Mathf.Clamp01(t * 3f)).normalized;
         }
 
-        // Hard cap: if past the absolute kill boundary, steer straight back to center.
-        if (distToCenter > ScriptsReference.BoundaryLimit * 0.9f)
+        // Hard cap: if at or past the arena boundary, steer straight back to center.
+        if (distToCenter >= ScriptsReference.ArenaRadius)
             dir = -transform.position.normalized;
 
         return dir;
+    }
+
+    private void EnforceBoundary()
+    {
+        float dist = transform.position.magnitude;
+        if (dist <= ScriptsReference.ArenaRadius) return;
+
+        // Clamp position to the arena surface
+        transform.position = transform.position.normalized * ScriptsReference.ArenaRadius;
+
+        // Kill any outward velocity component
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            Vector3 outward = transform.position.normalized;
+            if (Vector3.Dot(rb.linearVelocity, outward) > 0f)
+                rb.linearVelocity = Vector3.ProjectOnPlane(rb.linearVelocity, outward) * 0.3f;
+        }
     }
 
     private Vector3 ApplyObstacleAvoidance(Vector3 dir)
