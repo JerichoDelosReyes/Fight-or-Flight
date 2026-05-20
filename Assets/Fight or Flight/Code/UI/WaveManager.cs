@@ -202,23 +202,32 @@ public class WaveManager : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        // Always spawn well inside the arena — never close to the boundary wall.
-        float safeRadius = ScriptsReference.ArenaRadius * 0.55f;
-        float useRadius  = Mathf.Min(SpawnRadius, safeRadius);
+        // Spawn 30-80 units (user scale) from the player — i.e. between the
+        // orbit distance and chase-trigger distance, scaled to ArenaRadius.
+        // Falls back to a random spot well inside the arena if no player.
+        float arenaR  = ScriptsReference.ArenaRadius;
+        float safeMax = arenaR * 0.85f;
 
-        Vector3 pos = Random.insideUnitSphere * useRadius;
-        pos.y = 0f;
-
-        if (pos.magnitude > safeRadius)
-            pos = pos.normalized * safeRadius;
-
-        if (Ship.PlayerShip != null &&
-            Vector3.Distance(pos, Ship.PlayerShip.transform.position) < MinPlayerDist)
+        Vector3 pos;
+        if (Ship.PlayerShip != null)
         {
-            pos += (pos - Ship.PlayerShip.transform.position).normalized * MinPlayerDist;
-            if (pos.magnitude > safeRadius)
-                pos = pos.normalized * safeRadius;
+            Vector3 playerPos = Ship.PlayerShip.transform.position;
+            float   minDist   = arenaR * 0.17f;  // user "30"
+            float   maxDist   = arenaR * 0.45f;  // user "80"
+            Vector3 dir       = Random.onUnitSphere;
+            dir.y *= 0.35f;
+            dir = dir.normalized;
+            float dist = Random.Range(minDist, maxDist);
+            pos = playerPos + dir * dist;
         }
+        else
+        {
+            pos = Random.insideUnitSphere * (arenaR * 0.55f);
+        }
+
+        // Keep inside the arena.
+        if (pos.magnitude > safeMax)
+            pos = pos.normalized * safeMax;
 
         Instantiate(enemyPrefab, pos, Quaternion.identity);
     }

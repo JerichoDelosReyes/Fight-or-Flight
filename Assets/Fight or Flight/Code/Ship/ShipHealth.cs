@@ -22,14 +22,32 @@ public class ShipHealth : MonoBehaviour
     public GameObject explosionPrefab;
 public AudioClip explosionSound;
 
+    private bool _hasDied;
+
     private void Awake()
     {
         currentHealth = maxHealth;
+
+        // Sync isPlayer from the Ship component if it's set there. The prefab
+        // sometimes has Ship.isPlayer=true but ShipHealth.isPlayer=false, which
+        // sends the player through the enemy-death branch and skips the
+        // defeat screen.
+        var ship = GetComponent<Ship>();
+        if (ship != null && ship.isPlayer) isPlayer = true;
     }
 
     private void Update()
     {
         if (!isPlayer) return;
+
+        // Safety net: if health hit 0 by any path that bypassed TakeDamage,
+        // make sure Die() still fires so the defeat screen appears.
+        if (currentHealth <= 0f && !_hasDied)
+        {
+            currentHealth = 0f;
+            Die();
+            return;
+        }
 
         // Health regen
         if (currentHealth < maxHealth && Time.time >= lastDamageTime + regenDelay)
@@ -103,6 +121,9 @@ public AudioClip explosionSound;
 
     private void Die()
     {
+        if (_hasDied) return;
+        _hasDied = true;
+
         // Play explosion
         if (explosionPrefab != null)
         {

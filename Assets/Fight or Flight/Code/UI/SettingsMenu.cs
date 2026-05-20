@@ -24,7 +24,6 @@ public class SettingsMenu : MonoBehaviour
 
     private const string KeyControlScheme = "ControlScheme";
     private const string KeyInvertY       = "InvertY";
-    private const string KeyDifficulty    = "Difficulty";
     private const string KeyVolMaster     = "VolMaster";
     private const string KeyVolMusic      = "VolMusic";
     private const string KeyVolSFX        = "VolSFX";
@@ -33,16 +32,13 @@ public class SettingsMenu : MonoBehaviour
     // ── Selection state ───────────────────────────────────────────────────────
 
     private int selectedScheme;     // 0 = Keyboard Only, 1 = Mouse + Keyboard
-    private int selectedDifficulty; // 0/1/2 = Easy/Normal/Hard
     private int selectedQuality;    // 0/1/2 = Low/Medium/High
 
     // ── Widget refs ───────────────────────────────────────────────────────────
 
     private Button[] schemeButtons     = new Button[2];
-    private Button[] difficultyButtons = new Button[3];
     private Button[] qualityButtons    = new Button[3];
     private Color[]  schemeColors;
-    private Color[]  difficultyColors;
     private Color[]  qualityColors;
 
     private GameObject invertYRow;
@@ -82,9 +78,8 @@ public class SettingsMenu : MonoBehaviour
 
     private void LoadCurrent()
     {
-        selectedScheme     = PlayerPrefs.GetInt(KeyControlScheme, 0);
-        selectedDifficulty = PlayerPrefs.GetInt(KeyDifficulty, 1);
-        selectedQuality    = Mathf.Clamp(PlayerPrefs.GetInt(KeyQuality, 1), 0, 2);
+        selectedScheme  = PlayerPrefs.GetInt(KeyControlScheme, 0);
+        selectedQuality = Mathf.Clamp(PlayerPrefs.GetInt(KeyQuality, 1), 0, 2);
     }
 
     // ── UI construction ───────────────────────────────────────────────────────
@@ -105,17 +100,17 @@ public class SettingsMenu : MonoBehaviour
         // Dark overlay (full screen).
         MakeStretchedImage(gameObject, new Color(0f, 0f, 0f, 0.85f));
 
-        // Centre panel.
-        var panel = MakePanel(new Vector2(0, 0), new Vector2(900, 940));
+        // Centre panel — shrunk vertically since the Difficulty section was removed.
+        var panel = MakePanel(new Vector2(0, 0), new Vector2(900, 830));
 
         // ── Title ─────────────────────────────────────────────────────────────
         MakeLabel(panel, "SETTINGS", 72, new Color(0.9f, 0.9f, 1f), FontStyle.Bold,
-                  new Vector2(0, 405), new Vector2(840, 90));
-        MakeDivider(panel, new Vector2(0, 350));
+                  new Vector2(0, 350), new Vector2(840, 90));
+        MakeDivider(panel, new Vector2(0, 295));
 
         // ── Control Scheme ────────────────────────────────────────────────────
         MakeLabel(panel, "CONTROL SCHEME", 30, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(0, 300), new Vector2(840, 40));
+                  new Vector2(0, 245), new Vector2(840, 40));
 
         string[] schemeNames = { "Keyboard Only", "Mouse + Keyboard" };
         schemeColors = new[]
@@ -128,30 +123,9 @@ public class SettingsMenu : MonoBehaviour
             int idx = i;
             float xOff = (i == 0) ? -160f : 160f;
             var btn = MakeButton(panel, schemeNames[i], schemeColors[i],
-                                 new Vector2(xOff, 245), new Vector2(290, 60),
+                                 new Vector2(xOff, 190), new Vector2(290, 60),
                                  () => SelectScheme(idx));
             schemeButtons[i] = btn.GetComponent<Button>();
-        }
-
-        // ── Difficulty ────────────────────────────────────────────────────────
-        MakeLabel(panel, "DIFFICULTY", 30, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(0, 190), new Vector2(840, 40));
-
-        string[] diffNames = { "Easy", "Normal", "Hard" };
-        difficultyColors = new[]
-        {
-            new Color(0.15f, 0.55f, 0.15f),
-            new Color(0.13f, 0.40f, 0.80f),
-            new Color(0.72f, 0.12f, 0.12f),
-        };
-        for (int i = 0; i < 3; i++)
-        {
-            int idx = i;
-            float xOff = (i - 1) * 220f;
-            var btn = MakeButton(panel, diffNames[i], difficultyColors[i],
-                                 new Vector2(xOff, 135), new Vector2(190, 60),
-                                 () => SelectDifficulty(idx));
-            difficultyButtons[i] = btn.GetComponent<Button>();
         }
 
         // ── Invert Y (only visible in Mouse + Keyboard) ───────────────────────
@@ -159,7 +133,7 @@ public class SettingsMenu : MonoBehaviour
         invertYRow.transform.SetParent(panel.transform, false);
         var rowRt = invertYRow.AddComponent<RectTransform>();
         rowRt.anchorMin = rowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        rowRt.anchoredPosition = new Vector2(0, 75);
+        rowRt.anchoredPosition = new Vector2(0, 120);
         rowRt.sizeDelta = new Vector2(840, 50);
 
         MakeLabel(invertYRow, "INVERT Y-AXIS", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
@@ -169,22 +143,20 @@ public class SettingsMenu : MonoBehaviour
 
         // ── Volume sliders ────────────────────────────────────────────────────
         MakeLabel(panel, "MASTER VOLUME", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-170, 15), new Vector2(380, 40));
-        masterSlider = MakeSlider(panel, new Vector2(200, 15), PlayerPrefs.GetFloat(KeyVolMaster, 1f));
+                  new Vector2(-170, 55), new Vector2(380, 40));
+        masterSlider = MakeSlider(panel, new Vector2(200, 55), PlayerPrefs.GetFloat(KeyVolMaster, 1f));
 
         MakeLabel(panel, "MUSIC VOLUME", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-170, -45), new Vector2(380, 40));
-        musicSlider = MakeSlider(panel, new Vector2(200, -45), PlayerPrefs.GetFloat(KeyVolMusic, 0.8f));
+                  new Vector2(-170, -5), new Vector2(380, 40));
+        musicSlider = MakeSlider(panel, new Vector2(200, -5), PlayerPrefs.GetFloat(KeyVolMusic, 0.8f));
 
         MakeLabel(panel, "SFX VOLUME", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-170, -105), new Vector2(380, 40));
-        sfxSlider = MakeSlider(panel, new Vector2(200, -105), PlayerPrefs.GetFloat(KeyVolSFX, 1f));
+                  new Vector2(-170, -65), new Vector2(380, 40));
+        sfxSlider = MakeSlider(panel, new Vector2(200, -65), PlayerPrefs.GetFloat(KeyVolSFX, 1f));
 
-        // ── Graphics quality (3-button row instead of a runtime-built Dropdown,
-        //    which would need an entire ScrollRect/Mask/Toggle template hierarchy
-        //    to function. Buttons match the rest of the menu visually.) ────────
+        // ── Graphics quality ──────────────────────────────────────────────────
         MakeLabel(panel, "GRAPHICS QUALITY", 30, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(0, -170), new Vector2(840, 40));
+                  new Vector2(0, -130), new Vector2(840, 40));
 
         string[] qualNames = { "Low", "Medium", "High" };
         qualityColors = new[]
@@ -198,21 +170,20 @@ public class SettingsMenu : MonoBehaviour
             int idx = i;
             float xOff = (i - 1) * 220f;
             var btn = MakeButton(panel, qualNames[i], qualityColors[i],
-                                 new Vector2(xOff, -225), new Vector2(190, 60),
+                                 new Vector2(xOff, -185), new Vector2(190, 60),
                                  () => SelectQuality(idx));
             qualityButtons[i] = btn.GetComponent<Button>();
         }
 
         // ── Apply / Back ──────────────────────────────────────────────────────
-        MakeDivider(panel, new Vector2(0, -300));
+        MakeDivider(panel, new Vector2(0, -250));
         MakeButton(panel, "APPLY", new Color(0.13f, 0.40f, 0.80f),
-                   new Vector2(-180, -380), new Vector2(320, 70), ApplySettings);
+                   new Vector2(-180, -325), new Vector2(320, 70), ApplySettings);
         MakeButton(panel, "BACK", new Color(0.25f, 0.25f, 0.25f),
-                   new Vector2( 180, -380), new Vector2(320, 70), Close);
+                   new Vector2( 180, -325), new Vector2(320, 70), Close);
 
         // Highlight current selections.
         SelectScheme(selectedScheme);
-        SelectDifficulty(selectedDifficulty);
         SelectQuality(selectedQuality);
     }
 
@@ -223,12 +194,6 @@ public class SettingsMenu : MonoBehaviour
         selectedScheme = idx;
         ApplyButtonHighlight(schemeButtons, schemeColors, idx);
         RefreshInvertYVisibility();
-    }
-
-    private void SelectDifficulty(int idx)
-    {
-        selectedDifficulty = idx;
-        ApplyButtonHighlight(difficultyButtons, difficultyColors, idx);
     }
 
     private void SelectQuality(int idx)
@@ -266,9 +231,6 @@ public class SettingsMenu : MonoBehaviour
         // static caches stay in sync with PlayerPrefs without a scene reload.
         ControlSchemeManager.SetScheme((ControlSchemeManager.Scheme)selectedScheme);
         ControlSchemeManager.SetInvertY(invertYToggle.isOn);
-
-        // Difficulty → DifficultyManager handles its own PlayerPrefs write.
-        DifficultyManager.Set((DifficultyManager.Difficulty)selectedDifficulty);
 
         // Volume — master applies live via AudioListener; music/SFX are persisted
         // for AudioSource components / future mixers to read.

@@ -53,23 +53,28 @@ public class EnemySpawner : MonoBehaviour
         if (_enemyPrefab == null) return;
         if (_currentEnemyCount >= _maxEnemies) return;
 
-        // Spawn well inside the arena — never near the boundary wall.
-        float safeRadius = ScriptsReference.ArenaRadius * 0.55f;
-        float useRadius  = Mathf.Min(_spawnRadius, safeRadius);
-        Vector3 spawnPos = Random.insideUnitSphere * useRadius;
+        // Spawn in a 30–80 unit ring (user scale) around the player.
+        float arenaR  = ScriptsReference.ArenaRadius;
+        float safeMax = arenaR * 0.85f;
 
-        // Hard clamp inside the safe zone in case Random produced an edge value.
-        if (spawnPos.magnitude > safeRadius)
-            spawnPos = spawnPos.normalized * safeRadius;
-
-        // Keep them away from player initially
-        if (Ship.PlayerShip != null && Vector3.Distance(spawnPos, Ship.PlayerShip.transform.position) < 800f)
+        Vector3 spawnPos;
+        if (Ship.PlayerShip != null)
         {
-            spawnPos += (spawnPos - Ship.PlayerShip.transform.position).normalized * 800f;
-            // Re-clamp after the player-push offset.
-            if (spawnPos.magnitude > safeRadius)
-                spawnPos = spawnPos.normalized * safeRadius;
+            Vector3 playerPos = Ship.PlayerShip.transform.position;
+            float   minDist   = arenaR * 0.17f;
+            float   maxDist   = arenaR * 0.45f;
+            Vector3 dir       = Random.onUnitSphere;
+            dir.y *= 0.35f;
+            dir = dir.normalized;
+            spawnPos = playerPos + dir * Random.Range(minDist, maxDist);
         }
+        else
+        {
+            spawnPos = Random.insideUnitSphere * (arenaR * 0.55f);
+        }
+
+        if (spawnPos.magnitude > safeMax)
+            spawnPos = spawnPos.normalized * safeMax;
 
         Instantiate(_enemyPrefab, spawnPos, Quaternion.identity);
         _currentEnemyCount++;

@@ -10,14 +10,18 @@ public class EnemyAI : MonoBehaviour
     [Header("Combat")]
     public GameObject laserPrefab;
     public float fireRate = 1.2f;
-    public float attackRange = 6000f;
     public float laserSpawnForwardOffset = 100f;
 
-    // ── Behavior ───────────────────────────────────────────────────────────────
+    // ── Behaviour ranges (in game units; ArenaRadius = 12,000) ────────────────
+    // User-scale 180 maps to ArenaRadius; the constants below are the
+    // corresponding fractions: 80 (chase), 30 (orbit), 100 (return-patrol),
+    // 175 (hard clamp).
+    private static float ChaseTriggerDist => ScriptsReference.ArenaRadius * 0.45f; // ~5400
+    private static float OrbitDist        => ScriptsReference.ArenaRadius * 0.17f; // ~2040
+    private static float ReturnPatrolDist => ScriptsReference.ArenaRadius * 0.55f; // ~6600
+    private static float HardClampDist    => ScriptsReference.ArenaRadius * 0.97f; // ~11640
+
     [Header("Behavior")]
-    public float detectionRange = 12000f;
-    [Tooltip("Desired orbit radius around the player when attacking")]
-    public float orbitRadius = 1800f;
     [Tooltip("Base turn speed multiplier")]
     public float turnSpeedFactor = 1.1f;
     [Tooltip("Throttle applied while chasing/orbiting")]
@@ -28,10 +32,9 @@ public class EnemyAI : MonoBehaviour
     private float circleDir = 1f;
 
     // ── Patrol ─────────────────────────────────────────────────────────────────
-    [Header("Patrol")]
-    public float patrolRadius = 8000f;
-    public float waypointReachedDistance = 500f;
-    private Vector3 patrolTarget;
+    // Random-direction patrol: every 3-5 s the enemy picks a new direction.
+    private Vector3 patrolDir;
+    private float   patrolDirTimer;
 
     // ── Obstacle Avoidance ──────────────────────────────────────────────────────
     [Header("Obstacle Avoidance")]
@@ -77,6 +80,9 @@ public class EnemyAI : MonoBehaviour
     {
         if (Ship.PlayerShip != null) player = Ship.PlayerShip.transform;
 
+        // Spawn facing a random direction.
+        transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+
         // Randomize circle direction so enemies don't all orbit the same way.
         circleDir = (Random.value > 0.5f) ? 1f : -1f;
         strafeSign = circleDir;
@@ -85,7 +91,7 @@ public class EnemyAI : MonoBehaviour
         // Slightly larger enemies — more visible and easier to read at range.
         transform.localScale *= 1.4f;
 
-        PickNewPatrolTarget();
+        PickRandomPatrolDir();
         SetupVisuals();
         ApplyDifficulty();
         if (GetComponent<EnemyHealthBar>() == null)
@@ -116,11 +122,10 @@ public class EnemyAI : MonoBehaviour
         // Fire rate — m.fireRate multiplies the INTERVAL, so >1 = slower shots.
         fireRate *= m.fireRate;
 
-        // Aggression — push Hard enemies into tighter orbits, faster turns, and
-        // more throttle so they actively close on the player.
+        // Aggression — faster turns and more throttle so Hard enemies actively
+        // close on the player. Orbit distance is a global constant now.
         turnSpeedFactor *= m.aggression;
         throttleFactor  *= m.aggression;
-        orbitRadius     /= Mathf.Max(0.01f, m.aggression);
     }
 
     private void SetupVisuals()
@@ -158,7 +163,7 @@ public class EnemyAI : MonoBehaviour
 
         // If we're at or past the boundary, completely override AI behaviour
         // and steer toward centre this frame so we can't keep thrusting outward.
-        if (transform.position.magnitude >= ScriptsReference.ArenaRadius * 0.97f)
+        if (transform.position.magnitude >= HardClampDist)
         {
             Vector3 toCentre = -transform.position.normalized;
             TurnToward(toCentre, turnSpeedFactor * 2f);
@@ -168,13 +173,21 @@ public class EnemyAI : MonoBehaviour
 
         float distToPlayer = Vector3.Distance(transform.position, player.position);
 
-        // ── State transitions ──────────────────────────────────────────────────
-        if (distToPlayer <= attackRange)
-            state = AIState.Attack;
-        else if (distToPlayer <= detectionRange)
-            state = AIState.Chase;
-        else
-            state = AIState.Patrol;
+        // ── State transitions (with hysteresis so enemies don't flicker) ─────
+        switch (state)
+        {
+            case AIState.Patrol:
+                if (distToPlayer < ChaseTriggerDist) state = AIState.Chase;
+                break;
+            case AIState.Chase:
+                if (distToPlayer < OrbitDist)            state = AIState.Attack;
+                else if (distToPlayer > ReturnPatrolDist) state = AIState.Patrol;
+                break;
+            case AIState.Attack:
+                if (distToPlayer > ReturnPatrolDist)     state = AIState.Patrol;
+                else if (distToPlayer > OrbitDist * 2f)  state = AIState.Chase;
+                break;
+        }
 
         // ── Execute state ──────────────────────────────────────────────────────
         switch (state)
@@ -196,16 +209,31 @@ public class EnemyAI : MonoBehaviour
 
     private void Patrol()
     {
-        // Pick a new waypoint once we're close enough.
-        if (Vector3.Distance(transform.position, patrolTarget) < waypointReachedDistance)
-            PickNewPatrolTarget();
+        // Count down the current direction's lifetime; pick new one when it expires.
+        patrolDirTimer -= Time.deltaTime;
+        if (patrolDirTimer <= 0f) PickRandomPatrolDir();
 
-        Vector3 dir = (patrolTarget - transform.position).normalized;
+        Vector3 dir = patrolDir;
+
+        // If we're getting close to the wall, flip the patrol direction inward
+        // immediately rather than waiting for the timer.
+        if (transform.position.magnitude > ScriptsReference.ArenaRadius * 0.75f)
+        {
+            Vector3 inward = -transform.position.normalized;
+            if (Vector3.Dot(patrolDir, inward) < 0f)
+            {
+                PickRandomPatrolDir();
+                // Bias the new direction inward.
+                patrolDir = Vector3.Slerp(patrolDir, inward, 0.7f).normalized;
+                dir = patrolDir;
+            }
+        }
+
         dir = ApplyBoundaryCorrection(dir);
         dir = ApplyObstacleAvoidance(dir);
 
-        TurnToward(dir, turnSpeedFactor * 0.6f);
-        physics.SetPhysicsInput(new Vector3(0, 0, throttleFactor * 0.5f), Vector3.zero);
+        TurnToward(dir, turnSpeedFactor * 0.7f);
+        physics.SetPhysicsInput(new Vector3(0, 0, throttleFactor * 0.6f), Vector3.zero);
     }
 
     private void Chase()
@@ -242,9 +270,9 @@ public class EnemyAI : MonoBehaviour
         TurnToward(desiredDir, turnSpeedFactor * 1.2f);
 
         // Throttle: close the gap if too far, hold orbit distance if inside it.
-        float throttle = (distToPlayer > orbitRadius * 1.1f) ? throttleFactor : throttleFactor * 0.4f;
+        float throttle = (distToPlayer > OrbitDist * 1.1f) ? throttleFactor : throttleFactor * 0.4f;
         // Back off slightly if too close.
-        if (distToPlayer < orbitRadius * 0.5f) throttle = -throttleFactor * 0.3f;
+        if (distToPlayer < OrbitDist * 0.5f) throttle = -throttleFactor * 0.3f;
 
         physics.SetPhysicsInput(new Vector3(0, 0, throttle), Vector3.zero);
 
@@ -261,19 +289,14 @@ public class EnemyAI : MonoBehaviour
     // Mirrors ScriptsReference.ArenaRadius — keeps enemies inside the asteroid wall.
     private static float EnemyRoamRadius => ScriptsReference.ArenaRadius;
 
-    private void PickNewPatrolTarget()
+    private void PickRandomPatrolDir()
     {
-        // Patrol around the player so enemies feel present and threatening.
-        // When no player is available, fall back to roaming near current position.
-        Vector3 center = (player != null) ? player.position : transform.position;
-        float   radius = patrolRadius * 0.45f; // tighter orbit around player
-        Vector3 offset = Random.insideUnitSphere * radius;
-        Vector3 candidate = center + offset;
-
-        float limit = EnemyRoamRadius * 0.9f;
-        if (candidate.magnitude > limit)
-            candidate = candidate.normalized * limit;
-        patrolTarget = candidate;
+        // Random unit direction; pinch the vertical component so enemies don't
+        // patrol straight up or straight down (looks weird in a spaceship sim).
+        Vector3 dir = Random.onUnitSphere;
+        dir.y *= 0.35f;
+        patrolDir      = dir.normalized;
+        patrolDirTimer = Random.Range(3f, 5f);
     }
 
     private Vector3 PredictPlayerPosition()

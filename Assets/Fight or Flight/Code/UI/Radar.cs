@@ -120,7 +120,7 @@ public class Radar : MonoBehaviour
     private void BuildUI()
     {
         BuildRadarCircle();
-        BuildHeadingStrip();
+        // Heading strip moved to its own component — CompassBar.cs (top-centre).
     }
 
     private void BuildRadarCircle()
@@ -344,8 +344,7 @@ public class Radar : MonoBehaviour
                      new Color(1f, 0.95f, 0.2f, 1f));
         }
 
-        // ── Heading strip ─────────────────────────────────────────────────────
-        UpdateHeadingStrip(angle);
+        // Heading strip removed — CompassBar provides this now.
     }
 
     private void UpdateHeadingStrip(float playerYawDeg)

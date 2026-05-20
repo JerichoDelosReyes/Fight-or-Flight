@@ -4,13 +4,17 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Scatters static rock/asteroid debris throughout the arena at startup.
-/// Auto-creates itself in MainScene — no scene wiring required.
+/// Builds the asteroid field arena in two passes:
+///   1) Dense shell of asteroids at 1.00x – 1.10x ArenaRadius — these ARE the walls.
+///   2) Interior scatter from the clear-zone radius out to 0.89x ArenaRadius.
 ///
-/// Phase 1 — dense ring near the boundary wall (reinforces the arena edge).
-/// Phase 2 — medium clusters in the mid-arena for cover and combat obstacles.
+/// Uses every Rock Type prefab in Assets/Fight or Flight/Content/Prefabs/Rocks
+/// plus Asteroid_New, so the field is visually varied.
 ///
-/// Rocks are purely static (Rigidbody removed if present).
+/// Cleans up any "DebrisRock" / "BoundaryRock" left over from previous scatter
+/// runs before spawning, so reloading the scene does not create duplicates.
+///
+/// Auto-creates itself in MainScene.
 /// </summary>
 public class DebrisScatter : MonoBehaviour
 {
@@ -35,97 +39,119 @@ public class DebrisScatter : MonoBehaviour
 
     // ── Config ────────────────────────────────────────────────────────────────
 
-    private const float ArenaR        = 12000f; // matches ScriptsReference.ArenaRadius
-    private const float ClearRadius   = 1500f;  // keep area around origin clear
-    private const int   BoundaryRocks = 120;    // dense outer ring
-    private const int   MidRocks      = 100;    // mid-arena scatter
-    private const int   ClusterRocks  = 60;     // small concentrated clusters
+    // All radii are fractions of ScriptsReference.ArenaRadius (12,000 by default).
+    private const float ClearZoneFrac    = 0.08f;  // user "15"  — keep clear around origin
+    private const float InteriorMaxFrac  = 0.89f;  // user "160"
+    private const float ShellInnerFrac   = 1.00f;  // user "180"
+    private const float ShellOuterFrac   = 1.10f;  // user "200"
+
+    private const int   ShellRocks       = 220;    // dense boundary shell
+    private const int   InteriorRocks    = 480;    // mid-arena fill
+    private const int   ClusterCount     = 10;
+    private const int   RocksPerCluster  = 12;
+
+    private const float ScaleMin = 0.5f;
+    private const float ScaleMax = 3.0f;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
-        StartCoroutine(ScatterDebris());
+        StartCoroutine(BuildField());
     }
 
-    // ── Scatter ───────────────────────────────────────────────────────────────
-
-    private IEnumerator ScatterDebris()
+    private IEnumerator BuildField()
     {
-        // Wait a couple of frames so the scene (asteroids etc.) has finished loading.
+        // Yield a couple of frames so any pre-existing scene asteroids settle.
         yield return null;
         yield return null;
 
-        // Collect template objects to clone from scene or project.
+        ClearPreviousRocks();
+
         var templates = GatherTemplates();
-        if (templates.Count == 0)
-        {
-            // Nothing to scatter — fall back to sphere primitives so something visible appears.
-            templates.Add(null);
-        }
+        if (templates.Count == 0) templates.Add(null); // fallback to primitive spheres
+
+        float arenaR = ScriptsReference.ArenaRadius;
+        float clear  = arenaR * ClearZoneFrac;
+        float interiorMax = arenaR * InteriorMaxFrac;
+        float shellInner  = arenaR * ShellInnerFrac;
+        float shellOuter  = arenaR * ShellOuterFrac;
 
         int spawned = 0;
 
-        // ── Phase 1: Dense boundary ring ──────────────────────────────────────
-        for (int i = 0; i < BoundaryRocks; i++)
+        // ── Pass 1: Boundary shell ────────────────────────────────────────────
+        for (int i = 0; i < ShellRocks; i++)
         {
-            float angle  = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float radius = Random.Range(ArenaR * 0.80f, ArenaR * 0.97f);
-            float yOff   = Random.Range(-ArenaR * 0.12f, ArenaR * 0.12f);
-            Vector3 pos  = new Vector3(Mathf.Cos(angle) * radius, yOff,
-                                       Mathf.Sin(angle) * radius);
-
-            SpawnRock(templates, pos,
-                      scaleMin: 0.9f, scaleMax: 2.8f);
+            Vector3 dir = Random.onUnitSphere;
+            // Pinch Y a little so the shell looks like a fat ring rather than a
+            // perfect sphere — easier to navigate.
+            dir.y *= 0.45f;
+            dir = dir.normalized;
+            float r = Random.Range(shellInner, shellOuter);
+            Vector3 pos = dir * r;
+            SpawnRock(templates, pos, 1.0f, ScaleMax);
             spawned++;
-            if (spawned % 10 == 0) yield return null;
+            if (spawned % 12 == 0) yield return null;
         }
 
-        // ── Phase 2: Mid-arena scatter ────────────────────────────────────────
-        for (int i = 0; i < MidRocks; i++)
+        // ── Pass 2: Interior scatter ──────────────────────────────────────────
+        for (int i = 0; i < InteriorRocks; i++)
         {
             Vector3 pos;
             int tries = 0;
             do
             {
-                pos = Random.insideUnitSphere * (ArenaR * 0.75f);
+                pos = Random.insideUnitSphere * interiorMax;
                 tries++;
             }
-            while (pos.magnitude < ClearRadius && tries < 20);
+            while (pos.magnitude < clear && tries < 25);
+            if (pos.magnitude < clear) continue;
 
-            if (pos.magnitude < ClearRadius) continue;
-
-            SpawnRock(templates, pos, scaleMin: 0.4f, scaleMax: 1.8f);
+            SpawnRock(templates, pos, ScaleMin, ScaleMax * 0.75f);
             spawned++;
-            if (spawned % 10 == 0) yield return null;
+            if (spawned % 14 == 0) yield return null;
         }
 
-        // ── Phase 3: Concentrated clusters (combat cover) ────────────────────
-        int numClusters = 8;
-        int rocksPerCluster = ClusterRocks / numClusters;
-        for (int c = 0; c < numClusters; c++)
+        // ── Pass 3: Concentrated clusters (combat cover) ──────────────────────
+        for (int c = 0; c < ClusterCount; c++)
         {
-            // Pick a cluster centre in the mid-arena band
-            float clusterAngle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float clusterR     = Random.Range(ArenaR * 0.25f, ArenaR * 0.68f);
-            float clusterY     = Random.Range(-ArenaR * 0.10f, ArenaR * 0.10f);
-            Vector3 clusterCenter = new Vector3(
-                Mathf.Cos(clusterAngle) * clusterR, clusterY,
-                Mathf.Sin(clusterAngle) * clusterR);
+            Vector3 dir = Random.onUnitSphere;
+            dir.y *= 0.35f;
+            dir = dir.normalized;
+            float r = Random.Range(arenaR * 0.25f, arenaR * 0.75f);
+            Vector3 centre = dir * r;
+            if (centre.magnitude < clear) continue;
 
-            if (clusterCenter.magnitude < ClearRadius) continue;
-
-            for (int r = 0; r < rocksPerCluster; r++)
+            for (int j = 0; j < RocksPerCluster; j++)
             {
-                Vector3 offset = Random.insideUnitSphere * 1200f;
-                Vector3 pos    = clusterCenter + offset;
-                if (pos.magnitude < ClearRadius) continue;
-                SpawnRock(templates, pos, scaleMin: 0.6f, scaleMax: 2.2f);
+                Vector3 offset = Random.insideUnitSphere * (arenaR * 0.08f);
+                Vector3 pos    = centre + offset;
+                if (pos.magnitude < clear) continue;
+                if (pos.magnitude > interiorMax) pos = pos.normalized * interiorMax;
+
+                SpawnRock(templates, pos, ScaleMin, ScaleMax * 0.85f);
                 spawned++;
-                if (spawned % 10 == 0) yield return null;
+                if (spawned % 16 == 0) yield return null;
             }
         }
     }
+
+    // ── Cleanup ───────────────────────────────────────────────────────────────
+
+    private static void ClearPreviousRocks()
+    {
+        // Names produced by any previous scatter pass — wipe them all so we
+        // don't accumulate duplicates after a scene reload.
+        string[] names = { "DebrisRock", "BoundaryRock", "ScatterRock" };
+        foreach (var n in names)
+        {
+            GameObject g;
+            while ((g = GameObject.Find(n)) != null)
+                DestroyImmediate(g);
+        }
+    }
+
+    // ── Spawning ──────────────────────────────────────────────────────────────
 
     private void SpawnRock(List<GameObject> templates, Vector3 pos,
                            float scaleMin, float scaleMax)
@@ -136,7 +162,7 @@ public class DebrisScatter : MonoBehaviour
         if (tmpl != null)
         {
             rock = Instantiate(tmpl, pos, Random.rotation);
-            // Remove any Asteroid script so scatter rocks aren't tracked or self-destructed.
+            // Strip Asteroid script so scatter rocks aren't tracked/killed by gameplay.
             var ast = rock.GetComponent<Asteroid>();
             if (ast != null) Destroy(ast);
         }
@@ -147,7 +173,7 @@ public class DebrisScatter : MonoBehaviour
             rock.transform.rotation = Random.rotation;
         }
 
-        // Static — no physics simulation needed.
+        // Strip physics — these are static obstacles.
         var rb = rock.GetComponent<Rigidbody>();
         if (rb != null) Destroy(rb);
 
@@ -163,11 +189,10 @@ public class DebrisScatter : MonoBehaviour
         var list = new List<GameObject>();
 
 #if UNITY_EDITOR
-        // In the editor, load rock prefabs directly from the content folder.
+        // Pull every prefab from the Rocks folder + Asteroid_New from top-level Prefabs.
         var guids = UnityEditor.AssetDatabase.FindAssets(
             "t:Prefab",
-            new[] { "Assets/Fight or Flight/Content/Prefabs/Rocks/Prefabs" });
-
+            new[] { "Assets/Fight or Flight/Content/Prefabs/Rocks" });
         foreach (var guid in guids)
         {
             string path   = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
@@ -175,7 +200,6 @@ public class DebrisScatter : MonoBehaviour
             if (prefab != null) list.Add(prefab);
         }
 
-        // Also try the top-level Prefabs folder for Asteroid_New
         var astGuids = UnityEditor.AssetDatabase.FindAssets(
             "Asteroid_New t:Prefab",
             new[] { "Assets/Fight or Flight/Content/Prefabs" });
@@ -187,7 +211,7 @@ public class DebrisScatter : MonoBehaviour
         }
 #endif
 
-        // Runtime fallback: find any existing Asteroid in the scene and use it as a template.
+        // Runtime fallback — find a scene Asteroid as a template.
         if (list.Count == 0)
         {
             var sceneAst = Object.FindAnyObjectByType<Asteroid>();
