@@ -25,20 +25,44 @@ public class MainMenuController : MonoBehaviour
 
     private void ApplyMenuPolish()
     {
-        // 1. Background gradient (vignette-style darkening at the screen edges)
-        AddBackgroundGradient();
+        // 1. Background gradient removed as per user request.
 
-        // 2. Resize + restyle the buttons. Start gets larger to set hierarchy.
-        StyleButton("PlayButton",         new Vector2(420f, 96f), 36, new Color(0.16f, 0.50f, 0.95f), new Color(0.30f, 0.65f, 1.00f));
-        StyleButton("InstructionsButton", new Vector2(340f, 68f), 26, new Color(0.20f, 0.20f, 0.30f), new Color(0.38f, 0.38f, 0.55f));
-        StyleButton("SettingsButton",     new Vector2(340f, 68f), 26, new Color(0.20f, 0.20f, 0.30f), new Color(0.38f, 0.38f, 0.55f));
-        StyleButton("QuitButton",         new Vector2(340f, 68f), 26, new Color(0.35f, 0.15f, 0.18f), new Color(0.55f, 0.25f, 0.30f));
+        // 2. Resize + restyle the buttons. All buttons are now unified in size.
+        Vector2 unifiedSize = new Vector2(560f, 96f);
+        int unifiedFontSize = 38;
+
+        StyleButton("StartButton",        unifiedSize, unifiedFontSize, new Color(0.16f, 0.50f, 0.95f), new Color(0.30f, 0.65f, 1.00f));
+        StyleButton("InstructionsButton", unifiedSize, unifiedFontSize, new Color(0.20f, 0.20f, 0.30f), new Color(0.38f, 0.38f, 0.55f));
+        StyleButton("SettingsButton",     unifiedSize, unifiedFontSize, new Color(0.20f, 0.20f, 0.30f), new Color(0.38f, 0.38f, 0.55f));
+        StyleButton("QuitButton",         unifiedSize, unifiedFontSize, new Color(0.35f, 0.15f, 0.18f), new Color(0.55f, 0.25f, 0.30f));
+
+        RepositionButtons();
 
         // 3. Title pulse (search for the FIGHT title text anywhere in the scene)
         TryAddTitlePulse();
 
         // 4. Version tag bottom-right
         AddVersionLabel();
+    }
+
+    private void RepositionButtons()
+    {
+        // Vertical layout: Start higher up, more spacing between all 4 buttons.
+        float startY = 60f;
+        float spacing = 150f;
+
+        SetButtonY("StartButton",        startY);
+        SetButtonY("InstructionsButton", startY - spacing);
+        SetButtonY("SettingsButton",     startY - spacing * 2);
+        SetButtonY("QuitButton",         startY - spacing * 3);
+    }
+
+    private void SetButtonY(string goName, float y)
+    {
+        var go = GameObject.Find(goName);
+        if (go == null) return;
+        var rt = go.GetComponent<RectTransform>();
+        if (rt != null) rt.anchoredPosition = new Vector2(0, y);
     }
 
     private static void StyleButton(string goName, Vector2 size, int fontSize,
@@ -84,52 +108,11 @@ public class MainMenuController : MonoBehaviour
         }
     }
 
-    private void AddBackgroundGradient()
-    {
-        // Find any Canvas already in the scene to host the gradient.
-        var canvas = Object.FindAnyObjectByType<Canvas>();
-        if (canvas == null) return;
-
-        var go = new GameObject("MenuGradient");
-        go.transform.SetParent(canvas.transform, false);
-        go.transform.SetSiblingIndex(1); // second child — above bg image, below buttons
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = rt.offsetMax = Vector2.zero;
-
-        var img = go.AddComponent<RawImage>();
-        img.texture = MakeEdgeGradientTex(256);
-        img.color   = new Color(0f, 0f, 0f, 1f); // texture controls alpha
-        img.raycastTarget = false;
-    }
-
-    // Edges dark, center transparent — focus the eye on the title/buttons.
-    private static Texture2D MakeEdgeGradientTex(int size)
-    {
-        var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
-        float r = size * 0.5f;
-        for (int y = 0; y < size; y++)
-        for (int x = 0; x < size; x++)
-        {
-            float dx = (x - r + 0.5f) / r;
-            float dy = (y - r + 0.5f) / r;
-            float d  = Mathf.Sqrt(dx * dx + dy * dy);
-            // 0 alpha at center, ramps to ~0.7 at the corners
-            float a = Mathf.Clamp01((d - 0.30f) / 0.85f);
-            a *= 0.70f;
-            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
-        }
-        tex.Apply();
-        tex.filterMode = FilterMode.Bilinear;
-        return tex;
-    }
-
     private void TryAddTitlePulse()
     {
-        foreach (var t in Object.FindObjectsByType<Text>(FindObjectsSortMode.None))
+        foreach (var t in Object.FindObjectsByType<Text>(FindObjectsInactive.Include))
         {
-            if (t == null) continue;
+if (t == null) continue;
             string up = (t.text ?? "").ToUpperInvariant();
             if (up.Contains("FIGHT") || up.Contains("FLIGHT"))
             {

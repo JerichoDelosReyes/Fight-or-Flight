@@ -4,7 +4,6 @@ public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private GameObject _enemyPrefab;
     [Tooltip("Time between spawns in seconds")][SerializeField] private float _spawnTime = 5f;
-    [SerializeField] private float _spawnRadius = 3000f;
     [SerializeField] private int _maxEnemies = 15;
 
     /// <summary>Public read-only access to the enemy prefab so the WaveManager
