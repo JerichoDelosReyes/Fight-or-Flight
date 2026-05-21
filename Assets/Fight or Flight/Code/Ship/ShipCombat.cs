@@ -56,7 +56,7 @@ public class ShipCombat : MonoBehaviour
     }
 
     private void FireLasers()
-{
+    {
         if (laserPrefab == null)
         {
             Debug.LogWarning("ShipCombat: Laser Prefab is not assigned!");
@@ -78,13 +78,6 @@ public class ShipCombat : MonoBehaviour
             if (found.Count > 0)
             {
                 firePoints = found.ToArray();
-                string names = "";
-                for (int i = 0; i < found.Count; i++)
-                {
-                    if (i > 0) names += ", ";
-                    names += found[i].name;
-                }
-                Debug.Log("ShipCombat: Automatically found and assigned fire points: " + names);
             }
             else
             {
@@ -93,36 +86,17 @@ public class ShipCombat : MonoBehaviour
             }
         }
 
-        // Aim target derived from the camera's view — independent of fire-point rotation,
-        // which may be incorrectly set up in the prefab.
-        //
-        // Mouse+KB: camera is locked at screen center = crosshair; cast from camera forward.
-        // Keyboard:  use Ship.PlayerShip.transform.forward (same axis HUDController uses for
-        //            the projected crosshair), not this.transform.forward which may differ.
-        Vector3 aimTarget;
-        if (ControlSchemeManager.IsMouseKeyboard && Camera.main != null)
-        {
-            Ray camRay = Camera.main.ScreenPointToRay(
-                new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
-            aimTarget = camRay.origin + camRay.direction * 15000f;
-        }
-        else
-        {
-            Ship ps = Ship.PlayerShip;
-            Vector3 origin = ps != null ? ps.transform.position : transform.position;
-            Vector3 fwd    = ps != null ? ps.transform.forward  : transform.forward;
-            aimTarget = origin + fwd * 15000f;
-        }
-
         foreach (Transform point in firePoints)
         {
             if (point == null) continue;
 
-            Vector3 shotDirection = (aimTarget - point.position).normalized;
+            // Fired in a fire point, it just goes straight forward (along the point's local Z axis).
+            Vector3 shotDirection = point.forward;
             Quaternion shotRotation = Quaternion.LookRotation(shotDirection);
 
             GameObject laser = Instantiate(laserPrefab, point.position, shotRotation);
             laser.transform.SetParent(null);
+
             ShipLaserProjectile script = laser.GetComponent<ShipLaserProjectile>();
             if (script != null)
             {

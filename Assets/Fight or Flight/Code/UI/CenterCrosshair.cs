@@ -42,11 +42,11 @@ public class CenterCrosshair : MonoBehaviour
     private void Update()
     {
         if (_canvas == null) return;
-        _canvas.enabled = ControlSchemeManager.IsMouseKeyboard;
-        if (!_canvas.enabled) return;
+        // Always enabled now to ensure the player always has a middle cursor.
+        _canvas.enabled = true;
 
         // Raycast from the camera through the screen centre — if the hit is on
-        // an Enemy, switch the crosshair colour to red.
+// an Enemy, switch the crosshair colour to red.
         bool aimingAtEnemy = false;
         var cam = Camera.main;
         if (cam != null)

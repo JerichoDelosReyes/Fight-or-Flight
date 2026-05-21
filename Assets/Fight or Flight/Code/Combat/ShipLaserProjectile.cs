@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class ShipLaserProjectile : MonoBehaviour
 {
-    public float speed = 1000f; 
-    public float lifeTime = 3f;
-    public float damage = 8f;
+    public float speed = 10000f; 
+    public float lifeTime = 5f;
+public float damage = 8f;
     public string targetTag = "Enemy";
 
     public AudioClip shotSound;
