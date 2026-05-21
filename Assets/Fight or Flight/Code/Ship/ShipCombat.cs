@@ -86,12 +86,28 @@ public class ShipCombat : MonoBehaviour
             }
         }
 
+        // Calculate aim target based on screen center (the crosshair).
+        Vector3 aimTarget;
+        if (Camera.main != null)
+        {
+            Ray camRay = Camera.main.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+            // Converge at a distance (e.g., 2000 units) if nothing is hit, or hit something.
+            if (Physics.Raycast(camRay, out RaycastHit hit, 15000f))
+                aimTarget = hit.point;
+            else
+                aimTarget = camRay.origin + camRay.direction * 15000f;
+        }
+        else
+        {
+            aimTarget = transform.position + transform.forward * 15000f;
+        }
+
         foreach (Transform point in firePoints)
         {
             if (point == null) continue;
 
-            // Fired in a fire point, it just goes straight forward (along the point's local Z axis).
-            Vector3 shotDirection = point.forward;
+            // Fired towards the aim target so it actually hits the crosshair.
+            Vector3 shotDirection = (aimTarget - point.position).normalized;
             Quaternion shotRotation = Quaternion.LookRotation(shotDirection);
 
             GameObject laser = Instantiate(laserPrefab, point.position, shotRotation);
@@ -104,5 +120,5 @@ public class ShipCombat : MonoBehaviour
                 script.Initialize(shotDirection);
             }
         }
-    }
+}
 }
