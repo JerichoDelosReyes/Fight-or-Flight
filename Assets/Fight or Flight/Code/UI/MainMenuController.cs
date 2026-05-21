@@ -9,6 +9,12 @@ public class MainMenuController : MonoBehaviour
     public Sprite buttonFrameSprite;
     public Font menuFont;
 
+    [Header("Sci-Fi UI Assets")]
+    public Sprite panelFrameSprite;
+    public Sprite headerBarSprite;
+    public Sprite buttonLargeSprite;
+    public Sprite dividerSprite;
+
     private GameObject instrOverlay;
 
     private void Start()
@@ -47,6 +53,12 @@ public class MainMenuController : MonoBehaviour
             menuFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>("Assets/Fight or Flight/Content/GLB/Inter-VariableFont_opsz,wght.ttf");
             #endif
         }
+
+        // Load new Sci-Fi assets from Resources
+        if (panelFrameSprite == null)  panelFrameSprite  = Resources.Load<Sprite>("SciFiUI/panel_frame");
+        if (headerBarSprite == null)   headerBarSprite   = Resources.Load<Sprite>("SciFiUI/header_bar");
+        if (buttonLargeSprite == null) buttonLargeSprite = Resources.Load<Sprite>("SciFiUI/button_large");
+        if (dividerSprite == null)     dividerSprite     = Resources.Load<Sprite>("SciFiUI/divider");
     }
 
     // ── Polish pass ───────────────────────────────────────────────────────────
@@ -198,9 +210,45 @@ public class MainMenuController : MonoBehaviour
     }
 
     public void StartGame() { SceneManager.LoadScene(startSceneName); }
-    public void OpenInstructions() { if (instrOverlay == null) instrOverlay = BuildInstructionsOverlay(); }
+    public void OpenInstructions() 
+    { 
+        if (instrOverlay != null) return;
+
+        // Try to load from prefab first
+        var prefab = Resources.Load<GameObject>("UI/InstructionsOverlay");
+        if (prefab != null)
+        {
+            instrOverlay = Instantiate(prefab);
+            
+            // Wire up the close button. We look for a child named "CloseBtn"
+            var closeBtn = instrOverlay.GetComponentInChildren<UnityEngine.UI.Button>(true);
+            // Specifically try to find "CloseBtn" if multiple buttons exist
+            var buttons = instrOverlay.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+            foreach (var b in buttons)
+            {
+                if (b.name.Contains("Close", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    closeBtn = b;
+                    break;
+                }
+            }
+
+            if (closeBtn != null)
+            {
+                closeBtn.onClick.RemoveAllListeners();
+                closeBtn.onClick.AddListener(() => {
+                    Destroy(instrOverlay);
+                    instrOverlay = null;
+                });
+            }
+        }
+        else
+        {
+            instrOverlay = BuildInstructionsOverlay();
+        }
+    }
     public void OpenSettings() { SettingsMenu.Show(); }
-    public void QuitGame() { 
+public void QuitGame() { 
         #if UNITY_EDITOR 
         UnityEditor.EditorApplication.isPlaying = false; 
         #else 
@@ -233,47 +281,90 @@ public class MainMenuController : MonoBehaviour
         var panelRt = panelGo.AddComponent<RectTransform>();
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
-        panelRt.sizeDelta = new Vector2(900f, 660f);
-        panelGo.AddComponent<UnityEngine.UI.Image>().color = new Color(0.06f, 0.06f, 0.12f, 0.97f);
+        panelRt.sizeDelta = new Vector2(1000f, 800f);
+        var panelImg = panelGo.AddComponent<UnityEngine.UI.Image>();
+        panelImg.sprite = panelFrameSprite;
+        panelImg.type = UnityEngine.UI.Image.Type.Sliced;
+        panelImg.color = Color.white;
 
-        AddLabel(panelGo.transform, font, "CONTROLS", 52, new Color(1f, 0.9f, 0.3f), FontStyle.Bold, new Vector2(0f, 290f), new Vector2(860f, 60f));
+        AddLabel(panelGo.transform, font, "CONTROLS", 52, new Color(0.3f, 1f, 1f), FontStyle.Bold, new Vector2(0f, 320f), new Vector2(860f, 60f));
 
-        float y = 180f;
+        float y = 210f;
         float spacing = 45f;
-        AddLabel(panelGo.transform, font, "MOUSE + KEYBOARD MODE", 30, Color.cyan, FontStyle.Bold, new Vector2(0, y), new Vector2(860, 40));
-        y -= spacing;
-        AddLabel(panelGo.transform, font, "W / S - THRUST & BRAKE", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
-        y -= spacing;
-        AddLabel(panelGo.transform, font, "A / D - STRAFE LEFT / RIGHT", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
-        y -= spacing;
-        AddLabel(panelGo.transform, font, "MOUSE - PITCH & YAW", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
-        y -= spacing;
-        AddLabel(panelGo.transform, font, "Q / E - ROLL        L-SHIFT - BOOST", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
-
+        
+        // Headers with background bars
+        AddHeaderBar(panelGo.transform, font, "MOUSE + KEYBOARD MODE", 26, Color.white, new Vector2(0, y));
         y -= spacing * 1.5f;
-        AddLabel(panelGo.transform, font, "KEYBOARD ONLY MODE", 30, Color.cyan, FontStyle.Bold, new Vector2(0, y), new Vector2(860, 40));
+        
+        AddLabel(panelGo.transform, font, "W / S - THRUST & BRAKE", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddDivider(panelGo.transform, new Vector2(0, y - spacing * 0.5f));
         y -= spacing;
-        AddLabel(panelGo.transform, font, "W / S - PITCH UP / DOWN", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddLabel(panelGo.transform, font, "A / D - STRAFE LEFT / RIGHT", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddDivider(panelGo.transform, new Vector2(0, y - spacing * 0.5f));
         y -= spacing;
-        AddLabel(panelGo.transform, font, "A / D - YAW LEFT / RIGHT", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddLabel(panelGo.transform, font, "MOUSE - PITCH & YAW", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddDivider(panelGo.transform, new Vector2(0, y - spacing * 0.5f));
         y -= spacing;
-        AddLabel(panelGo.transform, font, "Q / E - ROLL        L-SHIFT - THRUST", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddLabel(panelGo.transform, font, "Q / E - ROLL        L-SHIFT - BOOST", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+
+        y -= spacing * 2f;
+        AddHeaderBar(panelGo.transform, font, "KEYBOARD ONLY MODE", 26, Color.white, new Vector2(0, y));
+        y -= spacing * 1.5f;
+
+        AddLabel(panelGo.transform, font, "W / S - PITCH UP / DOWN", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddDivider(panelGo.transform, new Vector2(0, y - spacing * 0.5f));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "A / D - YAW LEFT / RIGHT", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        AddDivider(panelGo.transform, new Vector2(0, y - spacing * 0.5f));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "Q / E - ROLL        L-SHIFT - THRUST", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
 
         var closeBtnGo = new GameObject("CloseBtn");
         closeBtnGo.transform.SetParent(panelGo.transform, false);
         var closeBtnRt = closeBtnGo.AddComponent<RectTransform>();
         closeBtnRt.anchorMin = closeBtnRt.anchorMax = closeBtnRt.pivot = new Vector2(0.5f, 0.5f);
-        closeBtnRt.anchoredPosition = new Vector2(0f, -295f);
-        closeBtnRt.sizeDelta = new Vector2(200f, 52f);
+        closeBtnRt.anchoredPosition = new Vector2(0f, -345f);
+        closeBtnRt.sizeDelta = new Vector2(280f, 70f);
         var closeBtnImg = closeBtnGo.AddComponent<UnityEngine.UI.Image>();
-        closeBtnImg.color = new Color(0.25f, 0.25f, 0.25f, 1f);
+        closeBtnImg.sprite = buttonLargeSprite;
+        closeBtnImg.type = UnityEngine.UI.Image.Type.Sliced;
         var closeBtn = closeBtnGo.AddComponent<UnityEngine.UI.Button>();
         closeBtn.targetGraphic = closeBtnImg;
-        var cc = closeBtn.colors; cc.highlightedColor = new Color(0.4f, 0.4f, 0.4f); closeBtn.colors = cc;
+        var cc = closeBtn.colors; 
+        cc.highlightedColor = new Color(0.8f, 1f, 1f, 1f); 
+        closeBtn.colors = cc;
         closeBtn.onClick.AddListener(() => { DestroyImmediate(root); instrOverlay = null; });
         AddLabel(closeBtnGo.transform, font, "CLOSE", 28, Color.white, FontStyle.Bold, Vector2.zero, new Vector2(200f, 52f));
 
         return root;
+    }
+
+    private void AddHeaderBar(Transform parent, Font font, string text, int size, Color colour, Vector2 pos)
+    {
+        var go = new GameObject("HeaderBar");
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(700f, 60f);
+        var img = go.AddComponent<UnityEngine.UI.Image>();
+        img.sprite = headerBarSprite;
+        img.type = UnityEngine.UI.Image.Type.Sliced;
+        
+        AddLabel(go.transform, font, text, size, colour, FontStyle.Bold, Vector2.zero, new Vector2(700, 60));
+    }
+
+    private void AddDivider(Transform parent, Vector2 pos)
+    {
+        var go = new GameObject("Divider");
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(600f, 2f);
+        var img = go.AddComponent<UnityEngine.UI.Image>();
+        img.sprite = dividerSprite;
+        img.color = new Color(0.3f, 1f, 1f, 0.5f);
     }
 
     private static void AddLabel(Transform parent, Font font, string text, int size, Color colour, FontStyle style, Vector2 pos, Vector2 sizeDelta)

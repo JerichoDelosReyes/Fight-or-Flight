@@ -9,17 +9,6 @@ using UnityEngine.UI;
 /// </summary>
 public class SettingsMenu : MonoBehaviour
 {
-    // ── Static entry point ────────────────────────────────────────────────────
-
-    private static SettingsMenu instance;
-
-    public static void Show()
-    {
-        if (instance != null) { instance.gameObject.SetActive(true); return; }
-        var go = new GameObject("SettingsMenu");
-        instance = go.AddComponent<SettingsMenu>();
-    }
-
     // ── PlayerPrefs keys ──────────────────────────────────────────────────────
 
     private const string KeyControlScheme = "ControlScheme";
@@ -34,29 +23,127 @@ public class SettingsMenu : MonoBehaviour
 
     // ── Widget refs ───────────────────────────────────────────────────────────
 
-    private Button[] schemeButtons = new Button[2];
-    private Color[]  schemeColors;
+    [Header("UI References")]
+    [SerializeField] private GameObject panel;
+    [SerializeField] private Button[] schemeButtons = new Button[2];
+    [SerializeField] private GameObject invertYRow;
+    [SerializeField] private Toggle invertYToggle;
+    [SerializeField] private GameObject invertPitchKbRow;
+    [SerializeField] private Toggle invertPitchKbToggle;
+    [SerializeField] private Slider masterSlider;
+    [SerializeField] private Slider musicSlider;
+    [SerializeField] private Slider sfxSlider;
+    [SerializeField] private Button applyButton;
+    [SerializeField] private Button closeButton;
 
-    private GameObject invertYRow;
-    private Toggle invertYToggle;
-    private GameObject invertPitchKbRow;
-    private Toggle invertPitchKbToggle;
-    private Slider masterSlider;
-    private Slider musicSlider;
-    private Slider sfxSlider;
+    private Color[]  schemeColors = new[]
+    {
+        new Color(0.13f, 0.40f, 0.80f),
+        new Color(0.55f, 0.30f, 0.75f),
+    };
 
     private Font uiFont;
+
+    // Sci-Fi UI Assets
+    private Sprite panelSprite;
+    private Sprite headerSprite;
+    private Sprite btnLargeSprite;
+    private Sprite btnSmallSprite;
+    private Sprite checkboxSprite;
+    private Sprite checkmarkSprite;
+    private Sprite sliderTrackSprite;
+    private Sprite sliderHandleSprite;
+    private Sprite dividerSprite;
+
+    // ── Static entry point ────────────────────────────────────────────────────
+
+    private static SettingsMenu instance;
+
+    public static void Show()
+    {
+        if (instance != null && instance.gameObject != null)
+        {
+            instance.gameObject.SetActive(true);
+            return;
+        }
+
+        // Try to load from prefab first
+        var prefab = Resources.Load<GameObject>("UI/SettingsMenu");
+        if (prefab == null)
+        {
+            // Fallback to searching the path if not in Resources
+            #if UNITY_EDITOR
+            prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fight or Flight/Content/UI/SettingsMenu(Clone)(Clone).prefab");
+            #endif
+        }
+
+        if (prefab != null)
+        {
+            var go = Instantiate(prefab);
+            instance = go.GetComponent<SettingsMenu>();
+        }
+        else
+        {
+            var go = new GameObject("SettingsMenu");
+            instance = go.AddComponent<SettingsMenu>();
+        }
+    }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()
     {
+        // If an instance already exists and it's not us, we might be a duplicate or 
+        // a new one created while the old one is being destroyed.
+        if (instance != null && instance != this)
+        {
+            // If the old one is valid, we don't need this one.
+            if (instance.gameObject != null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+        }
+        
         instance = this;
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        LoadAssets();
         LoadCurrent();
         EnsureEventSystem();
-        BuildUI();
+        
+        // If we are instantiated from a prefab, UI components might already be assigned.
+        // If not, we build it procedurally as a fallback.
+        if (panel == null)
+        {
+            BuildUI();
+        }
+        else
+        {
+            WireListeners();
+        }
+        
         RefreshInvertYVisibility();
+    }
+
+    private void WireListeners()
+    {
+        if (schemeButtons[0] != null) schemeButtons[0].onClick.AddListener(() => SelectScheme(0));
+        if (schemeButtons[1] != null) schemeButtons[1].onClick.AddListener(() => SelectScheme(1));
+        if (applyButton != null) applyButton.onClick.AddListener(ApplySettings);
+        if (closeButton != null) closeButton.onClick.AddListener(Close);
+    }
+
+    private void LoadAssets()
+    {
+        panelSprite        = Resources.Load<Sprite>("SciFiUI/panel_frame");
+        headerSprite       = Resources.Load<Sprite>("SciFiUI/header_bar");
+        btnLargeSprite     = Resources.Load<Sprite>("SciFiUI/button_large");
+        btnSmallSprite     = Resources.Load<Sprite>("SciFiUI/button_small");
+        checkboxSprite     = Resources.Load<Sprite>("SciFiUI/checkbox_bg");
+        checkmarkSprite    = Resources.Load<Sprite>("SciFiUI/checkmark");
+        sliderTrackSprite  = Resources.Load<Sprite>("SciFiUI/slider_track");
+        sliderHandleSprite = Resources.Load<Sprite>("SciFiUI/slider_handle");
+        dividerSprite      = Resources.Load<Sprite>("SciFiUI/divider");
     }
 
     private void OnDestroy()
@@ -83,31 +170,51 @@ public class SettingsMenu : MonoBehaviour
 
     private void BuildUI()
     {
-        var canvas = gameObject.AddComponent<Canvas>();
+        var canvas = gameObject.GetComponent<Canvas>();
+        if (canvas == null) canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 300;
 
-        var scaler = gameObject.AddComponent<CanvasScaler>();
+        var scaler = gameObject.GetComponent<CanvasScaler>();
+        if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = 0.5f;
 
-        gameObject.AddComponent<GraphicRaycaster>();
+        if (gameObject.GetComponent<GraphicRaycaster>() == null)
+            gameObject.AddComponent<GraphicRaycaster>();
 
         // Dark overlay (full screen).
         MakeStretchedImage(gameObject, new Color(0f, 0f, 0f, 0.85f));
 
-        // Centre panel — shrunk vertically since the Difficulty section was removed.
-        var panel = MakePanel(new Vector2(0, 0), new Vector2(900, 830));
+        var panel = MakePanel(new Vector2(0, 0), new Vector2(1100, 850));
 
         // ── Title ─────────────────────────────────────────────────────────────
-        MakeLabel(panel, "SETTINGS", 72, new Color(0.9f, 0.9f, 1f), FontStyle.Bold,
-                  new Vector2(0, 350), new Vector2(840, 90));
-        MakeDivider(panel, new Vector2(0, 295));
+        var titleGo = MakeLabel(panel, "SETTINGS", 56, new Color(0.3f, 1f, 1f), FontStyle.Bold,
+                                new Vector2(0, 347), new Vector2(840, 90));
+        titleGo.transform.localScale = new Vector3(0.779049993f, 0.779049993f, 0.779049993f);
+        
+        var topDivider = MakeDivider(panel, new Vector2(0, 315));
 
-        // ── Control Scheme ────────────────────────────────────────────────────
-        MakeLabel(panel, "CONTROL SCHEME", 30, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(0, 245), new Vector2(840, 40));
+        // ── Type Header (Formerly Control Scheme) ─────────────────────────────
+        var typeHeader = MakeHeaderBar(panel, "TYPE", 26, new Vector2(0, 265));
+        typeHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
+        foreach (Transform child in typeHeader.transform)
+        {
+            if (child.name == "Lbl") child.localScale = new Vector3(1f, 0.249009997f, 1f);
+        }
+
+        // Backing panel for buttons
+        var btnBacking = new GameObject("ButtonPanel");
+        btnBacking.transform.SetParent(panel.transform, false);
+        var backingRt = btnBacking.AddComponent<RectTransform>();
+        backingRt.anchoredPosition = new Vector2(0, 205);
+        backingRt.sizeDelta = new Vector2(680, 80);
+        btnBacking.transform.localScale = new Vector3(1f, 6.67498636f, 1f);
+        var backingImg = btnBacking.AddComponent<Image>();
+backingImg.sprite = headerSprite;
+        backingImg.type = Image.Type.Sliced;
+        backingImg.color = new Color(1, 1, 1, 0.3f);
 
         string[] schemeNames = { "Keyboard Only", "Mouse + Keyboard" };
         schemeColors = new[]
@@ -118,10 +225,10 @@ public class SettingsMenu : MonoBehaviour
         for (int i = 0; i < 2; i++)
         {
             int idx = i;
-            float xOff = (i == 0) ? -160f : 160f;
+            float xOff = (i == 0) ? -165f : 165f;
             var btn = MakeButton(panel, schemeNames[i], schemeColors[i],
-                                 new Vector2(xOff, 190), new Vector2(290, 60),
-                                 () => SelectScheme(idx));
+                                 new Vector2(xOff, 205), new Vector2(300, 60),
+                                 () => SelectScheme(idx), true);
             schemeButtons[i] = btn.GetComponent<Button>();
         }
 
@@ -130,12 +237,12 @@ public class SettingsMenu : MonoBehaviour
         invertYRow.transform.SetParent(panel.transform, false);
         var rowRt = invertYRow.AddComponent<RectTransform>();
         rowRt.anchorMin = rowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        rowRt.anchoredPosition = new Vector2(0, 120);
+        rowRt.anchoredPosition = new Vector2(41, 135);
         rowRt.sizeDelta = new Vector2(840, 50);
 
-        MakeLabel(invertYRow, "INVERT Y-AXIS (MOUSE)", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-120, 0), new Vector2(500, 40));
-        invertYToggle = MakeToggle(invertYRow, new Vector2(210, 0));
+        MakeLabel(invertYRow, "INVERT Y-AXIS (MOUSE)", 24, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
+                  new Vector2(-150, 0), new Vector2(500, 40));
+        invertYToggle = MakeToggle(invertYRow, new Vector2(250, 0));
         invertYToggle.isOn = PlayerPrefs.GetInt(KeyInvertY, 0) == 1;
 
         // ── Invert Pitch (only visible in Keyboard Only) ──────────────────────
@@ -143,36 +250,65 @@ public class SettingsMenu : MonoBehaviour
         invertPitchKbRow.transform.SetParent(panel.transform, false);
         var ipRowRt = invertPitchKbRow.AddComponent<RectTransform>();
         ipRowRt.anchorMin = ipRowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        ipRowRt.anchoredPosition = new Vector2(0, 120);
+        ipRowRt.anchoredPosition = new Vector2(41, 135);
         ipRowRt.sizeDelta = new Vector2(840, 50);
 
-        MakeLabel(invertPitchKbRow, "INVERT PITCH (KEYBOARD)", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-120, 0), new Vector2(500, 40));
-        invertPitchKbToggle = MakeToggle(invertPitchKbRow, new Vector2(210, 0));
+        MakeLabel(invertPitchKbRow, "INVERT PITCH (KEYBOARD)", 24, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
+                  new Vector2(-150, 0), new Vector2(500, 40));
+        invertPitchKbToggle = MakeToggle(invertPitchKbRow, new Vector2(250, 0));
         invertPitchKbToggle.isOn = PlayerPrefs.GetInt("InvertPitchKeyboard", 0) == 1;
 
+        // ── Audio Settings Header ─────────────────────────────────────────────
+        var audioHeader = MakeHeaderBar(panel, "AUDIO SETTINGS", 26, new Vector2(0, 60));
+        audioHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
+        foreach (Transform child in audioHeader.transform)
+        {
+            if (child.name == "Lbl") child.localScale = new Vector3(1f, 0.249009997f, 1f);
+        }
+
         // ── Volume sliders ────────────────────────────────────────────────────
-        MakeLabel(panel, "MASTER VOLUME", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-170, 55), new Vector2(380, 40));
-        masterSlider = MakeSlider(panel, new Vector2(200, 55), PlayerPrefs.GetFloat(KeyVolMaster, 1f));
+float labelX = -250f;
+        float sliderX = 180f;
+        float sliderWidth = 500f;
 
-        MakeLabel(panel, "MUSIC VOLUME", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-170, -5), new Vector2(380, 40));
-        musicSlider = MakeSlider(panel, new Vector2(200, -5), PlayerPrefs.GetFloat(KeyVolMusic, 0.8f));
+        MakeLabel(panel, "MASTER VOLUME", 22, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
+                  new Vector2(labelX, 0), new Vector2(380, 40));
+        masterSlider = MakeSlider(panel, new Vector2(sliderX, 0), sliderWidth, PlayerPrefs.GetFloat(KeyVolMaster, 1f));
 
-        MakeLabel(panel, "SFX VOLUME", 28, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-170, -65), new Vector2(380, 40));
-        sfxSlider = MakeSlider(panel, new Vector2(200, -65), PlayerPrefs.GetFloat(KeyVolSFX, 1f));
+        MakeLabel(panel, "MUSIC VOLUME", 22, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
+                  new Vector2(labelX, -60), new Vector2(380, 40));
+        musicSlider = MakeSlider(panel, new Vector2(sliderX, -60), sliderWidth, PlayerPrefs.GetFloat(KeyVolMusic, 0.8f));
+
+        MakeLabel(panel, "SFX VOLUME", 22, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
+                  new Vector2(labelX, -120), new Vector2(380, 40));
+        sfxSlider = MakeSlider(panel, new Vector2(sliderX, -120), sliderWidth, PlayerPrefs.GetFloat(KeyVolSFX, 1f));
 
         // ── Apply / Back ──────────────────────────────────────────────────────
-        MakeDivider(panel, new Vector2(0, -150));
+        var bottomDivider = MakeDivider(panel, new Vector2(0, -200));
+        bottomDivider.transform.localScale = new Vector3(1f, 110.874985f, 1f);
+        
         MakeButton(panel, "APPLY", new Color(0.13f, 0.40f, 0.80f),
-                   new Vector2(-180, -225), new Vector2(320, 70), ApplySettings);
-        MakeButton(panel, "BACK", new Color(0.25f, 0.25f, 0.25f),
-                   new Vector2( 180, -225), new Vector2(320, 70), Close);
+new Vector2(-220, -280), new Vector2(350, 70), ApplySettings, false);
+        MakeButton(panel, "CLOSE", new Color(0.25f, 0.25f, 0.25f),
+                   new Vector2( 220, -280), new Vector2(350, 70), Close, false);
 
         // Highlight current selections.
         SelectScheme(selectedScheme);
+    }
+
+    private GameObject MakeHeaderBar(GameObject parent, string text, int size, Vector2 pos)
+    {
+        var go = new GameObject("HeaderBar");
+        go.transform.SetParent(parent.transform, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(840, 60);
+        var img = go.AddComponent<Image>();
+        img.sprite = headerSprite;
+        img.type = Image.Type.Sliced;
+        MakeLabel(go, text, size, Color.white, FontStyle.Bold, Vector2.zero, new Vector2(840, 60));
+        return go;
     }
 
     // ── Selection actions (visual highlight + state) ──────────────────────────
@@ -223,7 +359,6 @@ public class SettingsMenu : MonoBehaviour
         AudioListener.volume = masterSlider.value;
 
         PlayerPrefs.Save();
-        Close();
     }
 
     private void Close()
@@ -254,11 +389,13 @@ public class SettingsMenu : MonoBehaviour
         rt.anchoredPosition = pos;
         rt.sizeDelta = size;
         var img = go.AddComponent<Image>();
-        img.color = new Color(0.07f, 0.07f, 0.12f, 0.97f);
+        img.sprite = panelSprite;
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
         return go;
     }
 
-    private void MakeDivider(GameObject parent, Vector2 pos)
+    private GameObject MakeDivider(GameObject parent, Vector2 pos)
     {
         var go = new GameObject("Divider");
         go.transform.SetParent(parent.transform, false);
@@ -267,10 +404,12 @@ public class SettingsMenu : MonoBehaviour
         rt.anchoredPosition = pos;
         rt.sizeDelta = new Vector2(820, 2);
         var img = go.AddComponent<Image>();
-        img.color = new Color(1f, 1f, 1f, 0.15f);
+        img.sprite = dividerSprite;
+        img.color = new Color(0.3f, 1f, 1f, 0.5f);
+        return go;
     }
 
-    private void MakeLabel(GameObject parent, string text, int size, Color color,
+    private GameObject MakeLabel(GameObject parent, string text, int size, Color color,
                            FontStyle style, Vector2 pos, Vector2 sizeDelta)
     {
         var go = new GameObject("Lbl");
@@ -288,11 +427,12 @@ public class SettingsMenu : MonoBehaviour
         t.alignment = TextAnchor.MiddleCenter;
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow = VerticalWrapMode.Overflow;
+        return go;
     }
 
     private GameObject MakeButton(GameObject parent, string label, Color bg,
                                   Vector2 pos, Vector2 size,
-                                  UnityEngine.Events.UnityAction onClick)
+                                  UnityEngine.Events.UnityAction onClick, bool isSmall)
     {
         var go = new GameObject("Btn_" + label);
         go.transform.SetParent(parent.transform, false);
@@ -301,6 +441,8 @@ public class SettingsMenu : MonoBehaviour
         rt.anchoredPosition = pos;
         rt.sizeDelta = size;
         var img = go.AddComponent<Image>();
+        img.sprite = isSmall ? btnSmallSprite : btnLargeSprite;
+        img.type = Image.Type.Sliced;
         img.color = bg;
         var btn = go.AddComponent<Button>();
         var cols = btn.colors;
@@ -331,7 +473,9 @@ public class SettingsMenu : MonoBehaviour
         bgRt.sizeDelta = new Vector2(50, 50);
         bgRt.anchoredPosition = Vector2.zero;
         var bgImg = bg.AddComponent<Image>();
-        bgImg.color = new Color(0.2f, 0.2f, 0.3f, 1f);
+        bgImg.sprite = checkboxSprite;
+        bgImg.type = Image.Type.Sliced;
+        bgImg.color = Color.white;
 
         var check = new GameObject("Checkmark");
         check.transform.SetParent(bg.transform, false);
@@ -340,7 +484,8 @@ public class SettingsMenu : MonoBehaviour
         checkRt.sizeDelta = new Vector2(36, 36);
         checkRt.anchoredPosition = Vector2.zero;
         var checkImg = check.AddComponent<Image>();
-        checkImg.color = new Color(0.3f, 0.8f, 0.3f, 1f);
+        checkImg.sprite = checkmarkSprite;
+        checkImg.color = Color.white;
 
         var toggle = go.AddComponent<Toggle>();
         toggle.targetGraphic = bgImg;
@@ -348,30 +493,34 @@ public class SettingsMenu : MonoBehaviour
         return toggle;
     }
 
-    private Slider MakeSlider(GameObject parent, Vector2 pos, float initialValue)
+    private Slider MakeSlider(GameObject parent, Vector2 pos, float width, float initialValue)
     {
         var go = new GameObject("Slider");
         go.transform.SetParent(parent.transform, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(340, 40);
+        rt.sizeDelta = new Vector2(width, 40);
 
         var bgGo = new GameObject("BG");
         bgGo.transform.SetParent(go.transform, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
-        bgRt.anchorMin = new Vector2(0f, 0.25f);
-        bgRt.anchorMax = new Vector2(1f, 0.75f);
-        bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
+        bgRt.anchorMin = new Vector2(0f, 0.5f);
+        bgRt.anchorMax = new Vector2(1f, 0.5f);
+        bgRt.anchoredPosition = Vector2.zero;
+        bgRt.sizeDelta = new Vector2(0, 8);
         var bgImg = bgGo.AddComponent<Image>();
-        bgImg.color = new Color(0.2f, 0.2f, 0.3f, 1f);
+        bgImg.sprite = sliderTrackSprite;
+        bgImg.type = Image.Type.Sliced;
+        bgImg.color = Color.white;
 
         var fillAreaGo = new GameObject("FillArea");
         fillAreaGo.transform.SetParent(go.transform, false);
         var fillAreaRt = fillAreaGo.AddComponent<RectTransform>();
-        fillAreaRt.anchorMin = new Vector2(0f, 0.25f);
-        fillAreaRt.anchorMax = new Vector2(1f, 0.75f);
-        fillAreaRt.offsetMin = fillAreaRt.offsetMax = Vector2.zero;
+        fillAreaRt.anchorMin = new Vector2(0f, 0f);
+        fillAreaRt.anchorMax = new Vector2(1f, 1f);
+        fillAreaRt.offsetMin = new Vector2(5, 0); // Slight offset to stay inside frame
+        fillAreaRt.offsetMax = new Vector2(-5, 0);
 
         var fillGo = new GameObject("Fill");
         fillGo.transform.SetParent(fillAreaGo.transform, false);
@@ -380,21 +529,25 @@ public class SettingsMenu : MonoBehaviour
         fillRt.anchorMax = new Vector2(0f, 1f);
         fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
         var fillImg = fillGo.AddComponent<Image>();
-        fillImg.color = new Color(0.3f, 0.6f, 1f, 1f);
+        fillImg.sprite = sliderTrackSprite;
+        fillImg.type = Image.Type.Sliced;
+        fillImg.color = new Color(0.3f, 1f, 1f, 1f);
 
         var handleAreaGo = new GameObject("HandleArea");
         handleAreaGo.transform.SetParent(go.transform, false);
         var handleAreaRt = handleAreaGo.AddComponent<RectTransform>();
         handleAreaRt.anchorMin = new Vector2(0f, 0f);
         handleAreaRt.anchorMax = new Vector2(1f, 1f);
-        handleAreaRt.offsetMin = handleAreaRt.offsetMax = Vector2.zero;
+        handleAreaRt.offsetMin = new Vector2(10, 0);
+        handleAreaRt.offsetMax = new Vector2(-10, 0);
 
         var handleGo = new GameObject("Handle");
         handleGo.transform.SetParent(handleAreaGo.transform, false);
         var handleRt = handleGo.AddComponent<RectTransform>();
         handleRt.anchorMin = handleRt.anchorMax = new Vector2(0f, 0.5f);
-        handleRt.sizeDelta = new Vector2(24, 24);
+        handleRt.sizeDelta = new Vector2(24, 50);
         var handleImg = handleGo.AddComponent<Image>();
+        handleImg.sprite = sliderHandleSprite;
         handleImg.color = Color.white;
 
         var slider = go.AddComponent<Slider>();
