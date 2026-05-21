@@ -106,6 +106,9 @@ public AudioClip explosionSound;
 
         if (!hitObstacle) return;
 
+        // Enemies don't die on rocks anymore.
+        if (!isPlayer) return;
+
         TakeDamage(collisionDamage);
 
         if (isPlayer)

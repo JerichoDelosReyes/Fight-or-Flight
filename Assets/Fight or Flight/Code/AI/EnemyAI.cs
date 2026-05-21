@@ -47,6 +47,9 @@ public class EnemyAI : MonoBehaviour
     private float strafeSign = 1f;
     private float nextStrafeFlip;
     private float playerReacquireTimer; // refresh player ref every 0.5s
+    private Rigidbody _rb;
+
+    public Transform firePoint;
 
     public static List<EnemyAI> allEnemies = new List<EnemyAI>();
 
@@ -126,13 +129,44 @@ public class EnemyAI : MonoBehaviour
         if (trail == null) trail = GetComponentInChildren<TrailRenderer>();
         if (glow == null) glow = GetComponentInChildren<Light>();
 
-        if (glow != null)
+        Transform tp = transform.Find("TailPoint");
+        Vector3 tailPos = (tp != null) ? tp.localPosition : new Vector3(0, 0, -100);
+
+        // If still null, create them programmatically for game-feel
+        if (trail == null)
         {
-            glow.range = 300f;
-            glow.intensity = 5f;
+            GameObject trailGo = new GameObject("AI_Trail");
+            trailGo.transform.SetParent(transform, false);
+            trailGo.transform.localPosition = tailPos;
+
+            trail = trailGo.AddComponent<TrailRenderer>();
+            trail.time = 0.4f;
+            trail.startWidth = 40f; // Reduced from 100f
+            trail.endWidth = 0f;
+trail.material = new Material(Shader.Find("Sprites/Default"));
+            trail.startColor = Color.red;
+            trail.endColor = new Color(1, 0, 0, 0);
+        }
+
+        if (glow == null)
+        {
+            GameObject glowGo = new GameObject("AI_Glow");
+            glowGo.transform.SetParent(transform, false);
+            glowGo.transform.localPosition = tailPos;
+            
+            glow = glowGo.AddComponent<Light>();
+            glow.type = LightType.Point;
+            glow.range = 300f; // Reduced from 2000f to match scale
+            glow.intensity = 8f;
             glow.color = Color.red;
         }
-    }
+        else
+        {
+            // Update existing glow position if found in children
+            glow.transform.localPosition = tailPos;
+            glow.range = 300f;
+        }
+}
 
     private void OnPlayerDestroyed()
     {
@@ -188,7 +222,7 @@ public class EnemyAI : MonoBehaviour
         dir = ApplyObstacleAvoidance(dir);
 
         TurnToward(dir, turnSpeedFactor * 1.1f);
-        physics.SetPhysicsInput(new Vector3(0, 0, throttleFactor), Vector3.zero);
+        physics.SetLinearInput(new Vector3(0, 0, throttleFactor));
     }
 
     private void Attack()
@@ -218,7 +252,7 @@ public class EnemyAI : MonoBehaviour
         float throttle;
         if (distToPlayer < BackAwayDist) throttle = -throttleFactor * 0.7f;  // reverse
         else                              throttle =  throttleFactor * 0.5f;  // gentle forward
-        physics.SetPhysicsInput(new Vector3(0, 0, throttle), Vector3.zero);
+        physics.SetLinearInput(new Vector3(0, 0, throttle));
 
         // ── Fire ───────────────────────────────────────────────────────────────
         if (Time.time >= nextFireTime && PlayerInFiringArc())
@@ -248,7 +282,8 @@ public class EnemyAI : MonoBehaviour
     private bool PlayerInFiringArc()
     {
         if (player == null) return false;
-        return Vector3.Angle(transform.forward, player.position - transform.position) < 35f;
+        // Narrowed arc (from 35 to 15 degrees) so they don't look sideways when firing.
+        return Vector3.Angle(transform.forward, player.position - transform.position) < 15f;
     }
 
     private Vector3 ApplyBoundaryCorrection(Vector3 dir)
@@ -271,10 +306,8 @@ public class EnemyAI : MonoBehaviour
         return dir;
     }
 
-    private Rigidbody _rb;
-
     /// <summary>
-    /// Absolute hard clamp at the arena boundary — runs in both Update (before
+/// Absolute hard clamp at the arena boundary — runs in both Update (before
     /// AI logic) and FixedUpdate (after ShipPhysics applies force).
     ///
     /// User-spec: if the enemy gets further than 120 user units (ArenaRadius)
@@ -334,38 +367,50 @@ public class EnemyAI : MonoBehaviour
     private void TurnToward(Vector3 dir, float speedFactor)
     {
         if (dir == Vector3.zero) return;
-        Quaternion target = Quaternion.LookRotation(dir, Vector3.up);
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation, target, speedFactor * Time.deltaTime * 3f);
+
+        // Calculate relative rotation needed
+        Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
+        Quaternion relativeRot = Quaternion.Inverse(transform.rotation) * targetRot;
+        Vector3 rotationError = relativeRot.eulerAngles;
+
+        // Normalize angles to -180 to 180
+        if (rotationError.x > 180) rotationError.x -= 360;
+        if (rotationError.y > 180) rotationError.y -= 360;
+        if (rotationError.z > 180) rotationError.z -= 360;
+
+        // Map errors to physics inputs (Pitch, Yaw, Roll)
+        // Note: x is pitch, y is yaw, z is roll
+        float pInput = Mathf.Clamp(rotationError.x / 45f, -1f, 1f);
+        float yInput = Mathf.Clamp(rotationError.y / 45f, -1f, 1f);
+        
+        // Dynamic roll based on yaw to look "aerodynamic"
+        float rInput = Mathf.Clamp(-yInput * 1.5f, -1f, 1f);
+
+        physics.SetAngularInput(new Vector3(pInput, yInput, rInput) * speedFactor);
     }
 
     private void FireLasers()
     {
         if (laserPrefab == null) return;
 
-        Vector3 left  = transform.position + transform.forward * laserSpawnForwardOffset - transform.right * 60f;
-        Vector3 right = transform.position + transform.forward * laserSpawnForwardOffset + transform.right * 60f;
-
-        SpawnLaser(left);
-        SpawnLaser(right);
+        // Firing from the single central firepoint.
+        Vector3 pos = (firePoint != null) ? firePoint.position : transform.position + transform.forward * laserSpawnForwardOffset;
+        SpawnLaser(pos);
     }
 
     private void SpawnLaser(Vector3 pos)
     {
-        // Fire toward the predicted player position rather than raw forward.
-        Vector3 aimPoint = PredictPlayerPosition();
-        Vector3 aimDir = (aimPoint - pos).normalized;
+        // NO MORE MAGIC AIMING: Lasers fire exactly where the ship is pointing.
+        Vector3 fireDir = (firePoint != null) ? firePoint.forward : transform.forward;
 
-        Quaternion rot = (aimDir != Vector3.zero)
-            ? Quaternion.LookRotation(aimDir)
-            : transform.rotation;
+        Quaternion rot = Quaternion.LookRotation(fireDir);
 
         GameObject laser = Instantiate(laserPrefab, pos, rot);
         var script = laser.GetComponent<ShipLaserProjectile>();
         if (script != null)
         {
             script.targetTag = "Player";
-            script.Initialize(aimDir);
+            script.Initialize(fireDir);
         }
     }
 }

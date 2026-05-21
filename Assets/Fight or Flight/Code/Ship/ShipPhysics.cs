@@ -34,9 +34,10 @@ public class ShipPhysics : MonoBehaviour
     public bool useAngularAcceleration = true;
 
     public Rigidbody Rigidbody { get { return rbody; } }
+    public Vector3 CurrentLinearInput { get; private set; }
 
     private Vector3 appliedLinearForce = Vector3.zero;
-    private Vector3 appliedAngularForce = Vector3.zero;
+private Vector3 appliedAngularForce = Vector3.zero;
     private Vector3 rawAngularInput = Vector3.zero;
 
     private Rigidbody rbody;
@@ -118,13 +119,9 @@ public class ShipPhysics : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Sets the input for how much of linearForce and angularForce are applied
-    /// to the ship. Each component of the input vectors is assumed to be scaled
-    /// from -1 to 1, but is not clamped.
-    /// </summary>
-    public void SetPhysicsInput(Vector3 linearInput, Vector3 angularInput)
+    public void SetLinearInput(Vector3 linearInput)
     {
+        CurrentLinearInput = linearInput;
         appliedLinearForce = MultiplyByComponent(linearInput, linearForce);
 
         // Apply reverse multiplier to longitudinal thrust if moving backwards
@@ -132,9 +129,22 @@ public class ShipPhysics : MonoBehaviour
         {
             appliedLinearForce.z *= reverseMultiplier;
         }
+    }
 
+    public void SetAngularInput(Vector3 angularInput)
+    {
         appliedAngularForce = MultiplyByComponent(angularInput, angularForce);
         rawAngularInput = angularInput;
+    }
+
+    /// <summary>
+    /// Sets the input for how much of linearForce and angularForce are applied
+    /// to the ship.
+    /// </summary>
+    public void SetPhysicsInput(Vector3 linearInput, Vector3 angularInput)
+    {
+        SetLinearInput(linearInput);
+        SetAngularInput(angularInput);
     }
 
     /// <summary>
