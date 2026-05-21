@@ -162,9 +162,9 @@ public AudioClip explosionSound;
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
             foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = false;
             var rb = GetComponent<Rigidbody>();
-            if (rb != null) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
+            if (rb != null && !rb.isKinematic) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
             var input = GetComponent<ShipInput>(); if (input != null) input.enabled = false;
-            var combat = GetComponent<ShipCombat>(); if (combat != null) combat.enabled = false;
+var combat = GetComponent<ShipCombat>(); if (combat != null) combat.enabled = false;
         }
         else
         {

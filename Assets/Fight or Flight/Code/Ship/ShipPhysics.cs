@@ -89,7 +89,7 @@ public class ShipPhysics : MonoBehaviour
             rbody.AddRelativeForce(appliedLinearForce * forceMultiplier, ForceMode.Force);
 
             // Limit speed
-            if (rbody.linearVelocity.magnitude > ScriptsReference.MaxSpeed)
+            if (!rbody.isKinematic && rbody.linearVelocity.magnitude > ScriptsReference.MaxSpeed)
             {
                 rbody.linearVelocity = rbody.linearVelocity.normalized * ScriptsReference.MaxSpeed;
             }
@@ -110,7 +110,7 @@ public class ShipPhysics : MonoBehaviour
             transform.position = transform.position.normalized * ScriptsReference.BoundaryLimit;
 
             // Reduce velocity component moving away from center
-            if (Vector3.Dot(rbody.linearVelocity, transform.position.normalized) > 0)
+            if (rbody != null && !rbody.isKinematic && Vector3.Dot(rbody.linearVelocity, transform.position.normalized) > 0)
             {
                 // Reflect or dampen velocity
                 rbody.linearVelocity = Vector3.ProjectOnPlane(rbody.linearVelocity, transform.position.normalized) * 0.5f;

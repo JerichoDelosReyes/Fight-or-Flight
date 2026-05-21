@@ -86,32 +86,23 @@ public class ShipCombat : MonoBehaviour
             }
         }
 
-        // Calculate aim target based on screen center (the crosshair).
-        Vector3 aimTarget;
+        // Use the camera's forward direction for ALL lasers.
+        // This ensures they all fly in a perfectly straight, parallel stream.
+        Vector3 shotDirection = transform.forward;
         if (Camera.main != null)
         {
-            Ray camRay = Camera.main.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
-            // Converge at a distance (e.g., 2000 units) if nothing is hit, or hit something.
-            if (Physics.Raycast(camRay, out RaycastHit hit, 15000f))
-                aimTarget = hit.point;
-            else
-                aimTarget = camRay.origin + camRay.direction * 15000f;
+            shotDirection = Camera.main.transform.forward;
         }
-        else
-        {
-            aimTarget = transform.position + transform.forward * 15000f;
-        }
+        
+        Quaternion shotRotation = Quaternion.LookRotation(shotDirection);
 
         foreach (Transform point in firePoints)
         {
             if (point == null) continue;
 
-            // Fired towards the aim target so it actually hits the crosshair.
-            Vector3 shotDirection = (aimTarget - point.position).normalized;
-            Quaternion shotRotation = Quaternion.LookRotation(shotDirection);
-
+            // Instantiate at the wing, but fire in the universal forward direction.
             GameObject laser = Instantiate(laserPrefab, point.position, shotRotation);
-            laser.transform.SetParent(null);
+            laser.transform.SetParent(null, true);
 
             ShipLaserProjectile script = laser.GetComponent<ShipLaserProjectile>();
             if (script != null)
@@ -120,5 +111,5 @@ public class ShipCombat : MonoBehaviour
                 script.Initialize(shotDirection);
             }
         }
-}
+    }
 }

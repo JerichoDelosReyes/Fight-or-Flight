@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class ShipLaserProjectile : MonoBehaviour
 {
-    public float speed = 10000f; 
+    public float speed = 200000f; 
     public float lifeTime = 5f;
-public float damage = 8f;
+    public float damage = 8f;
     public string targetTag = "Enemy";
 
     public AudioClip shotSound;
@@ -25,12 +25,8 @@ public float damage = 8f;
 
     private void Start()
     {
-        // If Initialize wasn't called or passed zero, fall back to current transform.forward
-        if (movementDirection == Vector3.zero)
-            movementDirection = transform.forward;
-
         // Ensure it's not parented to the ship so it doesn't follow its movement
-        transform.SetParent(null);
+        transform.SetParent(null, true);
 
         Destroy(gameObject, lifeTime);
 
@@ -45,6 +41,9 @@ public float damage = 8f;
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
+            // Clear velocity BEFORE setting isKinematic to avoid console warnings.
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
             rb.isKinematic = true;
             rb.useGravity = false;
         }

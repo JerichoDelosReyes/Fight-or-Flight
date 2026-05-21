@@ -114,10 +114,10 @@ public class ArenaBoundary : MonoBehaviour
         if (dist > ScriptsReference.ArenaRadius)
         {
             var rb = Ship.PlayerShip.GetComponent<Rigidbody>();
-            if (rb != null)
+            if (rb != null && !rb.isKinematic)
             {
                 // Snap to boundary surface
-                Ship.PlayerShip.transform.position =
+Ship.PlayerShip.transform.position =
                     Ship.PlayerShip.transform.position.normalized * ScriptsReference.ArenaRadius;
 
                 // Completely kill the outward velocity component
