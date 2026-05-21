@@ -238,6 +238,27 @@ public class MainMenuController : MonoBehaviour
 
         AddLabel(panelGo.transform, font, "CONTROLS", 52, new Color(1f, 0.9f, 0.3f), FontStyle.Bold, new Vector2(0f, 290f), new Vector2(860f, 60f));
 
+        float y = 180f;
+        float spacing = 45f;
+        AddLabel(panelGo.transform, font, "MOUSE + KEYBOARD MODE", 30, Color.cyan, FontStyle.Bold, new Vector2(0, y), new Vector2(860, 40));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "W / S - THRUST & BRAKE", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "A / D - STRAFE LEFT / RIGHT", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "MOUSE - PITCH & YAW", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "Q / E - ROLL        L-SHIFT - BOOST", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+
+        y -= spacing * 1.5f;
+        AddLabel(panelGo.transform, font, "KEYBOARD ONLY MODE", 30, Color.cyan, FontStyle.Bold, new Vector2(0, y), new Vector2(860, 40));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "W / S - PITCH UP / DOWN", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "A / D - YAW LEFT / RIGHT", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+        y -= spacing;
+        AddLabel(panelGo.transform, font, "Q / E - ROLL        L-SHIFT - THRUST", 22, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
+
         var closeBtnGo = new GameObject("CloseBtn");
         closeBtnGo.transform.SetParent(panelGo.transform, false);
         var closeBtnRt = closeBtnGo.AddComponent<RectTransform>();
