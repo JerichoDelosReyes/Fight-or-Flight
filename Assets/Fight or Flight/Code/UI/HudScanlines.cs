@@ -8,12 +8,12 @@ using UnityEngine.UI;
 /// </summary>
 public class HudScanlines : MonoBehaviour
 {
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void HookSceneLoad()
     {
-        SceneManager.sceneLoaded -= OnSceneLoadedStatic;
-        SceneManager.sceneLoaded += OnSceneLoadedStatic;
-        TryCreate(SceneManager.GetActiveScene());
+        // SceneManager.sceneLoaded -= OnSceneLoadedStatic;
+        // SceneManager.sceneLoaded += OnSceneLoadedStatic;
+        // TryCreate(SceneManager.GetActiveScene());
     }
 
     private static void OnSceneLoadedStatic(Scene scene, LoadSceneMode mode) => TryCreate(scene);
