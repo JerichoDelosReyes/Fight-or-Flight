@@ -14,17 +14,10 @@ public class ShipCombat : MonoBehaviour
     public bool isOverheated = false;
     public float overheatThreshold = 1.0f;
 
-    [Header("Ammo")]
-    public int  ammoCount  = 30;
-    public int  maxAmmo    = 30;
-    public bool isReloading = false;
-    private float _lastFireTime;
-    private const float ReloadDelay    = 2f;
-    private const float ReloadDuration = 1f;
-
     [Header("Audio")]
     public AudioClip laserShotSound;
 
+    private float _lastFireTime;
     private float _nextFireTime;
 
     private void Update()
@@ -37,20 +30,15 @@ public class ShipCombat : MonoBehaviour
 
         if (isOverheated && heat <= 0) isOverheated = false;
 
-        // Auto-reload after ReloadDelay seconds of not firing
-        if (!isReloading && ammoCount < maxAmmo && Time.time - _lastFireTime >= ReloadDelay)
-            StartCoroutine(AutoReload());
-
         bool fireInput = Input.GetKey(KeyCode.Space);
         if (ControlSchemeManager.IsMouseKeyboard)
             fireInput |= Input.GetMouseButton(0);
 
-        if (fireInput && Time.time >= _nextFireTime && !isOverheated && ammoCount > 0 && !isReloading)
+        if (fireInput && Time.time >= _nextFireTime && !isOverheated)
         {
             FireLasers();
             _nextFireTime = Time.time + fireRate;
             _lastFireTime = Time.time;
-            ammoCount--;
 
             if (laserShotSound != null)
                 AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
@@ -67,23 +55,8 @@ public class ShipCombat : MonoBehaviour
         }
     }
 
-    private IEnumerator AutoReload()
-    {
-        isReloading = true;
-        int startAmmo = ammoCount;
-        float elapsed = 0f;
-        while (elapsed < ReloadDuration)
-        {
-            elapsed    += Time.deltaTime;
-            ammoCount   = startAmmo + Mathf.FloorToInt((maxAmmo - startAmmo) * (elapsed / ReloadDuration));
-            yield return null;
-        }
-        ammoCount   = maxAmmo;
-        isReloading = false;
-    }
-
     private void FireLasers()
-    {
+{
         if (laserPrefab == null)
         {
             Debug.LogWarning("ShipCombat: Laser Prefab is not assigned!");

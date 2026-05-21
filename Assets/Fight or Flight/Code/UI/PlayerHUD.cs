@@ -26,38 +26,47 @@ public class PlayerHUD : MonoBehaviour
     {
         if (scene.name != "MainScene") return;
         if (Object.FindAnyObjectByType<PlayerHUD>() != null) return;
+
+#if UNITY_EDITOR
+        string path = "Assets/Fight or Flight/Content/UI/PlayerHUD.prefab";
+        GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (prefab != null)
+        {
+            UnityEditor.PrefabUtility.InstantiatePrefab(prefab);
+            return;
+        }
+#endif
         new GameObject("PlayerHUD").AddComponent<PlayerHUD>();
     }
 
     // ── Layout config ─────────────────────────────────────────────────────────
 
-    private const float PanelW  = 420f;
-    private const float PanelH  = 220f;
-    private const float MarginX = 18f;
-    // Anchored to the bottom-left corner (radar now lives at bottom-right).
-    private const float MarginY = 18f;
+    private const float PanelW  = 400f;
+    private const float PanelH  = 280f;
+    private const float MarginX = 30f;
+    // Anchored to the bottom-left corner.
+    private const float MarginY = 30f;
 
-    private const float BarW    = 290f;
-    private const float BarH    = 30f;
-    private const float LabelW  = 100f;
-    private const float RowGap  = 48f;
+    private const float BarW    = 350f;
+    private const float BarH    = 18f;
+    private const float RowGap  = 80f;
 
-    private static readonly Color PanelBG     = new Color(0f,    0f,    0f,    0.70f);
+    private static readonly Color PanelBG     = new Color(0f, 0f, 0f, 0f);
     private static readonly Color HealthFull  = new Color(0.15f, 0.85f, 0.15f, 1f);
     private static readonly Color HealthEmpty = new Color(0.85f, 0.10f, 0.10f, 1f);
     private static readonly Color HealthLow   = new Color(0.95f, 0.05f, 0.05f, 1f);
     private static readonly Color ShieldFull  = new Color(0f,    0.75f, 1f,    1f);
     private static readonly Color ShieldEmpty = new Color(0f,    0.20f, 0.55f, 1f);
-    private static readonly Color AmmoFull    = new Color(1f,    0.88f, 0.10f, 1f);
-    private static readonly Color AmmoEmpty   = new Color(0.45f, 0.30f, 0f,    1f);
-    private static readonly Color BarBG       = new Color(0.08f, 0.08f, 0.08f, 0.92f);
+    private static readonly Color HeatCool    = new Color(0.1f,  0.5f,  1f,    1f);
+    private static readonly Color HeatHot     = new Color(1f,    0.2f,  0f,    1f);
+    private static readonly Color BarBG       = new Color(0.15f, 0.15f, 0.15f, 0.8f);
 
     // ── Runtime refs ──────────────────────────────────────────────────────────
 
-    private Image        _healthFill,  _shieldFill,  _ammoFill;
-    private Text         _healthVal,   _shieldVal,   _ammoVal;
-    private Text         _reloadText;
+    private Image        _healthFill,  _shieldFill,  _heatFill;
+    private Text         _healthVal,   _shieldVal,   _heatVal;
     private Image        _panelBg;
+    private Image        _heatBarBg;
 
     private ShipHealth   _health;
     private ShipCombat   _combat;
@@ -70,14 +79,45 @@ public class PlayerHUD : MonoBehaviour
     private Vector2 _healthRowBaseAnchor;
     private RectTransform _healthRowRt;
     private RectTransform _shieldRowRt;
-    private RectTransform _ammoRowRt;
+    private RectTransform _heatRowRt;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        BuildHUD(font);
+        if (transform.Find("PlayerHUDCanvas") != null)
+        {
+            FindReferencesInHierarchy();
+        }
+        else
+        {
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            BuildHUD(font);
+        }
+    }
+
+    private void FindReferencesInHierarchy()
+    {
+        Transform canvas = transform.Find("PlayerHUDCanvas");
+        Transform panel = canvas.Find("HUDPanel");
+        _panelBg = panel.GetComponent<Image>();
+
+        int barIndex = 0;
+        for (int i = 0; i < panel.childCount; i++)
+        {
+            Transform child = panel.GetChild(i);
+            if (child.name == "BarBg")
+            {
+                Image fill = child.Find("Fill").GetComponent<Image>();
+                Text val = child.Find("Val").GetComponent<Text>();
+                RectTransform rt = child.GetComponent<RectTransform>();
+
+                if (barIndex == 0) { _healthFill = fill; _healthVal = val; _healthRowRt = rt; _healthRowBaseAnchor = rt.anchoredPosition; }
+                else if (barIndex == 1) { _shieldFill = fill; _shieldVal = val; _shieldRowRt = rt; }
+                else if (barIndex == 2) { _heatFill = fill; _heatVal = val; _heatRowRt = rt; _heatBarBg = child.GetComponent<Image>(); }
+                barIndex++;
+            }
+        }
     }
 
     private void Update()
@@ -160,7 +200,7 @@ public class PlayerHUD : MonoBehaviour
                 if (hFrac < 0.30f)
                 {
                     float p = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 0.25f;
-                    _panelBg.color = new Color(p, 0f, 0f, 0.70f);
+                    _panelBg.color = new Color(p, 0f, 0f, 0.20f);
                 }
                 else
                 {
@@ -171,21 +211,28 @@ public class PlayerHUD : MonoBehaviour
 
         if (_combat != null)
         {
-            float aFrac = _combat.maxAmmo > 0 ? Mathf.Clamp01((float)_combat.ammoCount / _combat.maxAmmo) : 0f;
+            float heatFrac = Mathf.Clamp01(_combat.heat / Mathf.Max(0.1f, _combat.overheatThreshold));
 
-            // Low-ammo warning — flash between yellow and red when ammo < 5 (and not reloading).
-            Color aCol = Color.Lerp(AmmoEmpty, AmmoFull, aFrac);
-            bool lowAmmo = !_combat.isReloading && _combat.ammoCount < 5;
-            if (lowAmmo)
+            Color heatCol = Color.Lerp(HeatCool, HeatHot, heatFrac);
+            if (_combat.isOverheated)
             {
-                float pulse = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f));
-                aCol = Color.Lerp(new Color(1f, 0.85f, 0.10f, 1f),
-                                  new Color(1f, 0.10f, 0.10f, 1f),
-                                  pulse);
+                float pulse = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 10f));
+                heatCol = Color.Lerp(HeatHot, Color.white, pulse);
             }
 
-            if (_ammoFill != null) { _ammoFill.fillAmount = aFrac; _ammoFill.color = aCol; }
-            if (_ammoVal  != null) _ammoVal.text = _combat.isReloading ? "RELOADING..." : _combat.ammoCount + " / " + _combat.maxAmmo;
+            if (_heatFill != null) { _heatFill.fillAmount = heatFrac; _heatFill.color = heatCol; }
+            if (_heatVal  != null) 
+            {
+                if (_combat.isOverheated) _heatVal.text = "OVERHEATED";
+                else _heatVal.text = (int)(heatFrac * 100f) + "%";
+            }
+
+            if (_heatBarBg != null)
+            {
+                // It gets redder as the player heats up.
+                // We transition from the default grey BarBG to a solid red.
+                _heatBarBg.color = Color.Lerp(BarBG, new Color(1f, 0f, 0f, 0.8f), heatFrac);
+            }
         }
     }
 
@@ -219,25 +266,26 @@ public class PlayerHUD : MonoBehaviour
         _panelBg = panelGo.AddComponent<Image>();
         _panelBg.color = PanelBG;
 
-        float firstRowY = PanelH - 60f;  // top row y-offset from panel bottom
+        float currentY = PanelH - 40f;
 
         // Row 0 — HEALTH
-        AddLabel(panelGo.transform, font, "HEALTH", 14f, firstRowY, HealthFull);
-        (_healthFill, _healthVal, _healthRowRt) = AddBarRow(panelGo.transform, font, firstRowY, BarH, HealthFull);
+        AddLabel(panelGo.transform, font, "HEALTH", 0f, currentY, HealthFull);
+        currentY -= 25f;
+        (_healthFill, _healthVal, _healthRowRt) = AddBarRow(panelGo.transform, font, 0f, currentY, BarH, HealthFull);
         _healthRowBaseAnchor = _healthRowRt.anchoredPosition;
 
         // Row 1 — SHIELD
-        float r1y = firstRowY - RowGap;
-        AddLabel(panelGo.transform, font, "SHIELD", 14f, r1y, ShieldFull);
-        (_shieldFill, _shieldVal, _shieldRowRt) = AddBarRow(panelGo.transform, font, r1y, BarH - 4f, ShieldFull);
+        currentY -= RowGap - 25f;
+        AddLabel(panelGo.transform, font, "SHIELD", 0f, currentY, ShieldFull);
+        currentY -= 25f;
+        (_shieldFill, _shieldVal, _shieldRowRt) = AddBarRow(panelGo.transform, font, 0f, currentY, BarH - 4f, ShieldFull);
 
-        // Row 2 — AMMO
-        float r2y = r1y - RowGap;
-        AddLabel(panelGo.transform, font, "AMMO", 14f, r2y, AmmoFull);
-        (_ammoFill, _ammoVal, _ammoRowRt) = AddBarRow(panelGo.transform, font, r2y, BarH, AmmoFull);
-
-        // Reload indicator — reuses the ammo value text (text changes to "RELOADING...")
-        _reloadText = _ammoVal; // same text object, just changes content
+        // Row 2 — HEAT
+        currentY -= RowGap - 25f;
+        AddLabel(panelGo.transform, font, "HEAT", 0f, currentY, HeatHot);
+        currentY -= 25f;
+        (_heatFill, _heatVal, _heatRowRt) = AddBarRow(panelGo.transform, font, 0f, currentY, BarH, HeatHot);
+        _heatBarBg = _heatRowRt.GetComponent<Image>();
     }
 
     private void AddLabel(Transform parent, Font font, string text, float x, float y, Color col)
@@ -247,12 +295,12 @@ public class PlayerHUD : MonoBehaviour
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot            = new Vector2(0f, 0.5f);
-        rt.anchoredPosition = new Vector2(x, y + BarH * 0.5f);
-        rt.sizeDelta        = new Vector2(LabelW, 26f);
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta        = new Vector2(BarW, 26f);
         var t = go.AddComponent<Text>();
         t.text      = text;
         t.font      = font;
-        t.fontSize  = 20;
+        t.fontSize  = 18;
         t.fontStyle = FontStyle.Bold;
         t.color     = col;
         t.alignment = TextAnchor.MiddleLeft;
@@ -261,18 +309,15 @@ public class PlayerHUD : MonoBehaviour
     }
 
     // Returns (fillImage, valueText-inside-bar, barBgRectTransform).
-    // The bg RT is needed so we can shake it on damage.
-    private (Image, Text, RectTransform) AddBarRow(Transform parent, Font font, float yBase, float h, Color initialCol)
+    private (Image, Text, RectTransform) AddBarRow(Transform parent, Font font, float x, float y, float h, Color initialCol)
     {
-        float barX = LabelW + 18f; // starts right after the label
-
         // Background
         var bgGo = new GameObject("BarBg");
         bgGo.transform.SetParent(parent, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
         bgRt.anchorMin = bgRt.anchorMax = new Vector2(0f, 0f);
         bgRt.pivot            = new Vector2(0f, 0f);
-        bgRt.anchoredPosition = new Vector2(barX, yBase);
+        bgRt.anchoredPosition = new Vector2(x, y);
         bgRt.sizeDelta        = new Vector2(BarW, h);
         bgGo.AddComponent<Image>().color = BarBG;
 
@@ -289,20 +334,21 @@ public class PlayerHUD : MonoBehaviour
         fill.fillAmount = 1f;
         fill.color      = initialCol;
 
-        // Value text INSIDE the bar (centred)
+        // Value text INSIDE the bar (right-aligned)
         var valGo = new GameObject("Val");
         valGo.transform.SetParent(bgGo.transform, false);
         var valRt = valGo.AddComponent<RectTransform>();
         valRt.anchorMin = Vector2.zero;
         valRt.anchorMax = Vector2.one;
-        valRt.offsetMin = valRt.offsetMax = Vector2.zero;
+        valRt.offsetMin = new Vector2(0, 0);
+        valRt.offsetMax = new Vector2(-10, 0);
         var val = valGo.AddComponent<Text>();
         val.text      = "—";
         val.font      = font;
-        val.fontSize  = 18;
+        val.fontSize  = 14;
         val.fontStyle = FontStyle.Bold;
         val.color     = Color.white;
-        val.alignment = TextAnchor.MiddleCenter;
+        val.alignment = TextAnchor.MiddleRight;
         val.horizontalOverflow = HorizontalWrapMode.Overflow;
         val.verticalOverflow   = VerticalWrapMode.Overflow;
 
