@@ -83,8 +83,9 @@ public AudioClip explosionSound;
 
         if (isPlayer)
         {
-            ScreenShake.Trigger(0.2f, 2f);
-            ScreenFlash.Trigger(new Color(1f, 0.1f, 0.1f), 0.12f);
+            ScreenShake.Trigger(0.35f, 5f); // Increased from 0.2f, 2f
+            ScreenFlash.Trigger(new Color(1f, 0.1f, 0.1f, 0.3f), 0.15f);
+            ScreenVignette.Trigger(0.6f, 0.7f); // New vignette effect
         }
 
         if (currentHealth <= 0)

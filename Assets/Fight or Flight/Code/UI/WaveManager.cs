@@ -130,14 +130,14 @@ public class WaveManager : MonoBehaviour
     }
 
     // Deferred by one frame so Unity can process the Destroy() call from ShipHealth.Die()
-    // before we check EnemyAI.allEnemies. Without the yield, the dying enemy is still in
+    // before we check EnemyMovement.allEnemies. Without the yield, the dying enemy is still in
     // the list when this runs, making Count = 1 when it should be 0.
     private IEnumerator CheckAllEnemiesDead()
     {
         yield return null;
         if (!gameActive || !waveInProgress) yield break;
 
-        if (EnemyAI.allEnemies.Count == 0)
+        if (EnemyMovement.allEnemies.Count == 0)
         {
             waveInProgress = false;
             StartCoroutine(InterWaveCountdown());
@@ -145,7 +145,7 @@ public class WaveManager : MonoBehaviour
         else
         {
             // Enemies are still alive (counter drifted); resync to the real list.
-            activeEnemies = EnemyAI.allEnemies.Count;
+            activeEnemies = EnemyMovement.allEnemies.Count;
         }
     }
 

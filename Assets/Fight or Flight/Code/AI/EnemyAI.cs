@@ -17,15 +17,15 @@ public class EnemyAI : MonoBehaviour
     // ≤ ChaseTriggerDist  : Attack  (circle + strafe + shoot)
     // < BackAwayDist      : Attack  (still shooting, but reverse-thrust)
     private static float ChaseTriggerDist => ScriptsReference.ArenaRadius * 0.50f; // user "60"
-    private static float BackAwayDist     => ScriptsReference.ArenaRadius * 0.17f; // user "20"
+    private static float BackAwayDist     => ScriptsReference.ArenaRadius * 0.08f; // Reduced from 0.17f to be more aggressive
 
     [Header("Behavior")]
     [Tooltip("Base turn speed multiplier")]
-    public float turnSpeedFactor = 1.1f;
+    public float turnSpeedFactor = 1.3f; // Increased from 1.1f
     [Tooltip("Throttle applied while chasing/orbiting")]
-    public float throttleFactor = 0.14f;
+    public float throttleFactor = 0.25f; // Increased from 0.14f
     [Tooltip("How fast the enemy strafes laterally during attack")]
-    public float strafeSpeed = 0.35f;
+    public float strafeSpeed = 0.45f; // Increased from 0.35f
     [Tooltip("Direction the enemy is currently circling (+1 or -1)")]
     private float circleDir = 1f;
 
@@ -250,8 +250,8 @@ trail.material = new Material(Shader.Find("Sprites/Default"));
 
         // Throttle: back away if very close to the player, otherwise hold orbit.
         float throttle;
-        if (distToPlayer < BackAwayDist) throttle = -throttleFactor * 0.7f;  // reverse
-        else                              throttle =  throttleFactor * 0.5f;  // gentle forward
+        if (distToPlayer < BackAwayDist) throttle = -throttleFactor * 0.5f;  // reduced reverse
+        else                              throttle =  throttleFactor * 0.9f;  // increased forward (from 0.5)
         physics.SetLinearInput(new Vector3(0, 0, throttle));
 
         // ── Fire ───────────────────────────────────────────────────────────────
@@ -274,8 +274,8 @@ trail.material = new Material(Shader.Find("Sprites/Default"));
         if (playerRb == null) return player.position;
 
         float dist = Vector3.Distance(transform.position, player.position);
-        // Laser speed from ShipLaserProjectile default (1000 u/s).
-        float travelTime = dist / 1000f;
+        // Laser speed updated to match ShipLaserProjectile (5000 u/s).
+        float travelTime = dist / 5000f;
         return player.position + playerRb.linearVelocity * travelTime;
     }
 

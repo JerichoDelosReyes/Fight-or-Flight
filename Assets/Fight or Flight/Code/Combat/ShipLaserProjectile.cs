@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class ShipLaserProjectile : MonoBehaviour
 {
-    public float speed = 1000000f; 
+    public float speed = 5000f; 
 public float lifeTime = 5f;
     public float damage = 8f;
     public string targetTag = "Enemy";
@@ -41,10 +41,13 @@ public float lifeTime = 5f;
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
-            // Clear velocity BEFORE setting isKinematic to avoid console warnings.
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = true;
+            // Only set velocity if not already kinematic to avoid console warnings.
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = true;
+            }
             rb.useGravity = false;
         }
     }

@@ -18,7 +18,7 @@ public class FollowCam : MonoBehaviour
         if (!TargetPlayer()) return;
 
         Vector3 toPosition = _target.position + (_target.rotation * _followPosition);
-        transform.position = Vector3.SmoothDamp(transform.position, toPosition, ref _velocity, _followDelay);
+        transform.position = Vector3.SmoothDamp(transform.position, toPosition, ref _velocity, _followDelay) + ScreenShake.ShakeOffset;
         transform.LookAt(_target, _target.up);
     }
 

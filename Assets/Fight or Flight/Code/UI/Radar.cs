@@ -39,8 +39,8 @@ public class Radar : MonoBehaviour
     // ── Config ────────────────────────────────────────────────────────────────
 
     private const float RadarDiameterPx  = 280f;
-    private const float RadarRange       = 10000f;
-    private const float MaxEnemiesShown  = 8;
+    private const float RadarRange       = 15000f; // Increased to cover entire arena
+    private const float MaxEnemiesShown  = 12;     // Show more enemies
     private const float HeightThreshold  = 10f;
 
     // Heading strip
@@ -313,8 +313,8 @@ public class Radar : MonoBehaviour
             dotContainer.localEulerAngles = new Vector3(0f, 0f, angle);
 
         // ── Enemies ───────────────────────────────────────────────────────────
-        var enemies = new List<EnemyAI>(EnemyAI.allEnemies.Count);
-        foreach (var e in EnemyAI.allEnemies)
+        var enemies = new List<EnemyMovement>(EnemyMovement.allEnemies.Count);
+        foreach (var e in EnemyMovement.allEnemies)
             if (e != null) enemies.Add(e);
 
         enemies.Sort((a, b) =>
