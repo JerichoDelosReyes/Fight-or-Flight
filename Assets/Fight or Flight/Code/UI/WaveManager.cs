@@ -18,11 +18,12 @@ public class WaveManager : MonoBehaviour
     private const float InterWaveDelay   = 5f;
     private const float SpawnRadius      = 2500f;
     private const float MinPlayerDist    = 800f;
-    private const int   BaseEnemyCount   = 1;
-    private const int   EnemyIncrement   = 2;
+    private const int   BaseEnemyCount   = 10;
+    private const int   EnemyIncrement   = 5;
+    private const int   MaxWave          = 5;
 
     // ── Runtime state ─────────────────────────────────────────────────────────
-    private GameObject enemyPrefab;
+private GameObject enemyPrefab;
     private int        activeEnemies;
     private bool       gameActive;
     private bool       waveInProgress;
@@ -140,7 +141,17 @@ public class WaveManager : MonoBehaviour
         if (EnemyMovement.allEnemies.Count == 0)
         {
             waveInProgress = false;
-            StartCoroutine(InterWaveCountdown());
+            
+            // Check for game completion
+            if (CurrentWave >= MaxWave)
+            {
+                gameActive = false;
+                VictoryScreen.Show(ScoreManager.Score, ScoreManager.Kills);
+            }
+            else
+            {
+                StartCoroutine(InterWaveCountdown());
+            }
         }
         else
         {
@@ -265,7 +276,7 @@ public class WaveManager : MonoBehaviour
         int count = ComputeEnemyCount(wave);
         activeEnemies = count;
 
-        WaveStatusText = string.Format("WAVE {0}", wave);
+        WaveStatusText = string.Format("WAVE {0} / {1}", wave, MaxWave);
         if (headerText != null) headerText.text = WaveStatusText;
         ShowAnnouncement(string.Format("WAVE {0}", wave));
 

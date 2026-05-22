@@ -8,12 +8,12 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class PrefabSetup
 {
-    private const string ExplosionPath = "Assets/Fight or Flight/Content/Prefabs/ExplosionEffect.prefab";
+    private const string ExplosionPath = "Assets/Fight or Flight/Content/Prefabs/VFX/ExplosionEffect.prefab";
 
     private static readonly string[] ShipPrefabPaths =
     {
-        "Assets/Fight or Flight/Content/Prefabs/PlayerShip.prefab",
-        "Assets/Fight or Flight/Content/Prefabs/EnemyShip (1).prefab",
+        "Assets/Fight or Flight/Content/Prefabs/Player/PlayerShip.prefab",
+        "Assets/Fight or Flight/Content/Prefabs/Enemies/EnemyShip (1).prefab",
     };
 
     static PrefabSetup()
