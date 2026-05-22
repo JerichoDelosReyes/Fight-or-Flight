@@ -98,8 +98,13 @@ public AudioClip explosionSound;
     public float collisionDamage = 5f; // Reduced from 15f
     public GameObject poofPrefab;
 
+    private float _lastCollisionDamageTime;
+    private const float CollisionCooldown = 1.0f; // Seconds between collision damage
+
     private void OnCollisionEnter(Collision collision)
     {
+        if (Time.time < _lastCollisionDamageTime + CollisionCooldown) return;
+
         bool hitObstacle = collision.gameObject.GetComponentInParent<Asteroid>() != null ||
                            collision.gameObject.name.ToLower().Contains("rock") ||
                            collision.gameObject.name.ToLower().Contains("asteroid") ||
@@ -113,6 +118,7 @@ public AudioClip explosionSound;
         // Enemies don't die on rocks or other enemies anymore.
         if (!isPlayer) return;
 
+        _lastCollisionDamageTime = Time.time;
         TakeDamage(collisionDamage);
 
         if (isPlayer)

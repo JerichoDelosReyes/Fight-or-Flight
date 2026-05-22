@@ -18,7 +18,7 @@ public class WaveManager : MonoBehaviour
     private const float InterWaveDelay   = 5f;
     private const float SpawnRadius      = 2500f;
     private const float MinPlayerDist    = 800f;
-    private const int   BaseEnemyCount   = 3;
+    private const int   BaseEnemyCount   = 1;
     private const int   EnemyIncrement   = 2;
 
     // ── Runtime state ─────────────────────────────────────────────────────────
@@ -285,7 +285,7 @@ public class WaveManager : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             SpawnEnemy();
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(2.5f); // Increased delay for "one by one" feel
         }
     }
 

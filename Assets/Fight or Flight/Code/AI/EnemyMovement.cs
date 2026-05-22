@@ -7,7 +7,7 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private State _state = State.Chase;
 
     [SerializeField] private float _movementSpeed = 600f; // Reduced further
-    [SerializeField] private float _turnSpeed = 4.5f;     // Faster turns for better tracking
+    [SerializeField] private float _turnSpeed = 4.5f;
     [SerializeField] private float _rayCastOffset = 500f;
     [SerializeField] private float _rayCastRange = 3000f;
     [SerializeField] private int _points = 100;
@@ -51,11 +51,15 @@ public class EnemyMovement : MonoBehaviour
     private void UpdateState()
     {
         float distToTarget = Vector3.Distance(transform.position, _target.position);
+        Rigidbody targetRb = _target.GetComponent<Rigidbody>();
+        float playerVel = (targetRb != null) ? targetRb.linearVelocity.magnitude : 0f;
 
         switch (_state)
         {
             case State.Chase:
-                if (distToTarget < _flyPastDist)
+                // Only enter FlyPast if the player is moving or we are extremely close and fast.
+                // This prevents "jousting" loops around a stationary player.
+                if (distToTarget < _flyPastDist && playerVel > 1.0f)
                 {
                     _state = State.FlyPast;
                     _stateTimer = Time.time + _flyPastTime;
@@ -97,50 +101,74 @@ public class EnemyMovement : MonoBehaviour
             targetDir = _target.position - transform.position;
         }
 
-        targetDir.y = 0;
+        // Fix: Removed targetDir.y = 0. This was causing enemies to circle the 
+        // player's shadow on the XZ plane instead of pointing at the player in 3D.
         
-        if (targetDir == Vector3.zero) return;
+        if (targetDir.sqrMagnitude < 0.001f) return;
         
         Quaternion rotation = Quaternion.LookRotation(targetDir);
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, _turnSpeed * Time.deltaTime);
+
+        // Visual banking: Roll the ship slightly based on its turning direction
+        Vector3 localTargetDir = transform.InverseTransformDirection(targetDir);
+        float rollAngle = -localTargetDir.x * 0.1f; // Subtle bank
+        transform.Rotate(0, 0, rollAngle * _turnSpeed * 10f * Time.deltaTime, Space.Self);
     }
 
     private void Move()
     {
-        transform.position += transform.forward * _movementSpeed * Time.deltaTime;
+        float speed = _movementSpeed;
+        
+        // Slow down as we approach a stationary player to stay on target and avoid overshooting.
+        if (_target != null)
+        {
+            Rigidbody targetRb = _target.GetComponent<Rigidbody>();
+            float playerVel = (targetRb != null) ? targetRb.linearVelocity.magnitude : 0f;
+            float dist = Vector3.Distance(transform.position, _target.position);
+            
+            if (playerVel < 0.5f && dist < _flyPastDist)
+            {
+                speed = Mathf.Lerp(_movementSpeed * 0.25f, _movementSpeed, dist / _flyPastDist);
+            }
+        }
+
+        transform.position += transform.forward * speed * Time.deltaTime;
     }
 
     private void Pathfinding()
     {
         RaycastHit hit;
-        Vector3 rayCastOffset = Vector3.zero;
+        Vector3 rayCastRotation = Vector3.zero;
 
         Vector3 left = transform.position - transform.right * _rayCastOffset;
         Vector3 right = transform.position + transform.right * _rayCastOffset;
         Vector3 up = transform.position + transform.up * _rayCastOffset;
         Vector3 down = transform.position - transform.up * _rayCastOffset;
 
+        // Corrected obstacle avoidance axes: 
+        // If hit left, rotate positive Y (turn right).
+        // If hit up, rotate positive X (pitch down).
         if (Physics.Raycast(left, transform.forward, out hit, _rayCastRange))
         {
-            rayCastOffset += Vector3.right;
+            rayCastRotation.y += 1f;
         }
         else if (Physics.Raycast(right, transform.forward, out hit, _rayCastRange))
         {
-            rayCastOffset -= Vector3.right;
+            rayCastRotation.y -= 1f;
         }
 
         if (Physics.Raycast(up, transform.forward, out hit, _rayCastRange))
         {
-            rayCastOffset -= Vector3.up;
+            rayCastRotation.x += 1f;
         }
         else if (Physics.Raycast(down, transform.forward, out hit, _rayCastRange))
         {
-            rayCastOffset = Vector3.up;
+            rayCastRotation.x -= 1f;
         }
 
-        if (rayCastOffset != Vector3.zero)
+        if (rayCastRotation != Vector3.zero)
         {
-            transform.Rotate(rayCastOffset * 50f * Time.deltaTime);
+            transform.Rotate(rayCastRotation * 60f * Time.deltaTime);
         }
         else
         {

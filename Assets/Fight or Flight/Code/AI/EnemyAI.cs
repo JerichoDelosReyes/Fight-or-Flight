@@ -228,6 +228,8 @@ trail.material = new Material(Shader.Find("Sprites/Default"));
     private void Attack()
     {
         float distToPlayer = Vector3.Distance(transform.position, player.position);
+        Rigidbody playerRb = player.GetComponent<Rigidbody>();
+        float playerVel = (playerRb != null) ? playerRb.linearVelocity.magnitude : 0f;
 
         // Flip strafe direction occasionally for unpredictability.
         if (Time.time >= nextStrafeFlip)
@@ -241,7 +243,9 @@ trail.material = new Material(Shader.Find("Sprites/Default"));
         Vector3 toAim = (aimPoint - transform.position).normalized;
 
         // Add a lateral strafe component so the enemy circles around.
-        Vector3 strafeVec = transform.right * strafeSign * strafeSpeed;
+        // We reduce or disable strafe if the player is stationary to avoid tight loops.
+        float effectiveStrafe = (playerVel < 0.5f) ? 0f : strafeSpeed;
+        Vector3 strafeVec = transform.right * strafeSign * effectiveStrafe;
         Vector3 desiredDir = (toAim + strafeVec).normalized;
 
         desiredDir = ApplyBoundaryCorrection(desiredDir);
@@ -272,6 +276,11 @@ trail.material = new Material(Shader.Find("Sprites/Default"));
         if (player == null) return transform.position;
         Rigidbody playerRb = player.GetComponent<Rigidbody>();
         if (playerRb == null) return player.position;
+
+        // Fix: Add a velocity magnitude check before predicting to avoid 
+        // stale or noisy velocity causing "ghost" offsets when player is stopped.
+        if (playerRb.linearVelocity.magnitude < 0.5f)
+            return player.position;
 
         float dist = Vector3.Distance(transform.position, player.position);
         // Laser speed updated to match ShipLaserProjectile (5000 u/s).
@@ -366,7 +375,7 @@ trail.material = new Material(Shader.Find("Sprites/Default"));
 
     private void TurnToward(Vector3 dir, float speedFactor)
     {
-        if (dir == Vector3.zero) return;
+        if (dir.sqrMagnitude < 0.001f) return;
 
         // Calculate relative rotation needed
         Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);

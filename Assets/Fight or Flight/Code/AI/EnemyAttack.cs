@@ -5,8 +5,8 @@ public class EnemyAttack : MonoBehaviour
     [Header("Laser Projectile Settings")]
     public GameObject laserPrefab;
     public Transform[] firePoints;
-    public float fireRate = 0.3f; // Faster firing
-    public float bulletSpeed = 5000f; // Fast like the player
+    public float fireRate = 0.8f; // Changed to 0.8s as requested
+    public float bulletSpeed = 2500f; // Reduced speed
 
     private Transform _target;
     private float _nextFireTime;
@@ -68,7 +68,7 @@ public class EnemyAttack : MonoBehaviour
 
         // Lead Targeting Logic
         Vector3 targetPos = _target.position;
-        if (_targetRb != null)
+        if (_targetRb != null && _targetRb.linearVelocity.magnitude > 0.5f)
         {
             float dist = Vector3.Distance(transform.position, _target.position);
             float travelTime = dist / bulletSpeed;
