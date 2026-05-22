@@ -303,7 +303,16 @@ public class WaveManager : MonoBehaviour
         if (pos.magnitude > spawnLimit)
             pos = pos.normalized * spawnLimit;
 
-        Instantiate(enemyPrefab, pos, Quaternion.identity);
+        // Face the player immediately upon spawn
+        Quaternion rotation = Quaternion.identity;
+        if (Ship.PlayerShip != null)
+        {
+            Vector3 toPlayer = (Ship.PlayerShip.transform.position - pos).normalized;
+            if (toPlayer != Vector3.zero)
+                rotation = Quaternion.LookRotation(toPlayer);
+        }
+
+        Instantiate(enemyPrefab, pos, rotation);
     }
 
     // ── HUD UI (built at runtime — no scene wiring needed) ────────────────────

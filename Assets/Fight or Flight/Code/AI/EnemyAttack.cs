@@ -31,8 +31,8 @@ public class EnemyAttack : MonoBehaviour
         Vector3 directionToTarget = (_target.position - transform.position).normalized;
         float angle = Vector3.Angle(transform.forward, directionToTarget);
         
-        // Arc of 40 degrees (20 each side)
-        return angle < 20f;
+        // Widened arc to 90 degrees (45 each side) for more aggressive initial fire
+        return angle < 45f;
     }
 
     private bool HaveLineOfSight()
@@ -42,9 +42,10 @@ public class EnemyAttack : MonoBehaviour
         Vector3 directionToTarget = (_target.position - transform.position).normalized;
         Vector3 rayStart = transform.position + transform.forward * 15f; 
         
-        if (Physics.Raycast(rayStart, directionToTarget, out RaycastHit hit, 10000f))
+        // Use a layer mask or just be more lenient. For now, let's keep it but ensure it's working.
+        if (Physics.Raycast(rayStart, directionToTarget, out RaycastHit hit, 15000f))
         {
-            // If it hit something, check if it's NOT an obstacle (Asteroid/Rock/Boundary)
+            // If we hit something, check if it's NOT an obstacle (Asteroid/Rock/Boundary)
             bool hitObstacle = hit.transform.CompareTag("Untagged") && 
                 (hit.transform.name.Contains("Asteroid") || hit.transform.name.Contains("Rock") || hit.transform.name.Contains("Boundary"));
             
@@ -55,7 +56,7 @@ public class EnemyAttack : MonoBehaviour
         }
         else
         {
-            // Clear space
+            // Clear space, safe to fire
             return true;
         }
         return false;

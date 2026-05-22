@@ -95,7 +95,7 @@ public AudioClip explosionSound;
         }
     }
 
-    public float collisionDamage = 15f;
+    public float collisionDamage = 5f; // Reduced from 15f
     public GameObject poofPrefab;
 
     private void OnCollisionEnter(Collision collision)
@@ -105,9 +105,12 @@ public AudioClip explosionSound;
                            collision.gameObject.name.ToLower().Contains("asteroid") ||
                            collision.gameObject.name.StartsWith("BoundaryRock");
 
-        if (!hitObstacle) return;
+        bool hitEnemy = collision.gameObject.CompareTag("Enemy") || 
+                        collision.gameObject.GetComponentInParent<EnemyMovement>() != null;
 
-        // Enemies don't die on rocks anymore.
+        if (!hitObstacle && !hitEnemy) return;
+
+        // Enemies don't die on rocks or other enemies anymore.
         if (!isPlayer) return;
 
         TakeDamage(collisionDamage);
