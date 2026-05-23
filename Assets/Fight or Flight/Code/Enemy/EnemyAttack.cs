@@ -6,7 +6,7 @@ public class EnemyAttack : MonoBehaviour
     public GameObject laserPrefab;
     public Transform[] firePoints;
     public float fireRate = 0.8f; // Changed to 0.8s as requested
-    public float bulletSpeed = 2500f; // Reduced speed
+    public float bulletSpeed = 3200f; // Increased speed from 2500f
 
     private Transform _target;
     private float _nextFireTime;

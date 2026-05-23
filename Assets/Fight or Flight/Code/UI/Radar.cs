@@ -74,7 +74,8 @@ public class Radar : MonoBehaviour
     private void Start()
     {
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        bgTex  = MakeCircleTex(256, new Color(0f, 0f, 0f, 0.60f), 6, new Color(0.7f, 0.7f, 0.7f, 0.95f));
+        // Background set to transparent (alpha 0) and border to vibrant light blue
+        bgTex  = MakeCircleTex(256, new Color(0f, 0f, 0f, 0f), 6, new Color(0.6f, 0.85f, 1f, 1f));
         dotTex = MakeCircleTex(32, Color.white, 0, Color.white);
         BuildUI();
     }
@@ -207,9 +208,9 @@ public class Radar : MonoBehaviour
         txt.font      = uiFont;
         txt.fontSize  = 20;
         txt.fontStyle = FontStyle.Bold;
-        txt.color     = new Color(1f, 1f, 1f, 0.95f);
+        txt.color     = new Color(0.6f, 0.85f, 1f, 0.95f);
         txt.alignment = TextAnchor.MiddleCenter;
-        txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+txt.horizontalOverflow = HorizontalWrapMode.Overflow;
         txt.verticalOverflow   = VerticalWrapMode.Overflow;
     }
 
@@ -341,7 +342,7 @@ public class Radar : MonoBehaviour
         {
             if (p == null) continue;
             PlaceDot(ToRadarPos(p.transform.position, playerPos),
-                     new Color(1f, 0.95f, 0.2f, 1f));
+                     new Color(0.6f, 0.85f, 1f, 1f));
         }
 
         // Heading strip removed — CompassBar provides this now.

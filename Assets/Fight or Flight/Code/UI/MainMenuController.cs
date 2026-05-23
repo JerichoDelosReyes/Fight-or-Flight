@@ -9,6 +9,10 @@ public class MainMenuController : MonoBehaviour
     public Sprite buttonFrameSprite;
     public Font menuFont;
 
+    [Header("UI Prefabs")]
+    public GameObject instructionsPrefab;
+    public GameObject settingsPrefab;
+
     [Header("Sci-Fi UI Assets")]
     public Sprite panelFrameSprite;
     public Sprite headerBarSprite;
@@ -42,7 +46,7 @@ public class MainMenuController : MonoBehaviour
         if (buttonFrameSprite == null)
         {
             #if UNITY_EDITOR
-            buttonFrameSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Fight or Flight/Content/UI/Sprites/SciFiButtonFrame.png");
+            buttonFrameSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Fight or Flight/Content/Sprites/UI/SciFiButtonFrame.png");
             #endif
         }
 
@@ -50,15 +54,15 @@ public class MainMenuController : MonoBehaviour
         if (menuFont == null)
         {
             #if UNITY_EDITOR
-            menuFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>("Assets/Fight or Flight/Content/GLB/Inter-VariableFont_opsz,wght.ttf");
+            menuFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>("Assets/Fight or Flight/Content/Models/Inter-VariableFont_opsz,wght.ttf");
             #endif
         }
 
         // Load new Sci-Fi assets from Resources
-        if (panelFrameSprite == null)  panelFrameSprite  = Resources.Load<Sprite>("SciFiUI/panel_frame");
-        if (headerBarSprite == null)   headerBarSprite   = Resources.Load<Sprite>("SciFiUI/header_bar");
-        if (buttonLargeSprite == null) buttonLargeSprite = Resources.Load<Sprite>("SciFiUI/button_large");
-        if (dividerSprite == null)     dividerSprite     = Resources.Load<Sprite>("SciFiUI/divider");
+        if (panelFrameSprite == null)  panelFrameSprite  = Resources.Load<Sprite>("RootResources/SciFiUI/panel_frame");
+        if (headerBarSprite == null)   headerBarSprite   = Resources.Load<Sprite>("RootResources/SciFiUI/header_bar");
+        if (buttonLargeSprite == null) buttonLargeSprite = Resources.Load<Sprite>("RootResources/SciFiUI/button_large");
+        if (dividerSprite == null)     dividerSprite     = Resources.Load<Sprite>("RootResources/SciFiUI/divider");
     }
 
     // ── Polish pass ───────────────────────────────────────────────────────────
@@ -214,15 +218,11 @@ public class MainMenuController : MonoBehaviour
     { 
         if (instrOverlay != null) return;
 
-        // Try to load from prefab first
-        var prefab = Resources.Load<GameObject>("UI/InstructionsOverlay");
-        if (prefab != null)
+        if (instructionsPrefab != null)
         {
-            instrOverlay = Instantiate(prefab);
+            instrOverlay = Instantiate(instructionsPrefab);
             
-            // Wire up the close button. We look for a child named "CloseBtn"
             var closeBtn = instrOverlay.GetComponentInChildren<UnityEngine.UI.Button>(true);
-            // Specifically try to find "CloseBtn" if multiple buttons exist
             var buttons = instrOverlay.GetComponentsInChildren<UnityEngine.UI.Button>(true);
             foreach (var b in buttons)
             {
@@ -244,9 +244,10 @@ public class MainMenuController : MonoBehaviour
         }
         else
         {
-            instrOverlay = BuildInstructionsOverlay();
+            Debug.LogWarning("Instructions Prefab not assigned to MainMenuController.");
         }
     }
+
     public void OpenSettings() { SettingsMenu.Show(); }
 public void QuitGame() { 
         #if UNITY_EDITOR 
@@ -328,12 +329,28 @@ public void QuitGame() {
         var closeBtnImg = closeBtnGo.AddComponent<UnityEngine.UI.Image>();
         closeBtnImg.sprite = buttonLargeSprite;
         closeBtnImg.type = UnityEngine.UI.Image.Type.Sliced;
+        closeBtnImg.color = new Color(1.0f, 0.31f, 0.31f, 1.0f); // Match QuitButton color
         var closeBtn = closeBtnGo.AddComponent<UnityEngine.UI.Button>();
         closeBtn.targetGraphic = closeBtnImg;
         var cc = closeBtn.colors; 
-        cc.highlightedColor = new Color(0.8f, 1f, 1f, 1f); 
+        cc.normalColor = Color.white;
+        cc.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f); 
+        cc.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
         closeBtn.colors = cc;
         closeBtn.onClick.AddListener(() => { DestroyImmediate(root); instrOverlay = null; });
+        
+        // Add Hitbox for consistency
+        var hitboxGo = new GameObject("Hitbox");
+        hitboxGo.transform.SetParent(closeBtnGo.transform, false);
+        var hitboxRt = hitboxGo.AddComponent<RectTransform>();
+        hitboxRt.anchorMin = hitboxRt.anchorMax = hitboxRt.pivot = new Vector2(0.5f, 0.5f);
+        hitboxRt.anchoredPosition = Vector2.zero;
+        hitboxRt.sizeDelta = new Vector2(280f * 0.8f, 70f * 0.7f);
+        var hitboxImg = hitboxGo.AddComponent<UnityEngine.UI.Image>();
+        hitboxImg.color = new Color(0, 0, 0, 0);
+        hitboxImg.raycastTarget = true;
+        closeBtnImg.raycastTarget = false;
+
         AddLabel(closeBtnGo.transform, font, "CLOSE", 28, Color.white, FontStyle.Bold, Vector2.zero, new Vector2(200f, 52f));
 
         return root;

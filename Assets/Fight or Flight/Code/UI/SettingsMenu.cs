@@ -67,14 +67,17 @@ public class SettingsMenu : MonoBehaviour
             return;
         }
 
-        // Try to load from prefab first
-        var prefab = Resources.Load<GameObject>("UI/SettingsMenu");
+        GameObject prefab = null;
+
+        // Priority 1: MainMenu folder prefab
+        #if UNITY_EDITOR
+        prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fight or Flight/Content/Scenes/MainMenu/SettingsMenu.prefab");
+        #endif
+
+        // Priority 2: Resources
         if (prefab == null)
         {
-            // Fallback to searching the path if not in Resources
-            #if UNITY_EDITOR
-            prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fight or Flight/Content/UI/SettingsMenu(Clone)(Clone).prefab");
-            #endif
+            prefab = Resources.Load<GameObject>("RootResources/UI/SettingsMenu");
         }
 
         if (prefab != null)
@@ -84,6 +87,7 @@ public class SettingsMenu : MonoBehaviour
         }
         else
         {
+            // Fallback to procedural only if absolutely necessary
             var go = new GameObject("SettingsMenu");
             instance = go.AddComponent<SettingsMenu>();
         }
@@ -135,15 +139,15 @@ public class SettingsMenu : MonoBehaviour
 
     private void LoadAssets()
     {
-        panelSprite        = Resources.Load<Sprite>("SciFiUI/panel_frame");
-        headerSprite       = Resources.Load<Sprite>("SciFiUI/header_bar");
-        btnLargeSprite     = Resources.Load<Sprite>("SciFiUI/button_large");
-        btnSmallSprite     = Resources.Load<Sprite>("SciFiUI/button_small");
-        checkboxSprite     = Resources.Load<Sprite>("SciFiUI/checkbox_bg");
-        checkmarkSprite    = Resources.Load<Sprite>("SciFiUI/checkmark");
-        sliderTrackSprite  = Resources.Load<Sprite>("SciFiUI/slider_track");
-        sliderHandleSprite = Resources.Load<Sprite>("SciFiUI/slider_handle");
-        dividerSprite      = Resources.Load<Sprite>("SciFiUI/divider");
+        panelSprite        = Resources.Load<Sprite>("RootResources/SciFiUI/panel_frame");
+        headerSprite       = Resources.Load<Sprite>("RootResources/SciFiUI/header_bar");
+        btnLargeSprite     = Resources.Load<Sprite>("RootResources/SciFiUI/button_large");
+        btnSmallSprite     = Resources.Load<Sprite>("RootResources/SciFiUI/button_small");
+        checkboxSprite     = Resources.Load<Sprite>("RootResources/SciFiUI/checkbox_bg");
+        checkmarkSprite    = Resources.Load<Sprite>("RootResources/SciFiUI/checkmark");
+        sliderTrackSprite  = Resources.Load<Sprite>("RootResources/SciFiUI/slider_track");
+        sliderHandleSprite = Resources.Load<Sprite>("RootResources/SciFiUI/slider_handle");
+        dividerSprite      = Resources.Load<Sprite>("RootResources/SciFiUI/divider");
     }
 
     private void OnDestroy()
@@ -287,10 +291,17 @@ float labelX = -250f;
         var bottomDivider = MakeDivider(panel, new Vector2(0, -200));
         bottomDivider.transform.localScale = new Vector3(1f, 110.874985f, 1f);
         
-        MakeButton(panel, "APPLY", new Color(0.13f, 0.40f, 0.80f),
-new Vector2(-220, -280), new Vector2(350, 70), ApplySettings, false);
-        MakeButton(panel, "CLOSE", new Color(0.25f, 0.25f, 0.25f),
-                   new Vector2( 220, -280), new Vector2(350, 70), Close, false);
+        var applyBtn = MakeButton(panel, "APPLY", new Color(0.13f, 0.40f, 0.80f),
+                                  new Vector2(5, -263), new Vector2(350, 70), ApplySettings, false);
+        applyBtn.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
+        var applyLbl = applyBtn.transform.Find("Lbl");
+        if (applyLbl != null) applyLbl.localScale = new Vector3(1f, 0.604030013f, 1f);
+
+        var closeBtn = MakeButton(panel, "CLOSE", new Color(0.2980392f, 1f, 1f),
+                                  new Vector2(11, -361), new Vector2(350, 70), Close, false);
+        closeBtn.transform.localScale = new Vector3(1.44599998f, 1.40919995f, 1f);
+        var closeLbl = closeBtn.transform.Find("Lbl");
+        if (closeLbl != null) closeLbl.localScale = new Vector3(1f, 0.815180004f, 1f);
 
         // Highlight current selections.
         SelectScheme(selectedScheme);
@@ -444,6 +455,8 @@ new Vector2(-220, -280), new Vector2(350, 70), ApplySettings, false);
         img.sprite = isSmall ? btnSmallSprite : btnLargeSprite;
         img.type = Image.Type.Sliced;
         img.color = bg;
+        img.raycastTarget = false;
+
         var btn = go.AddComponent<Button>();
         var cols = btn.colors;
         cols.normalColor      = Color.white;
@@ -453,6 +466,18 @@ new Vector2(-220, -280), new Vector2(350, 70), ApplySettings, false);
         btn.colors = cols;
         btn.targetGraphic = img;
         btn.onClick.AddListener(onClick);
+
+        // Add Hitbox
+        var hitboxGo = new GameObject("Hitbox");
+        hitboxGo.transform.SetParent(go.transform, false);
+        var hitboxRt = hitboxGo.AddComponent<RectTransform>();
+        hitboxRt.anchorMin = hitboxRt.anchorMax = hitboxRt.pivot = new Vector2(0.5f, 0.5f);
+        hitboxRt.anchoredPosition = Vector2.zero;
+        hitboxRt.sizeDelta = new Vector2(size.x * 0.8f, size.y * 0.7f);
+        var hitboxImg = hitboxGo.AddComponent<Image>();
+        hitboxImg.color = new Color(0, 0, 0, 0);
+        hitboxImg.raycastTarget = true;
+
         MakeLabel(go, label, 26, Color.white, FontStyle.Bold, Vector2.zero, size);
         return go;
     }

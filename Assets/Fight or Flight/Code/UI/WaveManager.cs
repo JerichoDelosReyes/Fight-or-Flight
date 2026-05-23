@@ -276,7 +276,7 @@ private GameObject enemyPrefab;
         int count = ComputeEnemyCount(wave);
         activeEnemies = count;
 
-        WaveStatusText = string.Format("WAVE {0} / {1}", wave, MaxWave);
+        WaveStatusText = string.Format("WAVE {0}", wave);
         if (headerText != null) headerText.text = WaveStatusText;
         ShowAnnouncement(string.Format("WAVE {0}", wave));
 
@@ -346,18 +346,16 @@ private GameObject enemyPrefab;
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        // Persistent top-center "WAVE X" header — with dark panel background.
-        // Positioned BELOW the compass bar (which now occupies the top 10-96 px
-        // including the heading-number readout).
+        // Persistent middle-bottom "WAVE X" header.
         var headerBgGo = new GameObject("WaveHeaderBG");
         headerBgGo.transform.SetParent(canvasGo.transform, false);
         var headerBgRt = headerBgGo.AddComponent<RectTransform>();
-        headerBgRt.anchorMin = new Vector2(0.5f, 1f);
-        headerBgRt.anchorMax = new Vector2(0.5f, 1f);
-        headerBgRt.pivot     = new Vector2(0.5f, 1f);
-        headerBgRt.anchoredPosition = new Vector2(0f, -116f);
+        headerBgRt.anchorMin = new Vector2(0.5f, 0f);
+        headerBgRt.anchorMax = new Vector2(0.5f, 0f);
+        headerBgRt.pivot     = new Vector2(0.5f, 0f);
+        headerBgRt.anchoredPosition = new Vector2(0f, 60f);
         headerBgRt.sizeDelta = new Vector2(340f, 68f);
-        headerBgGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+        headerBgGo.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
 
         var headerGo = new GameObject("WaveHeader");
         headerGo.transform.SetParent(headerBgGo.transform, false);
@@ -367,16 +365,16 @@ private GameObject enemyPrefab;
         headerRt.offsetMin = headerRt.offsetMax = Vector2.zero;
 
         headerGroup = headerBgGo.AddComponent<CanvasGroup>();
-        headerGroup.alpha = 1f;
+headerGroup.alpha = 1f;
         headerGroup.blocksRaycasts = false;
 
         headerText = headerGo.AddComponent<Text>();
         headerText.font = font;
         headerText.fontSize = 40;
         headerText.fontStyle = FontStyle.Bold;
-        headerText.color = new Color(1f, 0.95f, 0.5f);
+        headerText.color = new Color(0.6f, 0.85f, 1f, 1f);
         headerText.alignment = TextAnchor.MiddleCenter;
-        headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
+headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
         headerText.verticalOverflow = VerticalWrapMode.Overflow;
         headerText.text = "";
 
@@ -399,7 +397,7 @@ private GameObject enemyPrefab;
         annBgRt.anchorMin = Vector2.zero;
         annBgRt.anchorMax = Vector2.one;
         annBgRt.offsetMin = annBgRt.offsetMax = Vector2.zero;
-        annBgGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
+        annBgGo.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
 
         var annGo = new GameObject("WaveAnnouncement");
         annGo.transform.SetParent(annContainer.transform, false);

@@ -214,7 +214,7 @@ public class DebrisScatter : MonoBehaviour
         // Pull every prefab from the Rocks folder + Asteroid_New from top-level Prefabs.
         var guids = UnityEditor.AssetDatabase.FindAssets(
             "t:Prefab",
-            new[] { "Assets/Fight or Flight/Content/Prefabs/Rocks" });
+            new[] { "Assets/Fight or Flight/Content/Prefabs/Environment/Rocks" });
         foreach (var guid in guids)
         {
             string path   = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
@@ -224,8 +224,8 @@ public class DebrisScatter : MonoBehaviour
 
         var astGuids = UnityEditor.AssetDatabase.FindAssets(
             "Asteroid_New t:Prefab",
-            new[] { "Assets/Fight or Flight/Content/Prefabs" });
-        foreach (var guid in astGuids)
+            new[] { "Assets/Fight or Flight/Content/Prefabs/Environment" });
+foreach (var guid in astGuids)
         {
             string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
             var    pf   = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);

@@ -131,11 +131,11 @@ public class CompassBar : MonoBehaviour
         barRt.anchoredPosition = new Vector2(0f, -10f);
         barRt.sizeDelta        = new Vector2(BarWidth, BarHeight);
         var barImg = barGo.AddComponent<Image>();
-        barImg.color = new Color(0f, 0f, 0f, 0.55f);
-        barGo.AddComponent<Mask>().showMaskGraphic = true;
+        barImg.color = new Color(0f, 0f, 0f, 0f);
+        barGo.AddComponent<RectMask2D>();
 
         // Sliding label container
-        var lc = new GameObject("LabelContainer");
+var lc = new GameObject("LabelContainer");
         lc.transform.SetParent(barGo.transform, false);
         _labelContainer = lc.AddComponent<RectTransform>();
         _labelContainer.anchorMin = _labelContainer.anchorMax = new Vector2(0.5f, 0.5f);
@@ -191,7 +191,7 @@ public class CompassBar : MonoBehaviour
         ctickRt.pivot            = new Vector2(0.5f, 0.5f);
         ctickRt.anchoredPosition = Vector2.zero;
         ctickRt.sizeDelta        = new Vector2(2f, BarHeight);
-        ctickGo.AddComponent<Image>().color = new Color(1f, 0.85f, 0.2f, 0.9f);
+        ctickGo.AddComponent<Image>().color = new Color(0.6f, 0.85f, 1f, 0.9f);
 
         // Heading number under the centre tick
         var hnGo = new GameObject("HeadingNum");
@@ -206,10 +206,10 @@ public class CompassBar : MonoBehaviour
         _headingNum.font      = font;
         _headingNum.fontSize  = 22;
         _headingNum.fontStyle = FontStyle.Bold;
-        _headingNum.color     = new Color(1f, 0.85f, 0.2f, 1f);
+        _headingNum.color     = new Color(0.6f, 0.85f, 1f, 1f);
         _headingNum.alignment = TextAnchor.MiddleCenter;
         _headingNum.text      = "000°";
-        _headingNum.horizontalOverflow = HorizontalWrapMode.Overflow;
+_headingNum.horizontalOverflow = HorizontalWrapMode.Overflow;
         _headingNum.verticalOverflow   = VerticalWrapMode.Overflow;
 
         // Build text ticks
