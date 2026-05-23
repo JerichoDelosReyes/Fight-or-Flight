@@ -39,8 +39,8 @@ public class Radar : MonoBehaviour
     // ── Config ────────────────────────────────────────────────────────────────
 
     private const float RadarDiameterPx  = 280f;
-    private const float RadarRange       = 10000f;
-    private const float MaxEnemiesShown  = 8;
+    private const float RadarRange       = 15000f; // Increased to cover entire arena
+    private const float MaxEnemiesShown  = 12;     // Show more enemies
     private const float HeightThreshold  = 10f;
 
     // Heading strip
@@ -74,7 +74,8 @@ public class Radar : MonoBehaviour
     private void Start()
     {
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        bgTex  = MakeCircleTex(256, new Color(0f, 0f, 0f, 0.60f), 6, new Color(0.7f, 0.7f, 0.7f, 0.95f));
+        // Background set to transparent (alpha 0) and border to vibrant light blue
+        bgTex  = MakeCircleTex(256, new Color(0f, 0f, 0f, 0f), 6, new Color(0.6f, 0.85f, 1f, 1f));
         dotTex = MakeCircleTex(32, Color.white, 0, Color.white);
         BuildUI();
     }
@@ -207,9 +208,9 @@ public class Radar : MonoBehaviour
         txt.font      = uiFont;
         txt.fontSize  = 20;
         txt.fontStyle = FontStyle.Bold;
-        txt.color     = new Color(1f, 1f, 1f, 0.95f);
+        txt.color     = new Color(0.6f, 0.85f, 1f, 0.95f);
         txt.alignment = TextAnchor.MiddleCenter;
-        txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+txt.horizontalOverflow = HorizontalWrapMode.Overflow;
         txt.verticalOverflow   = VerticalWrapMode.Overflow;
     }
 
@@ -313,8 +314,8 @@ public class Radar : MonoBehaviour
             dotContainer.localEulerAngles = new Vector3(0f, 0f, angle);
 
         // ── Enemies ───────────────────────────────────────────────────────────
-        var enemies = new List<EnemyAI>(EnemyAI.allEnemies.Count);
-        foreach (var e in EnemyAI.allEnemies)
+        var enemies = new List<EnemyMovement>(EnemyMovement.allEnemies.Count);
+        foreach (var e in EnemyMovement.allEnemies)
             if (e != null) enemies.Add(e);
 
         enemies.Sort((a, b) =>
@@ -341,7 +342,7 @@ public class Radar : MonoBehaviour
         {
             if (p == null) continue;
             PlaceDot(ToRadarPos(p.transform.position, playerPos),
-                     new Color(1f, 0.95f, 0.2f, 1f));
+                     new Color(0.6f, 0.85f, 1f, 1f));
         }
 
         // Heading strip removed — CompassBar provides this now.

@@ -75,9 +75,9 @@ public class LegacyHUDCleanup : MonoBehaviour
 
     private static void Cleanup()
     {
-        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include);
         foreach (var c in canvases)
-        {
+{
             if (c == null) continue;
             if (IsSafe(c.transform)) continue;
             Destroy(c.gameObject);

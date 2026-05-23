@@ -37,6 +37,10 @@ public class DefeatScreen : MonoBehaviour
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         EnsureEventSystem();
         Time.timeScale = 0f;
+        
+        // Unlock cursor so buttons are clickable
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     private void Init(int s, int k)
@@ -81,7 +85,7 @@ public class DefeatScreen : MonoBehaviour
         MakeText(panel, "GAME OVER", 110, new Color(0.95f, 0.1f, 0.1f), FontStyle.Bold,
                  new Vector2(0, 200), new Vector2(800, 130));
 
-        MakeText(panel, "DEFEATED", 56, new Color(1f, 0.8f, 0.2f), FontStyle.Bold,
+        MakeText(panel, "DEFEATED", 56, new Color(0.6f, 0.85f, 1f), FontStyle.Bold,
                  new Vector2(0, 110), new Vector2(700, 70));
 
         var line = MakeImage(panel, new Color(1f, 1f, 1f, 0.25f));

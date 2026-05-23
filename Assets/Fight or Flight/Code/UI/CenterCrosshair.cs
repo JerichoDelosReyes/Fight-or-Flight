@@ -42,11 +42,11 @@ public class CenterCrosshair : MonoBehaviour
     private void Update()
     {
         if (_canvas == null) return;
-        _canvas.enabled = ControlSchemeManager.IsMouseKeyboard;
-        if (!_canvas.enabled) return;
+        // Always enabled now to ensure the player always has a middle cursor.
+        _canvas.enabled = true;
 
         // Raycast from the camera through the screen centre — if the hit is on
-        // an Enemy, switch the crosshair colour to red.
+// an Enemy, switch the crosshair colour to red.
         bool aimingAtEnemy = false;
         var cam = Camera.main;
         if (cam != null)
@@ -55,12 +55,17 @@ public class CenterCrosshair : MonoBehaviour
                                                        Screen.height * 0.5f, 0f));
             if (Physics.Raycast(ray, out var hit, 15000f))
             {
-                // Walk up the hit hierarchy to find an Enemy tag / EnemyAI.
+                // Walk up the hit hierarchy to find an Enemy tag, EnemyAI, EnemyMovement or Asteroid.
                 Transform t = hit.transform;
                 while (t != null && !aimingAtEnemy)
                 {
-                    if (t.CompareTag("Enemy") || t.GetComponent<EnemyAI>() != null)
+                    if (t.CompareTag("Enemy") || 
+                        t.GetComponent<EnemyAI>() != null || 
+                        t.GetComponent<EnemyMovement>() != null ||
+                        t.GetComponentInParent<Asteroid>() != null)
+                    {
                         aimingAtEnemy = true;
+                    }
                     t = t.parent;
                 }
             }

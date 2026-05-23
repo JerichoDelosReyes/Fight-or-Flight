@@ -34,9 +34,10 @@ public class ShipPhysics : MonoBehaviour
     public bool useAngularAcceleration = true;
 
     public Rigidbody Rigidbody { get { return rbody; } }
+    public Vector3 CurrentLinearInput { get; private set; }
 
     private Vector3 appliedLinearForce = Vector3.zero;
-    private Vector3 appliedAngularForce = Vector3.zero;
+private Vector3 appliedAngularForce = Vector3.zero;
     private Vector3 rawAngularInput = Vector3.zero;
 
     private Rigidbody rbody;
@@ -44,7 +45,6 @@ public class ShipPhysics : MonoBehaviour
     // Keep a reference to the ship this is attached to just in case.
     private Ship ship;
 
-    // Use this for initialization
     void Awake()
     {
         rbody = GetComponent<Rigidbody>();
@@ -77,21 +77,16 @@ public class ShipPhysics : MonoBehaviour
     {
         if (rbody != null)
         {
-            if (autoDisableKinematic && rbody.isKinematic)
-                rbody.isKinematic = false;
-
-            if (autoUnfreezeRotation && (rbody.constraints & RigidbodyConstraints.FreezeRotation) != 0)
-                rbody.constraints &= ~RigidbodyConstraints.FreezeRotation;
-
             if (rawAngularInput.sqrMagnitude > 0.0001f)
                 rbody.WakeUp();
 
             rbody.AddRelativeForce(appliedLinearForce * forceMultiplier, ForceMode.Force);
 
-            // Limit speed
-            if (rbody.linearVelocity.magnitude > ScriptsReference.MaxSpeed)
+            // Limit speed - use sqrMagnitude first for performance
+            float maxSpeed = ScriptsReference.MaxSpeed;
+            if (!rbody.isKinematic && rbody.linearVelocity.sqrMagnitude > maxSpeed * maxSpeed)
             {
-                rbody.linearVelocity = rbody.linearVelocity.normalized * ScriptsReference.MaxSpeed;
+                rbody.linearVelocity = rbody.linearVelocity.normalized * maxSpeed;
             }
 
             ForceMode torqueMode = useAngularAcceleration ? ForceMode.Acceleration : ForceMode.Force;
@@ -104,37 +99,50 @@ public class ShipPhysics : MonoBehaviour
     private void EnforceBoundaries()
     {
         // Simple spherical boundary based on the background size
-        if (transform.position.magnitude > ScriptsReference.BoundaryLimit)
+        float boundary = ScriptsReference.BoundaryLimit;
+        if (transform.position.sqrMagnitude > boundary * boundary)
         {
+            Vector3 pos = transform.position;
+            Vector3 normalizedPos = pos.normalized;
+
             // Gently push back and clamp position
-            transform.position = transform.position.normalized * ScriptsReference.BoundaryLimit;
+            transform.position = normalizedPos * boundary;
 
             // Reduce velocity component moving away from center
-            if (Vector3.Dot(rbody.linearVelocity, transform.position.normalized) > 0)
+            if (!rbody.isKinematic && Vector3.Dot(rbody.linearVelocity, normalizedPos) > 0)
             {
                 // Reflect or dampen velocity
-                rbody.linearVelocity = Vector3.ProjectOnPlane(rbody.linearVelocity, transform.position.normalized) * 0.5f;
+                rbody.linearVelocity = Vector3.ProjectOnPlane(rbody.linearVelocity, normalizedPos) * 0.5f;
             }
         }
     }
 
-    /// <summary>
-    /// Sets the input for how much of linearForce and angularForce are applied
-    /// to the ship. Each component of the input vectors is assumed to be scaled
-    /// from -1 to 1, but is not clamped.
-    /// </summary>
-    public void SetPhysicsInput(Vector3 linearInput, Vector3 angularInput)
+    public void SetLinearInput(Vector3 linearInput)
     {
-        appliedLinearForce = MultiplyByComponent(linearInput, linearForce);
+        CurrentLinearInput = linearInput;
+        appliedLinearForce = Vector3.Scale(linearInput, linearForce);
 
         // Apply reverse multiplier to longitudinal thrust if moving backwards
         if (linearInput.z < 0)
         {
             appliedLinearForce.z *= reverseMultiplier;
         }
+    }
 
-        appliedAngularForce = MultiplyByComponent(angularInput, angularForce);
+    public void SetAngularInput(Vector3 angularInput)
+    {
+        appliedAngularForce = Vector3.Scale(angularInput, angularForce);
         rawAngularInput = angularInput;
+    }
+
+    /// <summary>
+    /// Sets the input for how much of linearForce and angularForce are applied
+    /// to the ship.
+    /// </summary>
+    public void SetPhysicsInput(Vector3 linearInput, Vector3 angularInput)
+    {
+        SetLinearInput(linearInput);
+        SetAngularInput(angularInput);
     }
 
     /// <summary>

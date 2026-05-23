@@ -147,7 +147,7 @@ public class PauseManager : MonoBehaviour
         rt.sizeDelta = new Vector2(90f, 70f);
 
         var img = go.AddComponent<Image>();
-        img.color = new Color(0f, 0f, 0f, 0.55f);
+        img.color = new Color(0f, 0f, 0f, 0f);
 
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = img;
@@ -213,7 +213,7 @@ public class PauseManager : MonoBehaviour
         titleText.font = font;
         titleText.fontSize = 46;
         titleText.fontStyle = FontStyle.Bold;
-        titleText.color = new Color(1f, 0.95f, 0.5f, 1f);
+        titleText.color = new Color(0.6f, 0.85f, 1f, 1f);
         titleText.alignment = TextAnchor.MiddleCenter;
         titleText.text = "PAUSED";
 

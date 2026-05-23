@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class ShipLaserProjectile : MonoBehaviour
 {
-    public float speed = 1000f; 
-    public float lifeTime = 3f;
+    public float speed = 5000f; 
+public float lifeTime = 5f;
     public float damage = 8f;
     public string targetTag = "Enemy";
 
@@ -25,12 +25,8 @@ public class ShipLaserProjectile : MonoBehaviour
 
     private void Start()
     {
-        // If Initialize wasn't called or passed zero, fall back to current transform.forward
-        if (movementDirection == Vector3.zero)
-            movementDirection = transform.forward;
-
         // Ensure it's not parented to the ship so it doesn't follow its movement
-        transform.SetParent(null);
+        transform.SetParent(null, true);
 
         Destroy(gameObject, lifeTime);
 
@@ -45,7 +41,13 @@ public class ShipLaserProjectile : MonoBehaviour
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.isKinematic = true;
+            // Only set velocity if not already kinematic to avoid console warnings.
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = true;
+            }
             rb.useGravity = false;
         }
     }

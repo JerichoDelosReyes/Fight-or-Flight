@@ -117,7 +117,9 @@ public class ShipInput : MonoBehaviour
         transform.Rotate(pitchAngle, yawAngle, rollAngle, Space.Self);
 
         // Zero angular velocity so the Rigidbody can't fight our direct rotation.
-        if (cachedRb != null) cachedRb.angularVelocity = Vector3.zero;
+        // Only do this if the body is not kinematic to avoid console warnings.
+        if (cachedRb != null && !cachedRb.isKinematic) 
+            cachedRb.angularVelocity = Vector3.zero;
 
         // Leave pitch/yaw/roll at zero — no physics torque for rotation in this mode.
         // throttle and strafe still flow through physics for translation.

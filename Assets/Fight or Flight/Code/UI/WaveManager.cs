@@ -18,11 +18,12 @@ public class WaveManager : MonoBehaviour
     private const float InterWaveDelay   = 5f;
     private const float SpawnRadius      = 2500f;
     private const float MinPlayerDist    = 800f;
-    private const int   BaseEnemyCount   = 3;
-    private const int   EnemyIncrement   = 2;
+    private const int   BaseEnemyCount   = 10;
+    private const int   EnemyIncrement   = 5;
+    private const int   MaxWave          = 5;
 
     // ── Runtime state ─────────────────────────────────────────────────────────
-    private GameObject enemyPrefab;
+private GameObject enemyPrefab;
     private int        activeEnemies;
     private bool       gameActive;
     private bool       waveInProgress;
@@ -130,22 +131,32 @@ public class WaveManager : MonoBehaviour
     }
 
     // Deferred by one frame so Unity can process the Destroy() call from ShipHealth.Die()
-    // before we check EnemyAI.allEnemies. Without the yield, the dying enemy is still in
+    // before we check EnemyMovement.allEnemies. Without the yield, the dying enemy is still in
     // the list when this runs, making Count = 1 when it should be 0.
     private IEnumerator CheckAllEnemiesDead()
     {
         yield return null;
         if (!gameActive || !waveInProgress) yield break;
 
-        if (EnemyAI.allEnemies.Count == 0)
+        if (EnemyMovement.allEnemies.Count == 0)
         {
             waveInProgress = false;
-            StartCoroutine(InterWaveCountdown());
+            
+            // Check for game completion
+            if (CurrentWave >= MaxWave)
+            {
+                gameActive = false;
+                VictoryScreen.Show(ScoreManager.Score, ScoreManager.Kills);
+            }
+            else
+            {
+                StartCoroutine(InterWaveCountdown());
+            }
         }
         else
         {
             // Enemies are still alive (counter drifted); resync to the real list.
-            activeEnemies = EnemyAI.allEnemies.Count;
+            activeEnemies = EnemyMovement.allEnemies.Count;
         }
     }
 
@@ -285,7 +296,7 @@ public class WaveManager : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             SpawnEnemy();
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(2.5f); // Increased delay for "one by one" feel
         }
     }
 
@@ -303,7 +314,16 @@ public class WaveManager : MonoBehaviour
         if (pos.magnitude > spawnLimit)
             pos = pos.normalized * spawnLimit;
 
-        Instantiate(enemyPrefab, pos, Quaternion.identity);
+        // Face the player immediately upon spawn
+        Quaternion rotation = Quaternion.identity;
+        if (Ship.PlayerShip != null)
+        {
+            Vector3 toPlayer = (Ship.PlayerShip.transform.position - pos).normalized;
+            if (toPlayer != Vector3.zero)
+                rotation = Quaternion.LookRotation(toPlayer);
+        }
+
+        Instantiate(enemyPrefab, pos, rotation);
     }
 
     // ── HUD UI (built at runtime — no scene wiring needed) ────────────────────
@@ -326,18 +346,16 @@ public class WaveManager : MonoBehaviour
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        // Persistent top-center "WAVE X" header — with dark panel background.
-        // Positioned BELOW the compass bar (which now occupies the top 10-96 px
-        // including the heading-number readout).
+        // Persistent middle-bottom "WAVE X" header.
         var headerBgGo = new GameObject("WaveHeaderBG");
         headerBgGo.transform.SetParent(canvasGo.transform, false);
         var headerBgRt = headerBgGo.AddComponent<RectTransform>();
-        headerBgRt.anchorMin = new Vector2(0.5f, 1f);
-        headerBgRt.anchorMax = new Vector2(0.5f, 1f);
-        headerBgRt.pivot     = new Vector2(0.5f, 1f);
-        headerBgRt.anchoredPosition = new Vector2(0f, -116f);
+        headerBgRt.anchorMin = new Vector2(0.5f, 0f);
+        headerBgRt.anchorMax = new Vector2(0.5f, 0f);
+        headerBgRt.pivot     = new Vector2(0.5f, 0f);
+        headerBgRt.anchoredPosition = new Vector2(0f, 60f);
         headerBgRt.sizeDelta = new Vector2(340f, 68f);
-        headerBgGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+        headerBgGo.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
 
         var headerGo = new GameObject("WaveHeader");
         headerGo.transform.SetParent(headerBgGo.transform, false);
@@ -347,16 +365,16 @@ public class WaveManager : MonoBehaviour
         headerRt.offsetMin = headerRt.offsetMax = Vector2.zero;
 
         headerGroup = headerBgGo.AddComponent<CanvasGroup>();
-        headerGroup.alpha = 1f;
+headerGroup.alpha = 1f;
         headerGroup.blocksRaycasts = false;
 
         headerText = headerGo.AddComponent<Text>();
         headerText.font = font;
         headerText.fontSize = 40;
         headerText.fontStyle = FontStyle.Bold;
-        headerText.color = new Color(1f, 0.95f, 0.5f);
+        headerText.color = new Color(0.6f, 0.85f, 1f, 1f);
         headerText.alignment = TextAnchor.MiddleCenter;
-        headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
+headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
         headerText.verticalOverflow = VerticalWrapMode.Overflow;
         headerText.text = "";
 
@@ -379,7 +397,7 @@ public class WaveManager : MonoBehaviour
         annBgRt.anchorMin = Vector2.zero;
         annBgRt.anchorMax = Vector2.one;
         annBgRt.offsetMin = annBgRt.offsetMax = Vector2.zero;
-        annBgGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
+        annBgGo.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
 
         var annGo = new GameObject("WaveAnnouncement");
         annGo.transform.SetParent(annContainer.transform, false);

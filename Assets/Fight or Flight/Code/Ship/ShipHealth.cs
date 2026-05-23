@@ -83,8 +83,9 @@ public AudioClip explosionSound;
 
         if (isPlayer)
         {
-            ScreenShake.Trigger(0.2f, 2f);
-            ScreenFlash.Trigger(new Color(1f, 0.1f, 0.1f), 0.12f);
+            ScreenShake.Trigger(0.35f, 5f); // Increased from 0.2f, 2f
+            ScreenFlash.Trigger(new Color(1f, 0.1f, 0.1f, 0.3f), 0.15f);
+            ScreenVignette.Trigger(0.6f, 0.7f); // New vignette effect
         }
 
         if (currentHealth <= 0)
@@ -94,18 +95,30 @@ public AudioClip explosionSound;
         }
     }
 
-    public float collisionDamage = 15f;
+    public float collisionDamage = 5f; // Reduced from 15f
     public GameObject poofPrefab;
+
+    private float _lastCollisionDamageTime;
+    private const float CollisionCooldown = 1.0f; // Seconds between collision damage
 
     private void OnCollisionEnter(Collision collision)
     {
+        if (Time.time < _lastCollisionDamageTime + CollisionCooldown) return;
+
         bool hitObstacle = collision.gameObject.GetComponentInParent<Asteroid>() != null ||
                            collision.gameObject.name.ToLower().Contains("rock") ||
                            collision.gameObject.name.ToLower().Contains("asteroid") ||
                            collision.gameObject.name.StartsWith("BoundaryRock");
 
-        if (!hitObstacle) return;
+        bool hitEnemy = collision.gameObject.CompareTag("Enemy") || 
+                        collision.gameObject.GetComponentInParent<EnemyMovement>() != null;
 
+        if (!hitObstacle && !hitEnemy) return;
+
+        // Enemies don't die on rocks or other enemies anymore.
+        if (!isPlayer) return;
+
+        _lastCollisionDamageTime = Time.time;
         TakeDamage(collisionDamage);
 
         if (isPlayer)
@@ -162,9 +175,9 @@ public AudioClip explosionSound;
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
             foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = false;
             var rb = GetComponent<Rigidbody>();
-            if (rb != null) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
+            if (rb != null && !rb.isKinematic) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
             var input = GetComponent<ShipInput>(); if (input != null) input.enabled = false;
-            var combat = GetComponent<ShipCombat>(); if (combat != null) combat.enabled = false;
+var combat = GetComponent<ShipCombat>(); if (combat != null) combat.enabled = false;
         }
         else
         {

@@ -31,15 +31,14 @@ public class ScoreHUD : MonoBehaviour
     // ── Config ────────────────────────────────────────────────────────────────
 
     private static readonly Color PanelBG    = new Color(0f,    0f,    0f,    0.65f);
-    private static readonly Color ScoreColor = new Color(1f,    0.92f, 0.3f,  1f);
-    private static readonly Color KillColor  = new Color(0.85f, 0.85f, 0.85f, 1f);
+    private static readonly Color ScoreColor = new Color(0.6f,  0.85f, 1f,    1f);
+    private static readonly Color KillColor  = new Color(1f,    0f,    0f,    1f);
     private static readonly Color WaveColor  = new Color(0.6f,  0.85f, 1f,    1f);
 
     // ── Runtime refs ──────────────────────────────────────────────────────────
 
     private Text _scoreText;
     private Text _killText;
-    private Text _waveText;
     private Transform _popupParent;
     private Font _font;
     private int _lastScore = -1;
@@ -58,11 +57,9 @@ public class ScoreHUD : MonoBehaviour
             _scoreText.text = string.Format("SCORE  {0:D6}", ScoreManager.Score);
         if (_killText != null)
             _killText.text  = string.Format("KILLS  {0}", ScoreManager.Kills);
-        if (_waveText != null)
-            _waveText.text  = string.Format("WAVE  {0}", WaveManager.CurrentWave);
 
         // Score popup: spawn a floating "+N" whenever score increases.
-        if (_lastScore < 0) _lastScore = ScoreManager.Score; // initialise without popup
+if (_lastScore < 0) _lastScore = ScoreManager.Score; // initialise without popup
         int delta = ScoreManager.Score - _lastScore;
         if (delta > 0)
         {
@@ -94,10 +91,10 @@ public class ScoreHUD : MonoBehaviour
         txt.font      = _font;
         txt.fontSize  = 26;
         txt.fontStyle = FontStyle.Bold;
-        txt.color     = new Color(1f, 0.95f, 0.35f, 1f);
+        txt.color     = new Color(0.6f, 0.85f, 1f, 1f);
         txt.alignment = TextAnchor.MiddleRight;
         txt.text      = "+" + amount;
-        txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+txt.horizontalOverflow = HorizontalWrapMode.Overflow;
         txt.verticalOverflow   = VerticalWrapMode.Overflow;
         txt.raycastTarget = false;
 
@@ -131,7 +128,7 @@ public class ScoreHUD : MonoBehaviour
         panelRt.pivot            = new Vector2(1f, 1f);
         panelRt.anchoredPosition = new Vector2(-18f, -18f);
         panelRt.sizeDelta        = new Vector2(340f, 150f);
-        panelGo.AddComponent<Image>().color = PanelBG;
+        panelGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
         // Score popups float upward beneath the panel — siblings of the panel
         // on the same canvas so they share the screen-space layer.
         _popupParent = canvasGo.transform;
@@ -142,9 +139,6 @@ public class ScoreHUD : MonoBehaviour
         // Kill counter
         _killText  = AddLine(panelGo.transform, font, "KILLS  0",
                              KillColor,  24, FontStyle.Bold, -74f);
-        // Wave
-        _waveText  = AddLine(panelGo.transform, font, "WAVE  1",
-                             WaveColor,  24, FontStyle.Bold, -110f);
     }
 
     private Text AddLine(Transform parent, Font font, string initial,
@@ -159,7 +153,7 @@ public class ScoreHUD : MonoBehaviour
         rt.sizeDelta        = new Vector2(280f, 36f);
 
         var txt = go.AddComponent<Text>();
-        txt.text      = initial;
+txt.text      = initial;
         txt.font      = font;
         txt.fontSize  = size;
         txt.fontStyle = style;
