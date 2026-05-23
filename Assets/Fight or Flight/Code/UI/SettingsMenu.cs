@@ -167,7 +167,7 @@ public class SettingsMenu : MonoBehaviour
 
     private void LoadCurrent()
     {
-        selectedScheme = PlayerPrefs.GetInt(KeyControlScheme, 0);
+        selectedScheme = PlayerPrefs.GetInt(KeyControlScheme, 1);
     }
 
     // ── UI construction ───────────────────────────────────────────────────────

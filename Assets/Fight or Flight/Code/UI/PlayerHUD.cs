@@ -27,15 +27,6 @@ public class PlayerHUD : MonoBehaviour
         if (scene.name != "MainScene") return;
         if (Object.FindAnyObjectByType<PlayerHUD>() != null) return;
 
-#if UNITY_EDITOR
-        string path = "Assets/Fight or Flight/Content/UI/PlayerHUD.prefab";
-        GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        if (prefab != null)
-        {
-            UnityEditor.PrefabUtility.InstantiatePrefab(prefab);
-            return;
-        }
-#endif
         new GameObject("PlayerHUD").AddComponent<PlayerHUD>();
     }
 
@@ -45,11 +36,17 @@ public class PlayerHUD : MonoBehaviour
     private const float PanelH  = 280f;
     private const float MarginX = 30f;
     // Anchored to the bottom-left corner.
-    private const float MarginY = 30f;
+    private const float MarginY = -66f;
 
     private const float BarW    = 350f;
     private const float BarH    = 18f;
-    private const float RowGap  = 80f;
+    private const float RowGap  = 60f;
+    private const float IconSize = 40f;
+    private const float IconGap  = 12f;
+
+    private const string HealthIconPath = "Assets/Fight or Flight/Content/Materials/health.png";
+    private const string ShieldIconPath = "Assets/Fight or Flight/Content/Materials/shield.png";
+    private const string HeatIconPath   = "Assets/Fight or Flight/Content/Materials/heat.png";
 
     private static readonly Color PanelBG     = new Color(0f, 0f, 0f, 0f);
     private static readonly Color HealthFull  = new Color(0.15f, 0.85f, 0.15f, 1f);
@@ -64,7 +61,6 @@ public class PlayerHUD : MonoBehaviour
     // ── Runtime refs ──────────────────────────────────────────────────────────
 
     private Image        _healthFill,  _shieldFill,  _heatFill;
-    private Text         _healthVal,   _shieldVal,   _heatVal;
     private Image        _panelBg;
     private Image        _heatBarBg;
 
@@ -99,7 +95,9 @@ public class PlayerHUD : MonoBehaviour
     private void FindReferencesInHierarchy()
     {
         Transform canvas = transform.Find("PlayerHUDCanvas");
+        if (canvas == null) return;
         Transform panel = canvas.Find("HUDPanel");
+        if (panel == null) return;
         _panelBg = panel.GetComponent<Image>();
 
         int barIndex = 0;
@@ -108,13 +106,14 @@ public class PlayerHUD : MonoBehaviour
             Transform child = panel.GetChild(i);
             if (child.name == "BarBg")
             {
-                Image fill = child.Find("Fill").GetComponent<Image>();
-                Text val = child.Find("Val").GetComponent<Text>();
+                Transform fillTrans = child.Find("Fill");
+                Image fill = fillTrans != null ? fillTrans.GetComponent<Image>() : null;
+                
                 RectTransform rt = child.GetComponent<RectTransform>();
 
-                if (barIndex == 0) { _healthFill = fill; _healthVal = val; _healthRowRt = rt; _healthRowBaseAnchor = rt.anchoredPosition; }
-                else if (barIndex == 1) { _shieldFill = fill; _shieldVal = val; _shieldRowRt = rt; }
-                else if (barIndex == 2) { _heatFill = fill; _heatVal = val; _heatRowRt = rt; _heatBarBg = child.GetComponent<Image>(); }
+                if (barIndex == 0) { _healthFill = fill; _healthRowRt = rt; _healthRowBaseAnchor = rt.anchoredPosition; }
+                else if (barIndex == 1) { _shieldFill = fill; _shieldRowRt = rt; }
+                else if (barIndex == 2) { _heatFill = fill; _heatRowRt = rt; _heatBarBg = child.GetComponent<Image>(); }
                 barIndex++;
             }
         }
@@ -182,7 +181,6 @@ public class PlayerHUD : MonoBehaviour
             }
 
             if (_healthFill != null) { _healthFill.fillAmount = hFrac; _healthFill.color = hCol; }
-            if (_healthVal  != null) _healthVal.text = (int)_health.currentHealth + " / " + (int)_health.maxHealth;
 
             // Shield bar — normal interpolation + brief white/blue flash when fully restored.
             Color shieldCol = Color.Lerp(ShieldEmpty, ShieldFull, sFrac);
@@ -192,7 +190,6 @@ public class PlayerHUD : MonoBehaviour
                 shieldCol = Color.Lerp(shieldCol, Color.white, t);
             }
             if (_shieldFill != null) { _shieldFill.fillAmount = sFrac; _shieldFill.color = shieldCol; }
-            if (_shieldVal  != null) _shieldVal.text = (int)_health.currentShield + " / " + (int)_health.maxShield;
 
             // Pulse panel border red at low HP
             if (_panelBg != null)
@@ -221,11 +218,6 @@ public class PlayerHUD : MonoBehaviour
             }
 
             if (_heatFill != null) { _heatFill.fillAmount = heatFrac; _heatFill.color = heatCol; }
-            if (_heatVal  != null) 
-            {
-                if (_combat.isOverheated) _heatVal.text = "OVERHEATED";
-                else _heatVal.text = (int)(heatFrac * 100f) + "%";
-            }
 
             if (_heatBarBg != null)
             {
@@ -269,57 +261,58 @@ public class PlayerHUD : MonoBehaviour
         float currentY = PanelH - 40f;
 
         // Row 0 — HEALTH
-        AddLabel(panelGo.transform, font, "HEALTH", 0f, currentY, HealthFull);
-        currentY -= 25f;
-        (_healthFill, _healthVal, _healthRowRt) = AddBarRow(panelGo.transform, font, 0f, currentY, BarH, HealthFull);
+        (_healthFill, _healthRowRt) = AddBarRow(panelGo.transform, HealthIconPath, 0f, currentY, BarH, HealthFull);
         _healthRowBaseAnchor = _healthRowRt.anchoredPosition;
 
         // Row 1 — SHIELD
-        currentY -= RowGap - 25f;
-        AddLabel(panelGo.transform, font, "SHIELD", 0f, currentY, ShieldFull);
-        currentY -= 25f;
-        (_shieldFill, _shieldVal, _shieldRowRt) = AddBarRow(panelGo.transform, font, 0f, currentY, BarH - 4f, ShieldFull);
+        currentY -= RowGap;
+        (_shieldFill, _shieldRowRt) = AddBarRow(panelGo.transform, ShieldIconPath, 0f, currentY, BarH, ShieldFull);
 
         // Row 2 — HEAT
-        currentY -= RowGap - 25f;
-        AddLabel(panelGo.transform, font, "HEAT", 0f, currentY, HeatHot);
-        currentY -= 25f;
-        (_heatFill, _heatVal, _heatRowRt) = AddBarRow(panelGo.transform, font, 0f, currentY, BarH, HeatHot);
+        currentY -= RowGap;
+        (_heatFill, _heatRowRt) = AddBarRow(panelGo.transform, HeatIconPath, 0f, currentY, BarH, HeatHot);
         _heatBarBg = _heatRowRt.GetComponent<Image>();
     }
 
     private void AddLabel(Transform parent, Font font, string text, float x, float y, Color col)
     {
-        var go = new GameObject("Lbl_" + text);
-        go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
-        rt.pivot            = new Vector2(0f, 0.5f);
-        rt.anchoredPosition = new Vector2(x, y);
-        rt.sizeDelta        = new Vector2(BarW, 26f);
-        var t = go.AddComponent<Text>();
-        t.text      = text;
-        t.font      = font;
-        t.fontSize  = 18;
-        t.fontStyle = FontStyle.Bold;
-        t.color     = col;
-        t.alignment = TextAnchor.MiddleLeft;
-        t.horizontalOverflow = HorizontalWrapMode.Overflow;
-        t.verticalOverflow   = VerticalWrapMode.Overflow;
     }
 
-    // Returns (fillImage, valueText-inside-bar, barBgRectTransform).
-    private (Image, Text, RectTransform) AddBarRow(Transform parent, Font font, float x, float y, float h, Color initialCol)
+    // Returns (fillImage, barBgRectTransform).
+    private (Image, RectTransform) AddBarRow(Transform parent, string iconPath, float x, float y, float h, Color initialCol)
     {
+        Sprite roundedSprite = RoundedRectSprite.Get();
+
+        // Icon
+        var iconGo = new GameObject("Icon");
+        iconGo.transform.SetParent(parent, false);
+        var iconRt = iconGo.AddComponent<RectTransform>();
+        iconRt.anchorMin = iconRt.anchorMax = new Vector2(0f, 0f);
+        iconRt.pivot            = new Vector2(0f, 0.5f);
+        iconRt.anchoredPosition = new Vector2(x, y);
+        iconRt.sizeDelta        = new Vector2(IconSize, IconSize);
+        var iconImg = iconGo.AddComponent<Image>();
+        iconImg.preserveAspect = true;
+#if UNITY_EDITOR
+        iconImg.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
+#endif
+
         // Background
         var bgGo = new GameObject("BarBg");
         bgGo.transform.SetParent(parent, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
         bgRt.anchorMin = bgRt.anchorMax = new Vector2(0f, 0f);
-        bgRt.pivot            = new Vector2(0f, 0f);
-        bgRt.anchoredPosition = new Vector2(x, y);
-        bgRt.sizeDelta        = new Vector2(BarW, h);
-        bgGo.AddComponent<Image>().color = BarBG;
+        bgRt.pivot            = new Vector2(0f, 0.5f);
+        bgRt.anchoredPosition = new Vector2(x + IconSize + IconGap, y);
+        bgRt.sizeDelta        = new Vector2(BarW - (IconSize + IconGap), h);
+        var bgImg = bgGo.AddComponent<Image>();
+        bgImg.color = BarBG;
+        bgImg.sprite = roundedSprite;
+        bgImg.type = Image.Type.Sliced;
+        
+        // Add Mask for rounded clipping
+        var mask = bgGo.AddComponent<Mask>();
+        mask.showMaskGraphic = true;
 
         // Fill
         var fillGo = new GameObject("Fill");
@@ -333,25 +326,10 @@ public class PlayerHUD : MonoBehaviour
         fill.fillMethod = Image.FillMethod.Horizontal;
         fill.fillAmount = 1f;
         fill.color      = initialCol;
-
-        // Value text INSIDE the bar (right-aligned)
-        var valGo = new GameObject("Val");
-        valGo.transform.SetParent(bgGo.transform, false);
-        var valRt = valGo.AddComponent<RectTransform>();
-        valRt.anchorMin = Vector2.zero;
-        valRt.anchorMax = Vector2.one;
-        valRt.offsetMin = new Vector2(0, 0);
-        valRt.offsetMax = new Vector2(-10, 0);
-        var val = valGo.AddComponent<Text>();
-        val.text      = "—";
-        val.font      = font;
-        val.fontSize  = 14;
-        val.fontStyle = FontStyle.Bold;
-        val.color     = Color.white;
-        val.alignment = TextAnchor.MiddleRight;
-        val.horizontalOverflow = HorizontalWrapMode.Overflow;
-        val.verticalOverflow   = VerticalWrapMode.Overflow;
-
-        return (fill, val, bgRt);
+        // No sprite on fill needed because mask clips it, 
+        // but we can add it if we want the right edge to be rounded too when partially full.
+        // However, a horizontal fill with a mask is usually cleaner.
+        
+        return (fill, bgRt);
     }
 }

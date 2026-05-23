@@ -14,14 +14,14 @@ public static class ControlSchemeManager
     private const string InvertYKey              = "InvertY";
     private const string InvertPitchKeyboardKey  = "InvertPitchKeyboard";
 
-    public static Scheme Current              { get; private set; } = Scheme.KeyboardOnly;
+    public static Scheme Current              { get; private set; } = Scheme.MouseKeyboard;
     public static bool   InvertY              { get; private set; } = false;
     public static bool   InvertPitchKeyboard  { get; private set; } = false;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Load()
     {
-        Current             = (Scheme)PlayerPrefs.GetInt(SchemeKey, (int)Scheme.KeyboardOnly);
+        Current             = (Scheme)PlayerPrefs.GetInt(SchemeKey, (int)Scheme.MouseKeyboard);
         InvertY             = PlayerPrefs.GetInt(InvertYKey, 0) != 0;
         InvertPitchKeyboard = PlayerPrefs.GetInt(InvertPitchKeyboardKey, 0) != 0;
     }
