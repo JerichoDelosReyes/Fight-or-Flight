@@ -54,8 +54,8 @@ public class PlayerHUD : MonoBehaviour
     private static readonly Color HealthLow   = new Color(0.95f, 0.05f, 0.05f, 1f);
     private static readonly Color ShieldFull  = new Color(0f,    0.75f, 1f,    1f);
     private static readonly Color ShieldEmpty = new Color(0f,    0.20f, 0.55f, 1f);
-    private static readonly Color HeatCool    = new Color(0.1f,  0.5f,  1f,    1f);
-    private static readonly Color HeatHot     = new Color(1f,    0.2f,  0f,    1f);
+    private static readonly Color HeatCool    = new Color(1f,    0.6f,  0.6f,  1f);
+    private static readonly Color HeatHot     = new Color(1f,    0.0f,  0.0f,  1f);
     private static readonly Color BarBG       = new Color(0.15f, 0.15f, 0.15f, 0.8f);
 
     // ── Runtime refs ──────────────────────────────────────────────────────────
@@ -283,28 +283,15 @@ public class PlayerHUD : MonoBehaviour
     {
         Sprite roundedSprite = RoundedRectSprite.Get();
 
-        // Icon
-        var iconGo = new GameObject("Icon");
-        iconGo.transform.SetParent(parent, false);
-        var iconRt = iconGo.AddComponent<RectTransform>();
-        iconRt.anchorMin = iconRt.anchorMax = new Vector2(0f, 0f);
-        iconRt.pivot            = new Vector2(0f, 0.5f);
-        iconRt.anchoredPosition = new Vector2(x, y);
-        iconRt.sizeDelta        = new Vector2(IconSize, IconSize);
-        var iconImg = iconGo.AddComponent<Image>();
-        iconImg.preserveAspect = true;
-#if UNITY_EDITOR
-        iconImg.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
-#endif
-
-        // Background
+        // Background (Created first so it's behind the icon)
         var bgGo = new GameObject("BarBg");
         bgGo.transform.SetParent(parent, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
         bgRt.anchorMin = bgRt.anchorMax = new Vector2(0f, 0f);
         bgRt.pivot            = new Vector2(0f, 0.5f);
-        bgRt.anchoredPosition = new Vector2(x + IconSize + IconGap, y);
-        bgRt.sizeDelta        = new Vector2(BarW - (IconSize + IconGap), h);
+        // Overlap: start at the same X as the icon
+        bgRt.anchoredPosition = new Vector2(x, y);
+        bgRt.sizeDelta        = new Vector2(BarW, h);
         var bgImg = bgGo.AddComponent<Image>();
         bgImg.color = BarBG;
         bgImg.sprite = roundedSprite;
@@ -320,15 +307,29 @@ public class PlayerHUD : MonoBehaviour
         var fillRt = fillGo.AddComponent<RectTransform>();
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = Vector2.one;
-        fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
+        // Padding: start fill after the icon's main area
+        fillRt.offsetMin = new Vector2(IconSize - 5f, 0); 
+        fillRt.offsetMax = Vector2.zero;
         var fill = fillGo.AddComponent<Image>();
         fill.type       = Image.Type.Filled;
         fill.fillMethod = Image.FillMethod.Horizontal;
         fill.fillAmount = 1f;
         fill.color      = initialCol;
-        // No sprite on fill needed because mask clips it, 
-        // but we can add it if we want the right edge to be rounded too when partially full.
-        // However, a horizontal fill with a mask is usually cleaner.
+
+        // Icon (Created second so it's in front)
+        var iconGo = new GameObject("Icon");
+        iconGo.transform.SetParent(parent, false);
+        var iconRt = iconGo.AddComponent<RectTransform>();
+        iconRt.anchorMin = iconRt.anchorMax = new Vector2(0f, 0f);
+        iconRt.pivot            = new Vector2(0f, 0.5f);
+        iconRt.anchoredPosition = new Vector2(x, y);
+        iconRt.sizeDelta        = new Vector2(IconSize, IconSize);
+        iconRt.localScale       = new Vector3(1.50000012f, 1.50000012f, 1.50000012f);
+        var iconImg = iconGo.AddComponent<Image>();
+        iconImg.preserveAspect = true;
+#if UNITY_EDITOR
+        iconImg.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
+#endif
         
         return (fill, bgRt);
     }
