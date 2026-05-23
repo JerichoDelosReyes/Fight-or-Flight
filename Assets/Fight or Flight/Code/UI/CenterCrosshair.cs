@@ -55,12 +55,17 @@ public class CenterCrosshair : MonoBehaviour
                                                        Screen.height * 0.5f, 0f));
             if (Physics.Raycast(ray, out var hit, 15000f))
             {
-                // Walk up the hit hierarchy to find an Enemy tag / EnemyAI.
+                // Walk up the hit hierarchy to find an Enemy tag, EnemyAI, EnemyMovement or Asteroid.
                 Transform t = hit.transform;
                 while (t != null && !aimingAtEnemy)
                 {
-                    if (t.CompareTag("Enemy") || t.GetComponent<EnemyAI>() != null)
+                    if (t.CompareTag("Enemy") || 
+                        t.GetComponent<EnemyAI>() != null || 
+                        t.GetComponent<EnemyMovement>() != null ||
+                        t.GetComponentInParent<Asteroid>() != null)
+                    {
                         aimingAtEnemy = true;
+                    }
                     t = t.parent;
                 }
             }
