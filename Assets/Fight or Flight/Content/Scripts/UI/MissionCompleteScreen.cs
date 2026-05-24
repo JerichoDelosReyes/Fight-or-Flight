@@ -155,12 +155,10 @@ public class MissionCompleteScreen : MonoBehaviour
         const float BW = PW - 100f, BH = 70f;
         const float BY = -554f, STEP = -82f;
 
-        var nextBtn   = AddButton(contentRt, "NEXT LEVEL",   BY,        true,  BW, BH);
-        var replayBtn = AddButton(contentRt, "REPLAY LEVEL", BY + STEP, false, BW, BH);
-        var quitBtn   = AddButton(contentRt, "QUIT TO MENU", BY+STEP*2, false, BW, BH);
+        var playBtn = AddButton(contentRt, "PLAY AGAIN",      BY,        true,  BW, BH);
+        var quitBtn = AddButton(contentRt, "QUIT TO MAIN MENU", BY + STEP, false, BW, BH);
 
-        nextBtn.onClick.AddListener(OnNextLevel);
-        replayBtn.onClick.AddListener(OnReplay);
+        playBtn.onClick.AddListener(OnNextLevel);
         quitBtn.onClick.AddListener(OnQuit);
     }
 

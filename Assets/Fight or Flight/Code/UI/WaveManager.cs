@@ -27,6 +27,7 @@ private GameObject enemyPrefab;
     private int        activeEnemies;
     private bool       gameActive;
     private bool       waveInProgress;
+    private float      matchStartTime;
 
     // Persistent top-center header ("WAVE 3") + transient announcement overlay.
     private Text   headerText;
@@ -106,9 +107,10 @@ private GameObject enemyPrefab;
             spawner.enabled = false;
         }
 
-        CurrentWave  = 0;
+        CurrentWave   = 0;
         activeEnemies = 0;
-        gameActive   = true;
+        gameActive    = true;
+        matchStartTime = Time.realtimeSinceStartup;
         StartCoroutine(BeginNextWave());
     }
 
@@ -146,7 +148,7 @@ private GameObject enemyPrefab;
             if (CurrentWave >= MaxWave)
             {
                 gameActive = false;
-                VictoryScreen.Show(ScoreManager.Score, ScoreManager.Kills);
+                MissionCompleteScreen.Show(ScoreManager.Score, Time.realtimeSinceStartup - matchStartTime, ScoreManager.Kills, CurrentWave, MaxWave);
             }
             else
             {
