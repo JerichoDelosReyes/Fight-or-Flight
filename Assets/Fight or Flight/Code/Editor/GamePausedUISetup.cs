@@ -153,11 +153,11 @@ public static class GamePausedUISetup
         const float BW = PW - 44f, BH = 70f;
         const float BY = -136f, STEP = -96f;
 
-        AddButtonPreview(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon",   font);
-        AddButtonPreview(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon", font);
-        AddButtonPreview(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "restart_icon",  font);
-        AddButtonPreview(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "quit_icon",     font);
-    }
+        AddButtonPreview(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "Boxy/Icons/resume",   font);
+        AddButtonPreview(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "Boxy/Icons/settings", font);
+        AddButtonPreview(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "Boxy/Icons/restart",  font);
+        AddButtonPreview(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "Boxy/Icons/quit",     font);
+}
 
     private static void AddButtonPreview(Transform parent, string label, float anchoredY,
                                          bool highlighted, float bw, float bh,
@@ -212,8 +212,8 @@ public static class GamePausedUISetup
             iconRt.sizeDelta = new Vector2(56f, 56f);
             var iconImg = iconRt.gameObject.AddComponent<Image>();
             iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
-            iconImg.preserveAspect = true;
-            iconImg.color = Color.white;
+            iconImg.color = new Color(0f, 1f, 0.831f, 1f);
+            iconImg.raycastTarget = false;
             if (iconImg.sprite == null) iconImg.enabled = false;
         }
     }

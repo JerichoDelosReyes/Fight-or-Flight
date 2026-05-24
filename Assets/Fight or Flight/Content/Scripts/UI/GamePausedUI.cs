@@ -210,10 +210,10 @@ public class GamePausedUI : MonoBehaviour
         const float BW = PW - 44f, BH = 70f;
         const float BY = -136f, STEP = -96f;
 
-        var resumeBtn   = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon");
-        var settingsBtn = AddButton(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon");
-        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "restart_icon");
-        var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "quit_icon");
+        var resumeBtn   = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "Boxy/Icons/resume");
+        var settingsBtn = AddButton(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "Boxy/Icons/settings");
+        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "Boxy/Icons/restart");
+        var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "Boxy/Icons/quit");
 
         resumeBtn.onClick.AddListener(DoResume);
         settingsBtn.onClick.AddListener(DoSettings);
@@ -281,9 +281,9 @@ public class GamePausedUI : MonoBehaviour
             iconRt.sizeDelta = new Vector2(56f, 56f);
             var iconImg = iconRt.gameObject.AddComponent<Image>();
             iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
-            iconImg.preserveAspect = true;
-            // White preserves the sprite's own teal/green colors without double-tinting
-            iconImg.color = Color.white;
+            // Bright teal tint so the icon pops against the dark panel background
+            iconImg.color = new Color(0f, 1f, 0.831f, 1f);
+            iconImg.raycastTarget = false;
             if (iconImg.sprite == null) iconImg.enabled = false;
         }
 
