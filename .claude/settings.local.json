@@ -5,7 +5,8 @@
       "PowerShell(Get-Content *)",
       "Bash(Get-ChildItem -Path \"D:\\\\Game Development\\\\Fight-or-Flight\\\\Assets\\\\*Fight*\" -Recurse -ErrorAction SilentlyContinue)",
       "Bash(Select-Object FullName)",
-      "Bash(dir D:\\\\Game Development\\\\Fight-or-Flight\\\\Assets\\\\Fight or Flight\\\\Code\\\\UI\\\\ *)"
+      "Bash(dir D:\\\\Game Development\\\\Fight-or-Flight\\\\Assets\\\\Fight or Flight\\\\Code\\\\UI\\\\ *)",
+      "Bash(xargs grep -l \"GamePausedUI\\\\|PauseManager\")"
     ]
   }
 }

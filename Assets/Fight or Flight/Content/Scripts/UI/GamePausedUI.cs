@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -15,6 +14,11 @@ public class GamePausedUI : MonoBehaviour
 
     private GameObject pauseOverlay;
     private Font       uiFont;
+
+    // Teal and green color constants matching the reference
+    private static readonly Color Teal      = new Color(0f,    1f,    0.831f, 1f);
+    private static readonly Color TealDim   = new Color(0f,    1f,    0.831f, 0.38f);
+    private static readonly Color GreenText = new Color(0.72f, 1f,    0.55f,  1f);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void HookSceneLoad()
@@ -104,6 +108,10 @@ public class GamePausedUI : MonoBehaviour
         SceneManager.LoadScene("MainMenu");
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // UI construction
+    // ─────────────────────────────────────────────────────────────────────────
+
     private void BuildUI()
     {
         var canvasGo = new GameObject("PauseCanvas");
@@ -121,7 +129,7 @@ public class GamePausedUI : MonoBehaviour
         canvasGo.AddComponent<GraphicRaycaster>();
 
         BuildPauseButton(canvasGo.transform);
-        BuildPauseOverlayFromPrefab(canvasGo.transform);
+        BuildPauseOverlay(canvasGo.transform);
     }
 
     private void BuildPauseButton(Transform canvasT)
@@ -137,59 +145,149 @@ public class GamePausedUI : MonoBehaviour
 
         var img = go.AddComponent<Image>();
         img.sprite = Resources.Load<Sprite>("UI/Sprites/button_base");
+        img.type = Image.Type.Sliced;
         if (img.sprite == null) img.color = new Color(0f, 1f, 0.831f, 0.2f);
         else img.color = Color.white;
-        img.type = Image.Type.Sliced;
 
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = img;
         btn.onClick.AddListener(TogglePause);
 
-        var lblGo = new GameObject("Lbl");
-        lblGo.transform.SetParent(go.transform, false);
-        var lblRt = lblGo.AddComponent<RectTransform>();
+        var lblRt = NewRt("Lbl", go.transform);
         lblRt.anchorMin = Vector2.zero; lblRt.anchorMax = Vector2.one;
         lblRt.offsetMin = lblRt.offsetMax = Vector2.zero;
-        var t = lblGo.AddComponent<Text>();
+        var t = lblRt.gameObject.AddComponent<Text>();
         t.font = uiFont; t.fontSize = 32; t.fontStyle = FontStyle.Bold;
-        t.color = new Color(0f, 1f, 0.831f, 0.85f);
-        t.alignment = TextAnchor.MiddleCenter;
+        t.color = Teal; t.alignment = TextAnchor.MiddleCenter;
         t.text = "II";
     }
 
-    private void BuildPauseOverlayFromPrefab(Transform canvasT)
+    private void BuildPauseOverlay(Transform canvasT)
     {
-        GameObject prefab = Resources.Load<GameObject>("UI/PauseOverlayPrefab");
-        if (prefab != null)
-        {
-            pauseOverlay = Instantiate(prefab, canvasT, false);
-            pauseOverlay.name = "PauseOverlay";
+        // Full-screen dimmer
+        pauseOverlay = new GameObject("PauseOverlay");
+        pauseOverlay.transform.SetParent(canvasT, false);
+        var overlayRt = pauseOverlay.AddComponent<RectTransform>();
+        overlayRt.anchorMin = Vector2.zero;
+        overlayRt.anchorMax = Vector2.one;
+        overlayRt.offsetMin = overlayRt.offsetMax = Vector2.zero;
+        pauseOverlay.AddComponent<Image>().color = new Color(0f, 0.02f, 0.06f, 0.78f);
 
-            // Map buttons
-            Button resumeBtn = FindButton(pauseOverlay.transform, "RESUME");
-            if (resumeBtn != null) resumeBtn.onClick.AddListener(DoResume);
+        // Panel
+        const float PW = 380f, PH = 440f;
+        var panelRt = NewRt("Panel", pauseOverlay.transform);
+        panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
+        panelRt.anchoredPosition = Vector2.zero;
+        panelRt.sizeDelta = new Vector2(PW, PH);
 
-            Button settingsBtn = FindButton(pauseOverlay.transform, "SETTINGS");
-            if (settingsBtn != null) settingsBtn.onClick.AddListener(DoSettings);
+        var panelImg = panelRt.gameObject.AddComponent<Image>();
+        panelImg.sprite = Resources.Load<Sprite>("UI/Sprites/panel_background");
+        panelImg.type = Image.Type.Sliced;
+        if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
+        else panelImg.color = Color.white;
 
-            Button restartBtn = FindButton(pauseOverlay.transform, "RESTART WAVE");
-            if (restartBtn != null) restartBtn.onClick.AddListener(DoRestartWave);
+        // Header box — "GAME PAUSED"
+        const float HW = PW - 30f, HH = 58f;
+        var headerRt = NewRt("Header", panelRt.transform);
+        headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
+        headerRt.anchoredPosition = new Vector2(0f, -22f);
+        headerRt.sizeDelta = new Vector2(HW, HH);
 
-            Button quitBtn = FindButton(pauseOverlay.transform, "QUIT TO MENU");
-            if (quitBtn != null) quitBtn.onClick.AddListener(DoQuitToMenu);
-        }
-        else
-        {
-            Debug.LogError("PauseOverlayPrefab not found in Resources/UI/");
-        }
+        var headerImg = headerRt.gameObject.AddComponent<Image>();
+        headerImg.sprite = Resources.Load<Sprite>("UI/Sprites/header_box");
+        headerImg.type = Image.Type.Sliced;
+        if (headerImg.sprite == null) headerImg.color = new Color(0f, 0.7f, 0.65f, 0.25f);
+        else headerImg.color = Color.white;
 
-        if (pauseOverlay != null) pauseOverlay.SetActive(false);
+        var headerTxtRt = NewRt("Txt", headerRt.transform);
+        headerTxtRt.anchorMin = Vector2.zero; headerTxtRt.anchorMax = Vector2.one;
+        headerTxtRt.offsetMin = headerTxtRt.offsetMax = Vector2.zero;
+        var ht = headerTxtRt.gameObject.AddComponent<Text>();
+        ht.font = uiFont; ht.fontSize = 30; ht.fontStyle = FontStyle.Bold;
+        ht.color = Teal; ht.alignment = TextAnchor.MiddleCenter;
+        ht.text = "GAME PAUSED";
+        ht.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+        // Divider line below header
+        var divRt = NewRt("Divider", panelRt.transform);
+        divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
+        divRt.anchoredPosition = new Vector2(0f, -92f);
+        divRt.sizeDelta = new Vector2(PW - 40f, 2f);
+        divRt.gameObject.AddComponent<Image>().color = TealDim;
+
+        // Buttons
+        const float BW = PW - 44f, BH = 58f;
+        const float BY = -108f, STEP = -76f;
+
+        var resumeBtn  = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon");
+        var settingsBtn = AddButton(panelRt.transform, "SETTINGS",    BY + STEP,   false, BW, BH, "settings_icon");
+        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE",BY + STEP*2, false, BW, BH, "restart_icon");
+        var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU",BY + STEP*3, false, BW, BH, "quit_icon");
+
+        resumeBtn.onClick.AddListener(DoResume);
+        settingsBtn.onClick.AddListener(DoSettings);
+        restartBtn.onClick.AddListener(DoRestartWave);
+        quitBtn.onClick.AddListener(DoQuitToMenu);
+
+        pauseOverlay.SetActive(false);
     }
 
-    private Button FindButton(Transform root, string name)
+    private Button AddButton(Transform parent, string label, float anchoredY, bool highlighted,
+                             float bw, float bh, string iconSpriteName)
     {
-        Transform t = root.Find("Panel/Buttons/" + name);
-        return t != null ? t.GetComponent<Button>() : null;
+        var root = NewRt(label, parent);
+        root.anchorMin = root.anchorMax = root.pivot = new Vector2(0.5f, 1f);
+        root.anchoredPosition = new Vector2(0f, anchoredY);
+        root.sizeDelta = new Vector2(bw, bh);
+
+        var img = root.gameObject.AddComponent<Image>();
+        string spritePath = highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base";
+        img.sprite = Resources.Load<Sprite>(spritePath);
+        img.type = Image.Type.Sliced;
+        if (img.sprite == null)
+            img.color = highlighted ? new Color(0f, 0.45f, 0.1f, 0.92f) : new Color(0f, 0.5f, 0.5f, 0.3f);
+        else
+            img.color = Color.white;
+
+        var btn = root.gameObject.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        // Label — centered, with right padding to avoid overlapping icon
+        var txtRt = NewRt("Txt", root.transform);
+        txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = new Vector2(10f, 0f);
+        txtRt.offsetMax = new Vector2(-48f, 0f);
+        var t = txtRt.gameObject.AddComponent<Text>();
+        t.font = uiFont;
+        t.fontSize = highlighted ? 28 : 24;
+        t.fontStyle = FontStyle.Bold;
+        t.color = highlighted ? GreenText : Teal;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.text = label;
+        t.horizontalOverflow = HorizontalWrapMode.Overflow;
+        t.verticalOverflow   = VerticalWrapMode.Overflow;
+
+        // Icon anchored to right edge
+        var iconRt = NewRt("Icon", root.transform);
+        iconRt.anchorMin = new Vector2(1f, 0.5f);
+        iconRt.anchorMax = new Vector2(1f, 0.5f);
+        iconRt.pivot     = new Vector2(1f, 0.5f);
+        iconRt.anchoredPosition = new Vector2(-10f, 0f);
+        iconRt.sizeDelta = new Vector2(38f, 38f);
+        var iconImg = iconRt.gameObject.AddComponent<Image>();
+        iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
+        iconImg.preserveAspect = true;
+        if (iconImg.sprite == null) iconImg.enabled = false;
+        else iconImg.color = highlighted ? GreenText : Teal;
+
+        return btn;
+    }
+
+    private static RectTransform NewRt(string name, Transform parent)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        return go.AddComponent<RectTransform>();
     }
 
     private static void EnsureEventSystem()

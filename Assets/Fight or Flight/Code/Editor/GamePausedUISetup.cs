@@ -7,31 +7,34 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Editor tool: "Fight or Flight → Setup Game Paused UI"
-/// Builds the complete Game Paused Canvas hierarchy in the currently open scene
-/// so you can visually inspect and tweak the layout without entering Play mode.
+/// Builds a live-editable preview of the pause panel in the currently open scene.
+/// The preview mirrors GamePausedUI.cs exactly — sprites, sizes, and layout.
 ///
-/// The runtime script (GamePausedUI.cs) auto-creates the same hierarchy when
-/// MainScene starts, so this preview is optional — delete it before shipping.
+/// HOW TO USE:
+///   1. Click  Fight or Flight → Setup Game Paused UI
+///   2. In the Hierarchy find  GamePausedUI_Preview → PauseCanvas → PauseOverlay
+///   3. Tick "Active" on PauseOverlay in the Inspector to make it visible
+///   4. Select any child to move / resize / recolour it in the Scene view (just like Figma)
+///   5. When you're happy, copy the numeric values back into GamePausedUI.cs
+///   6. Delete the preview object before shipping
 /// </summary>
 public static class GamePausedUISetup
 {
     [MenuItem("Fight or Flight/Setup Game Paused UI")]
     private static void SetupGamePausedUI()
     {
-        // Remove any existing preview from a prior run
-        var existing = Object.FindFirstObjectByType<GamePausedUI>();
+        var existing = GameObject.Find("GamePausedUI_Preview");
         if (existing != null)
         {
             bool replace = EditorUtility.DisplayDialog(
                 "Setup Game Paused UI",
-                "A GamePausedUI preview already exists in the scene.\nReplace it?",
+                "A preview already exists in the scene.\nReplace it?",
                 "Replace", "Cancel");
             if (!replace) return;
-            Undo.DestroyObjectImmediate(existing.gameObject);
+            Undo.DestroyObjectImmediate(existing);
         }
 
-        // Root object
-        var root = new GameObject("GamePausedUI");
+        var root = new GameObject("GamePausedUI_Preview");
         Undo.RegisterCreatedObjectUndo(root, "Setup Game Paused UI");
 
         // Canvas
@@ -46,7 +49,6 @@ public static class GamePausedUISetup
         scaler.matchWidthOrHeight = 0.5f;
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        // EventSystem (if absent)
         if (Object.FindFirstObjectByType<EventSystem>() == null)
         {
             var es = new GameObject("EventSystem");
@@ -56,181 +58,186 @@ public static class GamePausedUISetup
         }
 
         var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        BuildPreview(canvasGo.transform, font);
+
+        BuildPauseButtonPreview(canvasGo.transform, font);
+        BuildPauseOverlayPreview(canvasGo.transform, font);
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Selection.activeGameObject = root;
 
         EditorUtility.DisplayDialog(
             "Setup Game Paused UI",
-            "Preview created under 'GamePausedUI' in the scene.\n\n" +
-            "• The PauseOverlay child is initially hidden — select it and tick Active to preview.\n" +
-            "• At runtime, GamePausedUI.cs rebuilds this hierarchy automatically.\n" +
-            "• Delete this preview object before shipping (it will be recreated at runtime).",
+            "Preview created under 'GamePausedUI_Preview'.\n\n" +
+            "• Find PauseCanvas → PauseOverlay in the Hierarchy\n" +
+            "• Tick 'Active' in the Inspector to show the panel\n" +
+            "• Select any child element to drag/resize it (like Figma)\n" +
+            "• Copy changed values back into GamePausedUI.cs to make them permanent\n" +
+            "• Delete this preview before shipping",
             "OK");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Preview builder — mirrors GamePausedUI.BuildUI() but runs in Edit mode.
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─── Pause button (top-left corner) ──────────────────────────────────────
 
-    private static void BuildPreview(Transform canvasT, Font font)
-    {
-        BuildPauseButton(canvasT, font);
-
-        // Full-screen overlay
-        var overlay = new GameObject("PauseOverlay");
-        overlay.transform.SetParent(canvasT, false);
-        var rt = overlay.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
-        rt.offsetMin = rt.offsetMax = Vector2.zero;
-        overlay.AddComponent<Image>().color = new Color(0.039f, 0.055f, 0.102f, 0.82f);
-        overlay.SetActive(false); // hidden until designer toggles it
-
-        const float PW = 370f, PH = 440f;
-
-        var panelRoot = MakeCenteredGo("PanelRoot", overlay.transform, new Vector2(PW, PH));
-
-        MakeCenteredImage(panelRoot.transform, "GlowOuter", new Vector2(PW+14,PH+14),
-                          new Color(0f, 1f, 0.831f, 0.06f));
-        MakeCenteredImage(panelRoot.transform, "GlowMid",   new Vector2(PW+7, PH+7),
-                          new Color(0f, 1f, 0.831f, 0.15f));
-        MakeCenteredImage(panelRoot.transform, "Border",    new Vector2(PW,   PH),
-                          new Color(0f, 1f, 0.831f, 0.80f));
-        var fill = MakeCenteredImage(panelRoot.transform, "Fill",
-                                     new Vector2(PW-4, PH-4), SciFiUIStyle.PanelBg);
-
-        BuildPanelContent(fill.gameObject.transform, font);
-    }
-
-    private static void BuildPauseButton(Transform canvasT, Font font)
+    private static void BuildPauseButtonPreview(Transform canvasT, Font font)
     {
         var go = new GameObject("PauseBtn");
         go.transform.SetParent(canvasT, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
-        rt.anchoredPosition = new Vector2(20f, -20f);
-        rt.sizeDelta = new Vector2(80f, 56f);
-        var img = go.AddComponent<Image>();
-        img.color = new Color(0f, 1f, 0.831f, 0.08f);
+        rt.anchoredPosition = new Vector2(30f, -30f);
+        rt.sizeDelta = new Vector2(80f, 80f);
 
-        var lblGo = new GameObject("Lbl");
-        lblGo.transform.SetParent(go.transform, false);
-        var lblRt = lblGo.AddComponent<RectTransform>();
+        var img = go.AddComponent<Image>();
+        img.sprite = Resources.Load<Sprite>("UI/Sprites/button_base");
+        img.type = Image.Type.Sliced;
+        if (img.sprite == null) img.color = new Color(0f, 1f, 0.831f, 0.2f);
+        else img.color = Color.white;
+
+        var lblRt = NewRt("Lbl", go.transform, font);
         lblRt.anchorMin = Vector2.zero; lblRt.anchorMax = Vector2.one;
         lblRt.offsetMin = lblRt.offsetMax = Vector2.zero;
-        var t = lblGo.AddComponent<Text>();
-        t.font = font; t.fontSize = 28; t.fontStyle = FontStyle.Bold;
+        var t = lblRt.gameObject.GetComponent<Text>();
+        t.fontSize = 32; t.fontStyle = FontStyle.Bold;
         t.color = new Color(0f, 1f, 0.831f, 0.85f);
         t.alignment = TextAnchor.MiddleCenter;
         t.text = "II";
     }
 
-    private static void BuildPanelContent(Transform fillT, Font font)
+    // ─── Pause overlay panel ─────────────────────────────────────────────────
+
+    private static void BuildPauseOverlayPreview(Transform canvasT, Font font)
     {
-        AddTopText(fillT, "GAME PAUSED", 46, SciFiUIStyle.Teal, FontStyle.Bold,
-                   new Vector2(0f, -30f), new Vector2(340f, 50f), font);
+        // Full-screen dimmer — starts INACTIVE so it doesn't block the scene
+        var overlay = new GameObject("PauseOverlay");
+        overlay.transform.SetParent(canvasT, false);
+        var ort = overlay.AddComponent<RectTransform>();
+        ort.anchorMin = Vector2.zero; ort.anchorMax = Vector2.one;
+        ort.offsetMin = ort.offsetMax = Vector2.zero;
+        overlay.AddComponent<Image>().color = new Color(0f, 0.02f, 0.06f, 0.78f);
+        overlay.SetActive(false);
 
-        var lineGo = new GameObject("TitleLine");
-        lineGo.transform.SetParent(fillT, false);
-        var lineRt = lineGo.AddComponent<RectTransform>();
-        lineRt.anchorMin = lineRt.anchorMax = lineRt.pivot = new Vector2(0.5f, 1f);
-        lineRt.anchoredPosition = new Vector2(0f, -88f);
-        lineRt.sizeDelta = new Vector2(330f, 2f);
-        lineGo.AddComponent<Image>().color = new Color(0f, 1f, 0.831f, 0.38f);
+        // Panel
+        const float PW = 380f, PH = 440f;
+        var panelRt = NewRtBlank("Panel", overlay.transform);
+        panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
+        panelRt.anchoredPosition = Vector2.zero;
+        panelRt.sizeDelta = new Vector2(PW, PH);
 
-        const float Y0 = -106f, Step = -76f;
-        AddButton(fillT, "RESUME  >>",      Y0,          true,  font);
-        AddButton(fillT, "SETTINGS  *",     Y0+Step,     false, font);
-        AddButton(fillT, "RESTART WAVE",    Y0+Step*2f,  false, font);
-        AddButton(fillT, "QUIT TO MENU  >", Y0+Step*3f,  false, font);
+        var panelImg = panelRt.gameObject.AddComponent<Image>();
+        panelImg.sprite = Resources.Load<Sprite>("UI/Sprites/panel_background");
+        panelImg.type = Image.Type.Sliced;
+        if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
+        else panelImg.color = Color.white;
+
+        // Header box
+        var headerRt = NewRtBlank("Header", panelRt.transform);
+        headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
+        headerRt.anchoredPosition = new Vector2(0f, -22f);
+        headerRt.sizeDelta = new Vector2(PW - 30f, 58f);
+
+        var headerImg = headerRt.gameObject.AddComponent<Image>();
+        headerImg.sprite = Resources.Load<Sprite>("UI/Sprites/header_box");
+        headerImg.type = Image.Type.Sliced;
+        if (headerImg.sprite == null) headerImg.color = new Color(0f, 0.7f, 0.65f, 0.25f);
+        else headerImg.color = Color.white;
+
+        var htRt = NewRt("Txt", headerRt.transform, font);
+        htRt.anchorMin = Vector2.zero; htRt.anchorMax = Vector2.one;
+        htRt.offsetMin = htRt.offsetMax = Vector2.zero;
+        var ht = htRt.gameObject.GetComponent<Text>();
+        ht.fontSize = 30; ht.fontStyle = FontStyle.Bold;
+        ht.color = new Color(0f, 1f, 0.831f, 1f);
+        ht.alignment = TextAnchor.MiddleCenter;
+        ht.text = "GAME PAUSED";
+        ht.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+        // Divider
+        var divRt = NewRtBlank("Divider", panelRt.transform);
+        divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
+        divRt.anchoredPosition = new Vector2(0f, -92f);
+        divRt.sizeDelta = new Vector2(PW - 40f, 2f);
+        divRt.gameObject.AddComponent<Image>().color = new Color(0f, 1f, 0.831f, 0.38f);
+
+        // Buttons
+        const float BW = PW - 44f, BH = 58f;
+        const float BY = -108f, STEP = -76f;
+
+        AddButtonPreview(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon",   font);
+        AddButtonPreview(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon", font);
+        AddButtonPreview(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "restart_icon",  font);
+        AddButtonPreview(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "quit_icon",     font);
     }
 
-    private static void AddButton(Transform parent, string label, float anchoredY,
-                                  bool highlighted, Font font)
+    private static void AddButtonPreview(Transform parent, string label, float anchoredY,
+                                         bool highlighted, float bw, float bh,
+                                         string iconSpriteName, Font font)
     {
-        const float BW = 318f, BH = 58f;
+        var root = NewRtBlank(label, parent);
+        root.anchorMin = root.anchorMax = root.pivot = new Vector2(0.5f, 1f);
+        root.anchoredPosition = new Vector2(0f, anchoredY);
+        root.sizeDelta = new Vector2(bw, bh);
 
-        var cont = new GameObject("BtnCont_" + label.Split(' ')[0]);
-        cont.transform.SetParent(parent, false);
-        var contRt = cont.AddComponent<RectTransform>();
-        contRt.anchorMin = contRt.anchorMax = contRt.pivot = new Vector2(0.5f, 1f);
-        contRt.anchoredPosition = new Vector2(0f, anchoredY);
-        contRt.sizeDelta = new Vector2(BW, BH);
+        var img = root.gameObject.AddComponent<Image>();
+        string spritePath = highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base";
+        img.sprite = Resources.Load<Sprite>(spritePath);
+        img.type = Image.Type.Sliced;
+        if (img.sprite == null)
+            img.color = highlighted ? new Color(0f, 0.45f, 0.1f, 0.92f) : new Color(0f, 0.5f, 0.5f, 0.3f);
+        else
+            img.color = Color.white;
 
-        var borderGo = new GameObject("Border");
-        borderGo.transform.SetParent(cont.transform, false);
-        var borderRt = borderGo.AddComponent<RectTransform>();
-        borderRt.anchorMin = Vector2.zero; borderRt.anchorMax = Vector2.one;
-        borderRt.offsetMin = new Vector2(-2f,-2f); borderRt.offsetMax = new Vector2(2f,2f);
-        borderGo.AddComponent<Image>().color = highlighted
-            ? new Color(SciFiUIStyle.GreenGlow.r, SciFiUIStyle.GreenGlow.g,
-                        SciFiUIStyle.GreenGlow.b, 0.88f)
-            : new Color(SciFiUIStyle.Teal.r, SciFiUIStyle.Teal.g, SciFiUIStyle.Teal.b, 0.30f);
+        root.gameObject.AddComponent<Button>().targetGraphic = img;
 
-        var bgGo = new GameObject("Bg");
-        bgGo.transform.SetParent(cont.transform, false);
-        var bgRt = bgGo.AddComponent<RectTransform>();
-        bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
-        bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
-        bgGo.AddComponent<Image>().color = highlighted
-            ? new Color(0.04f, 0.22f, 0.06f, 0.92f)
-            : SciFiUIStyle.DimButtonBg;
+        // Text
+        var txtRt = NewRt("Txt", root.transform, font);
+        txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = new Vector2(10f, 0f);
+        txtRt.offsetMax = new Vector2(-48f, 0f);
+        var t = txtRt.gameObject.GetComponent<Text>();
+        t.fontSize = highlighted ? 28 : 24;
+        t.fontStyle = FontStyle.Bold;
+        t.color = highlighted
+            ? new Color(0.72f, 1f, 0.55f, 1f)
+            : new Color(0f, 1f, 0.831f, 1f);
+        t.alignment = TextAnchor.MiddleCenter;
+        t.text = label;
+        t.horizontalOverflow = HorizontalWrapMode.Overflow;
+        t.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        var lblGo = new GameObject("Lbl");
-        lblGo.transform.SetParent(bgGo.transform, false);
-        var lblRt = lblGo.AddComponent<RectTransform>();
-        lblRt.anchorMin = Vector2.zero; lblRt.anchorMax = Vector2.one;
-        lblRt.offsetMin = lblRt.offsetMax = Vector2.zero;
-        var txt = lblGo.AddComponent<Text>();
-        txt.font = font; txt.fontSize = highlighted ? 28 : 24;
-        txt.fontStyle = FontStyle.Bold;
-        txt.color = highlighted ? SciFiUIStyle.GreenGlow : SciFiUIStyle.DimText;
-        txt.alignment = TextAnchor.MiddleCenter;
-        txt.text = label;
-        txt.horizontalOverflow = HorizontalWrapMode.Overflow;
-        txt.verticalOverflow   = VerticalWrapMode.Overflow;
+        // Icon
+        var iconRt = NewRtBlank("Icon", root.transform);
+        iconRt.anchorMin = new Vector2(1f, 0.5f);
+        iconRt.anchorMax = new Vector2(1f, 0.5f);
+        iconRt.pivot     = new Vector2(1f, 0.5f);
+        iconRt.anchoredPosition = new Vector2(-10f, 0f);
+        iconRt.sizeDelta = new Vector2(38f, 38f);
+        var iconImg = iconRt.gameObject.AddComponent<Image>();
+        iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
+        iconImg.preserveAspect = true;
+        if (iconImg.sprite == null) iconImg.enabled = false;
+        else iconImg.color = highlighted ? new Color(0.72f, 1f, 0.55f, 1f) : new Color(0f, 1f, 0.831f, 1f);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    private static GameObject MakeCenteredGo(string name, Transform parent, Vector2 size)
+    // Creates a RectTransform + Text component (Text is ready to configure after)
+    private static RectTransform NewRt(string name, Transform parent, Font font)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = Vector2.zero;
-        rt.sizeDelta = size;
-        return go;
-    }
-
-    private static Image MakeCenteredImage(Transform parent, string name,
-                                           Vector2 size, Color color)
-    {
-        var go = MakeCenteredGo(name, parent, size);
-        var img = go.AddComponent<Image>();
-        img.color = color;
-        return img;
-    }
-
-    private static void AddTopText(Transform parent, string content, int size, Color color,
-                                   FontStyle style, Vector2 anchoredPos, Vector2 sizeDelta,
-                                   Font font)
-    {
-        var go = new GameObject("Txt_" + content.Split(' ')[0]);
-        go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = anchoredPos;
-        rt.sizeDelta = sizeDelta;
+        go.AddComponent<RectTransform>();
         var t = go.AddComponent<Text>();
-        t.font = font; t.fontSize = size; t.color = color;
-        t.fontStyle = style; t.alignment = TextAnchor.MiddleCenter;
-        t.horizontalOverflow = HorizontalWrapMode.Overflow;
-        t.verticalOverflow   = VerticalWrapMode.Overflow;
-        t.text = content;
+        t.font = font;
+        return go.GetComponent<RectTransform>();
+    }
+
+    // Creates a bare RectTransform
+    private static RectTransform NewRtBlank(string name, Transform parent)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        return go.AddComponent<RectTransform>();
     }
 }
 #endif
