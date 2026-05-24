@@ -116,7 +116,7 @@ public class MissionCompleteScreen : MonoBehaviour
         contentRt.anchorMin = new Vector2(0, 1); contentRt.anchorMax = new Vector2(1, 1);
         contentRt.pivot = new Vector2(0.5f, 1);
         contentRt.anchoredPosition = Vector2.zero;
-        contentRt.sizeDelta = new Vector2(0, 940f); 
+        contentRt.sizeDelta = new Vector2(0, 780f);
         scrollRect.content = contentRt;
 
         // "MISSION COMPLETE" header
@@ -140,8 +140,8 @@ public class MissionCompleteScreen : MonoBehaviour
         // Icon — centered
         var iconRt = NewRt("Icon", contentRt);
         iconRt.anchorMin = iconRt.anchorMax = iconRt.pivot = new Vector2(0.5f, 1f);
-        iconRt.anchoredPosition = new Vector2(0f, -118f);
-        iconRt.sizeDelta = new Vector2(240f, 240f);
+        iconRt.anchoredPosition = new Vector2(0f, -126f);
+        iconRt.sizeDelta = new Vector2(180f, 180f);
         var iconImg = iconRt.gameObject.AddComponent<Image>();
         iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/mission_comp");
         iconImg.preserveAspect = true;
@@ -153,7 +153,7 @@ public class MissionCompleteScreen : MonoBehaviour
 
         // Buttons
         const float BW = PW - 100f, BH = 70f;
-        const float BY = -600f, STEP = -90f;
+        const float BY = -510f, STEP = -82f;
 
         var nextBtn   = AddButton(contentRt, "NEXT LEVEL",   BY,        true,  BW, BH);
         var replayBtn = AddButton(contentRt, "REPLAY LEVEL", BY + STEP, false, BW, BH);
@@ -169,7 +169,7 @@ public class MissionCompleteScreen : MonoBehaviour
         // "MISSION SUCCESSFUL!" subtitle label
         var subtitleRt = NewRt("Subtitle", contentT);
         subtitleRt.anchorMin = subtitleRt.anchorMax = subtitleRt.pivot = new Vector2(0.5f, 1f);
-        subtitleRt.anchoredPosition = new Vector2(0f, -370f);
+        subtitleRt.anchoredPosition = new Vector2(0f, -302f);
         subtitleRt.sizeDelta = new Vector2(PW - 80f, 32f);
         var st = subtitleRt.gameObject.AddComponent<Text>();
         st.font = uiFont; st.fontSize = 24; st.fontStyle = FontStyle.Bold;
@@ -186,7 +186,7 @@ public class MissionCompleteScreen : MonoBehaviour
             ("WAVES COMPLETED:",  $"{_waves} OF {_totalWaves}"),
         };
 
-        float rowY = -410f;
+        float rowY = -342f;
         const float ROW_H = 36f, ROW_STEP = -36f;
         float sideMargin = 60f;
 
