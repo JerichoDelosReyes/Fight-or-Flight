@@ -133,7 +133,7 @@ public static class GamePausedUISetup
         // "GAME PAUSED" — plain text, extra top padding
         var headerRt = NewRt("Header", panelRt.transform, font);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
-        headerRt.anchoredPosition = new Vector2(0f, -44f);
+        headerRt.anchoredPosition = new Vector2(0f, -32f);
         headerRt.sizeDelta = new Vector2(PW - 30f, 64f);
         var ht = headerRt.gameObject.GetComponent<Text>();
         ht.fontSize = 40; ht.fontStyle = FontStyle.Bold;
@@ -145,13 +145,13 @@ public static class GamePausedUISetup
         // Divider
         var divRt = NewRtBlank("Divider", panelRt.transform);
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
-        divRt.anchoredPosition = new Vector2(0f, -120f);
+        divRt.anchoredPosition = new Vector2(0f, -96f);
         divRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divRt.gameObject.AddComponent<Image>().color = new Color(0f, 1f, 0.831f, 0.38f);
 
-        // Buttons — vertically centered below divider (50 px margin each side)
+        // Buttons — vertically centered below divider
         const float BW = PW - 44f, BH = 70f;
-        const float BY = -172f, STEP = -96f;
+        const float BY = -136f, STEP = -96f;
 
         AddButtonPreview(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon",   font);
         AddButtonPreview(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon", font);
