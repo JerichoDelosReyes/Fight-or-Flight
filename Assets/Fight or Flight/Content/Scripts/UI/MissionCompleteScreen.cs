@@ -153,7 +153,7 @@ public class MissionCompleteScreen : MonoBehaviour
 
         // Buttons
         const float BW = PW - 100f, BH = 70f;
-        const float BY = -510f, STEP = -82f;
+        const float BY = -554f, STEP = -82f;
 
         var nextBtn   = AddButton(contentRt, "NEXT LEVEL",   BY,        true,  BW, BH);
         var replayBtn = AddButton(contentRt, "REPLAY LEVEL", BY + STEP, false, BW, BH);
@@ -170,9 +170,9 @@ public class MissionCompleteScreen : MonoBehaviour
         var subtitleRt = NewRt("Subtitle", contentT);
         subtitleRt.anchorMin = subtitleRt.anchorMax = subtitleRt.pivot = new Vector2(0.5f, 1f);
         subtitleRt.anchoredPosition = new Vector2(0f, -302f);
-        subtitleRt.sizeDelta = new Vector2(PW - 80f, 32f);
+        subtitleRt.sizeDelta = new Vector2(PW - 80f, 42f);
         var st = subtitleRt.gameObject.AddComponent<Text>();
-        st.font = uiFont; st.fontSize = 24; st.fontStyle = FontStyle.Bold;
+        st.font = uiFont; st.fontSize = 32; st.fontStyle = FontStyle.Bold;
         st.color = new Color(0f, 1f, 0.831f, 0.9f);
         st.alignment = TextAnchor.MiddleCenter;
         st.text = "MISSION SUCCESSFUL!";
@@ -186,8 +186,8 @@ public class MissionCompleteScreen : MonoBehaviour
             ("WAVES COMPLETED:",  $"{_waves} OF {_totalWaves}"),
         };
 
-        float rowY = -342f;
-        const float ROW_H = 36f, ROW_STEP = -36f;
+        float rowY = -358f;
+        const float ROW_H = 40f, ROW_STEP = -44f;
         float sideMargin = 60f;
 
         foreach (var (label, value) in rows)
@@ -198,19 +198,19 @@ public class MissionCompleteScreen : MonoBehaviour
             lblRt.anchoredPosition = new Vector2(sideMargin, rowY);
             lblRt.sizeDelta = new Vector2(PW * 0.5f, ROW_H);
             var lt = lblRt.gameObject.AddComponent<Text>();
-            lt.font = uiFont; lt.fontSize = 24; lt.fontStyle = FontStyle.Bold;
-            lt.color = Teal;
+            lt.font = uiFont; lt.fontSize = 26; lt.fontStyle = FontStyle.Bold;
+            lt.color = Color.white;
             lt.alignment = TextAnchor.MiddleLeft;
             lt.text = label;
 
             // Value (right)
             var valRt = NewRt(label + "_Val", contentT);
-            valRt.anchorMin = valRt.anchorMax = valRt.pivot = new Vector2(1f, 1f); // Anchor to right
+            valRt.anchorMin = valRt.anchorMax = valRt.pivot = new Vector2(1f, 1f);
             valRt.anchoredPosition = new Vector2(-sideMargin, rowY);
             valRt.sizeDelta = new Vector2(PW * 0.5f, ROW_H);
             var vt = valRt.gameObject.AddComponent<Text>();
-            vt.font = uiFont; vt.fontSize = 24; vt.fontStyle = FontStyle.Bold;
-            vt.color = Teal;
+            vt.font = uiFont; vt.fontSize = 26; vt.fontStyle = FontStyle.Bold;
+            vt.color = new Color(1f, 0.92f, 0.02f, 1f);
             vt.alignment = TextAnchor.MiddleRight;
             vt.text = value;
 
@@ -250,21 +250,9 @@ public class MissionCompleteScreen : MonoBehaviour
         btn.targetGraphic = img;
 
         var colors = btn.colors;
-        // Non-highlighted buttons in reference are text-only style
-        if (!highlighted)
-        {
-            colors.normalColor      = new Color(1f, 1f, 1f, 0f);
-            colors.highlightedColor = new Color(1f, 1f, 1f, 0.1f);
-            colors.pressedColor     = new Color(1f, 1f, 1f, 0.2f);
-        }
-        else
-        {
-            // Highlighted green button (NEXT LEVEL)
-            img.color = new Color(0.2f, 1f, 0.4f, 1f); // Green tint
-            colors.normalColor      = Color.white;
-            colors.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
-            colors.pressedColor     = new Color(0.7f, 0.7f, 0.7f, 1f);
-        }
+        colors.normalColor      = new Color(1f, 1f, 1f, 0f);
+        colors.highlightedColor = highlighted ? Color.white : new Color(1f, 1f, 1f, 0.55f);
+        colors.pressedColor     = highlighted ? new Color(0.6f, 0.9f, 0.35f, 1f) : new Color(1f, 1f, 1f, 0.75f);
         colors.selectedColor    = new Color(1f, 1f, 1f, 0f);
         colors.colorMultiplier  = 1f;
         btn.colors = colors;
@@ -275,7 +263,7 @@ public class MissionCompleteScreen : MonoBehaviour
         txtRt.offsetMax = new Vector2(-10f, 0f);
         var t = txtRt.gameObject.AddComponent<Text>();
         t.font = uiFont; t.fontSize = 32; t.fontStyle = FontStyle.Bold;
-        t.color = highlighted ? Color.black : Teal; 
+        t.color = Teal;
         t.alignment = TextAnchor.MiddleCenter;
         t.text = label;
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
