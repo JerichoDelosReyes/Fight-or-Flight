@@ -1,0 +1,38 @@
+{
+    "asset": "cdf4ae07a60b078409f7afa20ad70b9d",
+    "fileName": "019e57f6-62f2-70eb-8d69-f436dcb1ffa7.png",
+    "prompt": "A Unity game UI asset sprite sheet. White background. STRICT 2x2 grid (2 columns, 2 rows = 4 equal cells). Styled to exactly match the provided reference image but with BOXY SHARP CORNERS (no rounding). Contains: 1. Boxy Panel Background (sharp corners, dark teal semi-transparent fill, glowing teal border). 2. Boxy Header Background (sharp corners, glowing teal border and fill). 3. Boxy Button Highlight Sprite (sharp corners, vibrant glowing green fill and border, exactly like the resume button in reference). 4. Boxy Divider Line. Rules: ONE asset per grid cell, centered with ample padding. NO rounded corners, use sharp 90-degree corners. NO text. White background inside every cell. Assets must match the sci-fi glow style of the reference. negative prompt: rounded corners, circles, soft edges, blurry, low quality, text, labels.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash-texture",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "8798d9c309e99704c852c8917b9c3f7f",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

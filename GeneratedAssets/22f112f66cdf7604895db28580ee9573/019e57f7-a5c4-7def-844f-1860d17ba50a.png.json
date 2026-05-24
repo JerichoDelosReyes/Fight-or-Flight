@@ -1,0 +1,38 @@
+{
+    "asset": "22f112f66cdf7604895db28580ee9573",
+    "fileName": "019e57f7-a5c4-7def-844f-1860d17ba50a.png",
+    "prompt": "A Unity game UI icon sprite sheet. White background. STRICT 2x2 grid (2 columns, 2 rows = 4 equal cells). Styled to match a sci-fi teal/green glow aesthetic with crisp sharp edges. Contains: 1. Double Right Arrow icon (Resume). 2. Gear icon (Settings). 3. Circular arrow icon (Restart). 4. Exit Door icon (Quit). Rules: ONE icon per grid cell, centered with ample padding. Icons must be pure white with a slight glowing aura. NO text. negative prompt: blurry, low quality, messy, multiple icons in one cell.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash-texture",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "8798d9c309e99704c852c8917b9c3f7f",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

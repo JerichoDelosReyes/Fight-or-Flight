@@ -174,7 +174,7 @@ public class GamePausedUI : MonoBehaviour
         pauseOverlay.AddComponent<Image>().color = new Color(0f, 0.02f, 0.06f, 0.78f);
 
         // Panel
-        const float PW = 380f, PH = 440f;
+        const float PW = 560f, PH = 580f;
         var panelRt = NewRt("Panel", pauseOverlay.transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
@@ -186,24 +186,14 @@ public class GamePausedUI : MonoBehaviour
         if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
         else panelImg.color = Color.white;
 
-        // Header box — "GAME PAUSED"
-        const float HW = PW - 30f, HH = 58f;
+        // "GAME PAUSED" — plain text, no border/box
         var headerRt = NewRt("Header", panelRt.transform);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
-        headerRt.anchoredPosition = new Vector2(0f, -22f);
-        headerRt.sizeDelta = new Vector2(HW, HH);
+        headerRt.anchoredPosition = new Vector2(0f, -26f);
+        headerRt.sizeDelta = new Vector2(PW - 30f, 64f);
 
-        var headerImg = headerRt.gameObject.AddComponent<Image>();
-        headerImg.sprite = Resources.Load<Sprite>("UI/Sprites/header_box");
-        headerImg.type = Image.Type.Sliced;
-        if (headerImg.sprite == null) headerImg.color = new Color(0f, 0.7f, 0.65f, 0.25f);
-        else headerImg.color = Color.white;
-
-        var headerTxtRt = NewRt("Txt", headerRt.transform);
-        headerTxtRt.anchorMin = Vector2.zero; headerTxtRt.anchorMax = Vector2.one;
-        headerTxtRt.offsetMin = headerTxtRt.offsetMax = Vector2.zero;
-        var ht = headerTxtRt.gameObject.AddComponent<Text>();
-        ht.font = uiFont; ht.fontSize = 30; ht.fontStyle = FontStyle.Bold;
+        var ht = headerRt.gameObject.AddComponent<Text>();
+        ht.font = uiFont; ht.fontSize = 40; ht.fontStyle = FontStyle.Bold;
         ht.color = Teal; ht.alignment = TextAnchor.MiddleCenter;
         ht.text = "GAME PAUSED";
         ht.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -211,18 +201,19 @@ public class GamePausedUI : MonoBehaviour
         // Divider line below header
         var divRt = NewRt("Divider", panelRt.transform);
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
-        divRt.anchoredPosition = new Vector2(0f, -92f);
+        divRt.anchoredPosition = new Vector2(0f, -102f);
         divRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divRt.gameObject.AddComponent<Image>().color = TealDim;
 
-        // Buttons
-        const float BW = PW - 44f, BH = 58f;
-        const float BY = -108f, STEP = -76f;
+        // Buttons — all transparent at rest, border appears on hover.
+        // RESUME uses the green glow sprite; others use the teal outline sprite.
+        const float BW = PW - 44f, BH = 70f;
+        const float BY = -120f, STEP = -96f;
 
-        var resumeBtn  = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon");
-        var settingsBtn = AddButton(panelRt.transform, "SETTINGS",    BY + STEP,   false, BW, BH, "settings_icon");
-        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE",BY + STEP*2, false, BW, BH, "restart_icon");
-        var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU",BY + STEP*3, false, BW, BH, "quit_icon");
+        var resumeBtn   = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon");
+        var settingsBtn = AddButton(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon");
+        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, null);
+        var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "quit_icon");
 
         resumeBtn.onClick.AddListener(DoResume);
         settingsBtn.onClick.AddListener(DoSettings);
@@ -232,6 +223,9 @@ public class GamePausedUI : MonoBehaviour
         pauseOverlay.SetActive(false);
     }
 
+    // highlighted = true  → always-visible green glow (RESUME)
+    // highlighted = false → transparent normally, subtle teal border on hover
+    // iconSpriteName = null → no icon
     private Button AddButton(Transform parent, string label, float anchoredY, bool highlighted,
                              float bw, float bh, string iconSpriteName)
     {
@@ -241,44 +235,57 @@ public class GamePausedUI : MonoBehaviour
         root.sizeDelta = new Vector2(bw, bh);
 
         var img = root.gameObject.AddComponent<Image>();
-        string spritePath = highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base";
-        img.sprite = Resources.Load<Sprite>(spritePath);
+        img.sprite = Resources.Load<Sprite>(highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base");
         img.type = Image.Type.Sliced;
-        if (img.sprite == null)
-            img.color = highlighted ? new Color(0f, 0.45f, 0.1f, 0.92f) : new Color(0f, 0.5f, 0.5f, 0.3f);
-        else
-            img.color = Color.white;
+        img.pixelsPerUnitMultiplier = 3f;   // compresses 9-slice borders → smaller corner radius
+        img.color = Color.white;
 
         var btn = root.gameObject.AddComponent<Button>();
         btn.targetGraphic = img;
 
-        // Label — centered, with right padding to avoid overlapping icon
+        // All buttons transparent at rest. On hover:
+        //   RESUME → full-opacity green glow (button_highlighted sprite)
+        //   others → ~55% teal outline (button_base sprite)
+        var colors = btn.colors;
+        colors.normalColor      = new Color(1f, 1f, 1f, 0f);
+        colors.highlightedColor = highlighted ? Color.white : new Color(1f, 1f, 1f, 0.55f);
+        colors.pressedColor     = highlighted ? new Color(0.6f, 0.9f, 0.35f, 1f) : new Color(1f, 1f, 1f, 0.75f);
+        colors.selectedColor    = new Color(1f, 1f, 1f, 0f);
+        colors.colorMultiplier  = 1f;
+        btn.colors = colors;
+
+        // Text — centered; reserve right padding only when an icon is present
+        float rightPad = iconSpriteName != null ? -50f : -10f;
         var txtRt = NewRt("Txt", root.transform);
         txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
         txtRt.offsetMin = new Vector2(10f, 0f);
-        txtRt.offsetMax = new Vector2(-48f, 0f);
+        txtRt.offsetMax = new Vector2(rightPad, 0f);
         var t = txtRt.gameObject.AddComponent<Text>();
         t.font = uiFont;
-        t.fontSize = highlighted ? 28 : 24;
+        t.fontSize = 36;
         t.fontStyle = FontStyle.Bold;
-        t.color = highlighted ? GreenText : Teal;
+        t.color = Teal;
         t.alignment = TextAnchor.MiddleCenter;
         t.text = label;
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Icon anchored to right edge
-        var iconRt = NewRt("Icon", root.transform);
-        iconRt.anchorMin = new Vector2(1f, 0.5f);
-        iconRt.anchorMax = new Vector2(1f, 0.5f);
-        iconRt.pivot     = new Vector2(1f, 0.5f);
-        iconRt.anchoredPosition = new Vector2(-10f, 0f);
-        iconRt.sizeDelta = new Vector2(38f, 38f);
-        var iconImg = iconRt.gameObject.AddComponent<Image>();
-        iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
-        iconImg.preserveAspect = true;
-        if (iconImg.sprite == null) iconImg.enabled = false;
-        else iconImg.color = highlighted ? GreenText : Teal;
+        // Icon anchored to right edge (skipped when iconSpriteName is null)
+        if (iconSpriteName != null)
+        {
+            var iconRt = NewRt("Icon", root.transform);
+            iconRt.anchorMin = new Vector2(1f, 0.5f);
+            iconRt.anchorMax = new Vector2(1f, 0.5f);
+            iconRt.pivot     = new Vector2(1f, 0.5f);
+            iconRt.anchoredPosition = new Vector2(-12f, 0f);
+            iconRt.sizeDelta = new Vector2(44f, 44f);
+            var iconImg = iconRt.gameObject.AddComponent<Image>();
+            iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
+            iconImg.preserveAspect = true;
+            // White preserves the sprite's own teal/green colors without double-tinting
+            iconImg.color = Color.white;
+            if (iconImg.sprite == null) iconImg.enabled = false;
+        }
 
         return btn;
     }

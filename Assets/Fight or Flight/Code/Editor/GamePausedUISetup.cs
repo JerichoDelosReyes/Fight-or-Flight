@@ -118,7 +118,7 @@ public static class GamePausedUISetup
         overlay.SetActive(false);
 
         // Panel
-        const float PW = 380f, PH = 440f;
+        const float PW = 560f, PH = 580f;
         var panelRt = NewRtBlank("Panel", overlay.transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
@@ -130,23 +130,13 @@ public static class GamePausedUISetup
         if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
         else panelImg.color = Color.white;
 
-        // Header box
-        var headerRt = NewRtBlank("Header", panelRt.transform);
+        // "GAME PAUSED" — plain text, no border/box
+        var headerRt = NewRt("Header", panelRt.transform, font);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
-        headerRt.anchoredPosition = new Vector2(0f, -22f);
-        headerRt.sizeDelta = new Vector2(PW - 30f, 58f);
-
-        var headerImg = headerRt.gameObject.AddComponent<Image>();
-        headerImg.sprite = Resources.Load<Sprite>("UI/Sprites/header_box");
-        headerImg.type = Image.Type.Sliced;
-        if (headerImg.sprite == null) headerImg.color = new Color(0f, 0.7f, 0.65f, 0.25f);
-        else headerImg.color = Color.white;
-
-        var htRt = NewRt("Txt", headerRt.transform, font);
-        htRt.anchorMin = Vector2.zero; htRt.anchorMax = Vector2.one;
-        htRt.offsetMin = htRt.offsetMax = Vector2.zero;
-        var ht = htRt.gameObject.GetComponent<Text>();
-        ht.fontSize = 30; ht.fontStyle = FontStyle.Bold;
+        headerRt.anchoredPosition = new Vector2(0f, -26f);
+        headerRt.sizeDelta = new Vector2(PW - 30f, 64f);
+        var ht = headerRt.gameObject.GetComponent<Text>();
+        ht.fontSize = 40; ht.fontStyle = FontStyle.Bold;
         ht.color = new Color(0f, 1f, 0.831f, 1f);
         ht.alignment = TextAnchor.MiddleCenter;
         ht.text = "GAME PAUSED";
@@ -155,17 +145,17 @@ public static class GamePausedUISetup
         // Divider
         var divRt = NewRtBlank("Divider", panelRt.transform);
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
-        divRt.anchoredPosition = new Vector2(0f, -92f);
+        divRt.anchoredPosition = new Vector2(0f, -102f);
         divRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divRt.gameObject.AddComponent<Image>().color = new Color(0f, 1f, 0.831f, 0.38f);
 
         // Buttons
-        const float BW = PW - 44f, BH = 58f;
-        const float BY = -108f, STEP = -76f;
+        const float BW = PW - 44f, BH = 70f;
+        const float BY = -120f, STEP = -96f;
 
         AddButtonPreview(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon",   font);
         AddButtonPreview(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon", font);
-        AddButtonPreview(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "restart_icon",  font);
+        AddButtonPreview(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, null,            font);
         AddButtonPreview(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "quit_icon",     font);
     }
 
@@ -179,44 +169,53 @@ public static class GamePausedUISetup
         root.sizeDelta = new Vector2(bw, bh);
 
         var img = root.gameObject.AddComponent<Image>();
-        string spritePath = highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base";
-        img.sprite = Resources.Load<Sprite>(spritePath);
+        img.sprite = Resources.Load<Sprite>(highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base");
         img.type = Image.Type.Sliced;
-        if (img.sprite == null)
-            img.color = highlighted ? new Color(0f, 0.45f, 0.1f, 0.92f) : new Color(0f, 0.5f, 0.5f, 0.3f);
-        else
-            img.color = Color.white;
+        img.pixelsPerUnitMultiplier = 3f;
+        img.color = Color.white;
 
-        root.gameObject.AddComponent<Button>().targetGraphic = img;
+        var btn = root.gameObject.AddComponent<Button>();
+        btn.targetGraphic = img;
 
-        // Text
+        // Mirror runtime ColorBlock: non-highlighted buttons are transparent in normal state
+        // Preview at 40% so button bounds are visible in editor; runtime starts at 0%
+        var colors = btn.colors;
+        colors.normalColor      = new Color(1f, 1f, 1f, 0.4f);
+        colors.highlightedColor = highlighted ? Color.white : new Color(1f, 1f, 1f, 0.55f);
+        colors.pressedColor     = highlighted ? new Color(0.6f, 0.9f, 0.35f, 1f) : new Color(1f, 1f, 1f, 0.75f);
+        colors.colorMultiplier  = 1f;
+        btn.colors = colors;
+
+        // Text — centered
+        float rightPad = iconSpriteName != null ? -50f : -10f;
         var txtRt = NewRt("Txt", root.transform, font);
         txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
         txtRt.offsetMin = new Vector2(10f, 0f);
-        txtRt.offsetMax = new Vector2(-48f, 0f);
+        txtRt.offsetMax = new Vector2(rightPad, 0f);
         var t = txtRt.gameObject.GetComponent<Text>();
-        t.fontSize = highlighted ? 28 : 24;
+        t.fontSize = 36;
         t.fontStyle = FontStyle.Bold;
-        t.color = highlighted
-            ? new Color(0.72f, 1f, 0.55f, 1f)
-            : new Color(0f, 1f, 0.831f, 1f);
+        t.color = new Color(0f, 1f, 0.831f, 1f);
         t.alignment = TextAnchor.MiddleCenter;
         t.text = label;
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Icon
-        var iconRt = NewRtBlank("Icon", root.transform);
-        iconRt.anchorMin = new Vector2(1f, 0.5f);
-        iconRt.anchorMax = new Vector2(1f, 0.5f);
-        iconRt.pivot     = new Vector2(1f, 0.5f);
-        iconRt.anchoredPosition = new Vector2(-10f, 0f);
-        iconRt.sizeDelta = new Vector2(38f, 38f);
-        var iconImg = iconRt.gameObject.AddComponent<Image>();
-        iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
-        iconImg.preserveAspect = true;
-        if (iconImg.sprite == null) iconImg.enabled = false;
-        else iconImg.color = highlighted ? new Color(0.72f, 1f, 0.55f, 1f) : new Color(0f, 1f, 0.831f, 1f);
+        // Icon (skipped for RESTART WAVE which has no icon in the reference)
+        if (iconSpriteName != null)
+        {
+            var iconRt = NewRtBlank("Icon", root.transform);
+            iconRt.anchorMin = new Vector2(1f, 0.5f);
+            iconRt.anchorMax = new Vector2(1f, 0.5f);
+            iconRt.pivot     = new Vector2(1f, 0.5f);
+            iconRt.anchoredPosition = new Vector2(-12f, 0f);
+            iconRt.sizeDelta = new Vector2(44f, 44f);
+            var iconImg = iconRt.gameObject.AddComponent<Image>();
+            iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
+            iconImg.preserveAspect = true;
+            iconImg.color = Color.white;
+            if (iconImg.sprite == null) iconImg.enabled = false;
+        }
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
