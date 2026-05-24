@@ -76,7 +76,7 @@ public class MissionCompleteScreen : MonoBehaviour
         dimmerGo.AddComponent<Image>().color = new Color(0f, 0.02f, 0.06f, 0.82f);
 
         // Panel
-        const float PW = 640f, PH = 880f; 
+        const float PW = 640f, PH = 760f;
         var panelRt = NewRt("Panel", transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
@@ -116,7 +116,7 @@ public class MissionCompleteScreen : MonoBehaviour
         contentRt.anchorMin = new Vector2(0, 1); contentRt.anchorMax = new Vector2(1, 1);
         contentRt.pivot = new Vector2(0.5f, 1);
         contentRt.anchoredPosition = Vector2.zero;
-        contentRt.sizeDelta = new Vector2(0, 780f);
+        contentRt.sizeDelta = new Vector2(0, 730f);
         scrollRect.content = contentRt;
 
         // "MISSION COMPLETE" header
