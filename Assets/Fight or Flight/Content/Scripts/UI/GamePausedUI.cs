@@ -186,10 +186,10 @@ public class GamePausedUI : MonoBehaviour
         if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
         else panelImg.color = Color.white;
 
-        // "GAME PAUSED" — plain text, no border/box
+        // "GAME PAUSED" — plain text, extra top padding
         var headerRt = NewRt("Header", panelRt.transform);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
-        headerRt.anchoredPosition = new Vector2(0f, -26f);
+        headerRt.anchoredPosition = new Vector2(0f, -44f);
         headerRt.sizeDelta = new Vector2(PW - 30f, 64f);
 
         var ht = headerRt.gameObject.AddComponent<Text>();
@@ -201,14 +201,15 @@ public class GamePausedUI : MonoBehaviour
         // Divider line below header
         var divRt = NewRt("Divider", panelRt.transform);
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
-        divRt.anchoredPosition = new Vector2(0f, -102f);
+        divRt.anchoredPosition = new Vector2(0f, -120f);
         divRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divRt.gameObject.AddComponent<Image>().color = TealDim;
 
-        // Buttons — all transparent at rest, border appears on hover.
-        // RESUME uses the green glow sprite; others use the teal outline sprite.
+        // Buttons — vertically centered in the space below the divider.
+        // Group height = 3×STEP_MAG + BH = 288+70 = 358.
+        // Space below divider = PH−122 = 458. Margin each side = 50. BY = −172.
         const float BW = PW - 44f, BH = 70f;
-        const float BY = -120f, STEP = -96f;
+        const float BY = -172f, STEP = -96f;
 
         var resumeBtn   = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon");
         var settingsBtn = AddButton(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon");
