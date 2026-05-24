@@ -212,7 +212,7 @@ public class GamePausedUI : MonoBehaviour
 
         var resumeBtn   = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "resume_icon");
         var settingsBtn = AddButton(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "settings_icon");
-        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, null);
+        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "restart_icon");
         var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "quit_icon");
 
         resumeBtn.onClick.AddListener(DoResume);
@@ -255,7 +255,7 @@ public class GamePausedUI : MonoBehaviour
         btn.colors = colors;
 
         // Text — centered; reserve right padding only when an icon is present
-        float rightPad = iconSpriteName != null ? -50f : -10f;
+        float rightPad = iconSpriteName != null ? -80f : -10f;
         var txtRt = NewRt("Txt", root.transform);
         txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
         txtRt.offsetMin = new Vector2(10f, 0f);
@@ -277,8 +277,8 @@ public class GamePausedUI : MonoBehaviour
             iconRt.anchorMin = new Vector2(1f, 0.5f);
             iconRt.anchorMax = new Vector2(1f, 0.5f);
             iconRt.pivot     = new Vector2(1f, 0.5f);
-            iconRt.anchoredPosition = new Vector2(-12f, 0f);
-            iconRt.sizeDelta = new Vector2(44f, 44f);
+            iconRt.anchoredPosition = new Vector2(-20f, 0f);
+            iconRt.sizeDelta = new Vector2(56f, 56f);
             var iconImg = iconRt.gameObject.AddComponent<Image>();
             iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
             iconImg.preserveAspect = true;
