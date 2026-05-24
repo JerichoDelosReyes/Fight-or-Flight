@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(powershell -Command \"\\(Get-Content 'Assets/Fight or Flight/Content/Scenes/MainMenu.unity' -Raw\\) -replace 'fileID: 12800000, guid: 30ed8ef8d23a86241ad32abe7e8dc402, type: 3', 'fileID: 10102, guid: 0000000000000000e000000000000000, type: 0' | Set-Content -NoNewline 'Assets/Fight or Flight/Content/Scenes/MainMenu.unity'\")",
-      "PowerShell(Get-Content *)"
+      "PowerShell(Get-Content *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Game Development\\\\Fight-or-Flight\\\\Assets\\\\*Fight*\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName)",
+      "Bash(dir D:\\\\Game Development\\\\Fight-or-Flight\\\\Assets\\\\Fight or Flight\\\\Code\\\\UI\\\\ *)"
     ]
   }
 }

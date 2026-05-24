@@ -1,0 +1,28 @@
+{
+    "asset": "c989ee1d08a0251489a187a68e7ee955",
+    "fileName": "019e574d-ea8d-76a0-b174-fb45c8b2f4ab.png",
+    "prompt": "Sci-fi UI icon for 'Resume' game action, double right arrows, glowing cyan/green, flat design, transparent background.",
+    "negativePrompt": "",
+    "model": "flux-2-dev",
+    "modelName": "Flux 2 (Dev)",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

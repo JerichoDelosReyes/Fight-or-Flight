@@ -1,0 +1,28 @@
+{
+    "asset": "626af92dae10953499bdf1d52fbbad8a",
+    "fileName": "019e574e-4f4c-7fa2-948e-515dd5e87ae4.png",
+    "prompt": "Sci-fi UI button background, rounded corners, glowing green border and glow effect, green semi-transparent background, for 'Resume' action.",
+    "negativePrompt": "",
+    "model": "flux-2-dev",
+    "modelName": "Flux 2 (Dev)",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}
