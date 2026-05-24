@@ -63,6 +63,10 @@ public class GamePausedUI : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
             TogglePause();
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.M))
+            MissionCompleteScreen.Show(5000, 525f, 25, 5, 5);
+#endif
     }
 
     public static void TogglePause()

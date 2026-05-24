@@ -1,0 +1,38 @@
+{
+    "asset": "3645d3940a5c4a94c933f4a2169f3e2a",
+    "fileName": "019e5a03-cd7f-7199-98f2-f5fa9526caef.jpg",
+    "prompt": "a sci-fi star with laurel wreath icon, glowing teal cyan, simple vector style, flat design, matching the provided reference image layout. center focused. no background. isolated on black background.",
+    "negativePrompt": "",
+    "model": "game-ui-essentials-2",
+    "modelName": "Game UI Essentials 2.0",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "1d9bf7814f908614e84fd1353ae653c9",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 2048,
+        "height": 2048
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}
