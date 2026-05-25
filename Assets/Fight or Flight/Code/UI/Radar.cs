@@ -206,7 +206,7 @@ public class Radar : MonoBehaviour
         var txt = go.AddComponent<Text>();
         txt.text      = text;
         txt.font      = uiFont;
-        txt.fontSize  = 20;
+        txt.fontSize  = 16;
         txt.fontStyle = FontStyle.Bold;
         txt.color     = new Color(0.6f, 0.85f, 1f, 0.95f);
         txt.alignment = TextAnchor.MiddleCenter;
@@ -330,7 +330,7 @@ txt.horizontalOverflow = HorizontalWrapMode.Overflow;
             float     dy   = et.position.y - playerPos.y;
 
             string symbol = dy > HeightThreshold ? "▲" : dy < -HeightThreshold ? "▼" : "◆";
-            string label  = symbol + "\n" + Mathf.RoundToInt(dist / 100f);
+            string label  = string.Format("<size=22>{0}</size>\n{1}", symbol, Mathf.RoundToInt(dist / 100f));
 
             PlaceLabel(ToRadarPos(et.position, playerPos), label,
                        new Color(1f, 0.18f, 0.18f, 1f));
@@ -421,7 +421,7 @@ txt.horizontalOverflow = HorizontalWrapMode.Overflow;
             rt.sizeDelta = new Vector2(80f, 44f);
             txt = go.AddComponent<Text>();
             txt.font      = uiFont;
-            txt.fontSize  = 18;
+            txt.fontSize  = 12;
             txt.fontStyle = FontStyle.Bold;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -451,7 +451,7 @@ txt.horizontalOverflow = HorizontalWrapMode.Overflow;
         var go = new GameObject("Dot");
         go.transform.SetParent(dotContainer, false);
         var r = go.AddComponent<RectTransform>();
-        r.sizeDelta = new Vector2(14f, 14f);
+        r.sizeDelta = new Vector2(20f, 20f);
         var img = go.AddComponent<RawImage>();
         img.texture = dotTex;
         return r;
