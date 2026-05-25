@@ -177,7 +177,7 @@ public class SettingsMenu : MonoBehaviour
         var canvas = gameObject.GetComponent<Canvas>();
         if (canvas == null) canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 300;
+        canvas.sortingOrder = 700;
 
         var scaler = gameObject.GetComponent<CanvasScaler>();
         if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();

@@ -61,6 +61,8 @@ public class PlayerHUD : MonoBehaviour
     // ── Runtime refs ──────────────────────────────────────────────────────────
 
     private Image        _healthFill,  _shieldFill,  _heatFill;
+    private Text         _healthValText, _shieldValText, _heatValText;
+    private Text         _healthRegenText;
     private Image        _panelBg;
     private Image        _heatBarBg;
 
@@ -81,13 +83,13 @@ public class PlayerHUD : MonoBehaviour
 
     private void Start()
     {
+        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         if (transform.Find("PlayerHUDCanvas") != null)
         {
             FindReferencesInHierarchy();
         }
         else
         {
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             BuildHUD(font);
         }
     }
@@ -109,11 +111,19 @@ public class PlayerHUD : MonoBehaviour
                 Transform fillTrans = child.Find("Fill");
                 Image fill = fillTrans != null ? fillTrans.GetComponent<Image>() : null;
                 
+                Transform valTrans = child.Find("ValueText");
+                Text vText = valTrans != null ? valTrans.GetComponent<Text>() : null;
+
                 RectTransform rt = child.GetComponent<RectTransform>();
 
-                if (barIndex == 0) { _healthFill = fill; _healthRowRt = rt; _healthRowBaseAnchor = rt.anchoredPosition; }
-                else if (barIndex == 1) { _shieldFill = fill; _shieldRowRt = rt; }
-                else if (barIndex == 2) { _heatFill = fill; _heatRowRt = rt; _heatBarBg = child.GetComponent<Image>(); }
+                if (barIndex == 0) 
+                { 
+                    _healthFill = fill; _healthValText = vText; _healthRowRt = rt; _healthRowBaseAnchor = rt.anchoredPosition; 
+                    Transform regenTrans = child.Find("RegenText");
+                    _healthRegenText = regenTrans != null ? regenTrans.GetComponent<Text>() : null;
+                }
+                else if (barIndex == 1) { _shieldFill = fill; _shieldValText = vText; _shieldRowRt = rt; }
+                else if (barIndex == 2) { _heatFill = fill; _heatValText = vText; _heatRowRt = rt; _heatBarBg = child.GetComponent<Image>(); }
                 barIndex++;
             }
         }
@@ -181,6 +191,19 @@ public class PlayerHUD : MonoBehaviour
             }
 
             if (_healthFill != null) { _healthFill.fillAmount = hFrac; _healthFill.color = hCol; }
+            if (_healthValText != null) _healthValText.text = string.Format("{0:0} / {1:0}", _health.currentHealth, _health.maxHealth);
+
+            // Regen indicator
+            if (_healthRegenText != null)
+            {
+                bool isRegen = _health.IsRegenerating;
+                _healthRegenText.gameObject.SetActive(isRegen);
+                if (isRegen)
+                {
+                    float alpha = 0.5f + Mathf.Sin(Time.time * 10f) * 0.5f;
+                    _healthRegenText.color = new Color(0.2f, 1f, 0.2f, alpha);
+                }
+            }
 
             // Shield bar — normal interpolation + brief white/blue flash when fully restored.
             Color shieldCol = Color.Lerp(ShieldEmpty, ShieldFull, sFrac);
@@ -190,6 +213,7 @@ public class PlayerHUD : MonoBehaviour
                 shieldCol = Color.Lerp(shieldCol, Color.white, t);
             }
             if (_shieldFill != null) { _shieldFill.fillAmount = sFrac; _shieldFill.color = shieldCol; }
+            if (_shieldValText != null) _shieldValText.text = string.Format("{0:0} / {1:0}", _health.currentShield, _health.maxShield);
 
             // Pulse panel border red at low HP
             if (_panelBg != null)
@@ -218,6 +242,7 @@ public class PlayerHUD : MonoBehaviour
             }
 
             if (_heatFill != null) { _heatFill.fillAmount = heatFrac; _heatFill.color = heatCol; }
+            if (_heatValText != null) _heatValText.text = string.Format("{0:0}%", heatFrac * 100f);
 
             if (_heatBarBg != null)
             {
@@ -261,16 +286,34 @@ public class PlayerHUD : MonoBehaviour
         float currentY = PanelH - 40f;
 
         // Row 0 — HEALTH
-        (_healthFill, _healthRowRt) = AddBarRow(panelGo.transform, HealthIconPath, 0f, currentY, BarH, HealthFull);
+        (_healthFill, _healthRowRt, _healthValText) = AddBarRow(panelGo.transform, font, HealthIconPath, 0f, currentY, BarH, HealthFull);
         _healthRowBaseAnchor = _healthRowRt.anchoredPosition;
+
+        // Add Regen Text specifically for health
+        var regenGo = new GameObject("RegenText");
+        regenGo.transform.SetParent(_healthRowRt, false);
+        var regenRt = regenGo.AddComponent<RectTransform>();
+        regenRt.anchorMin = new Vector2(1f, 0.5f);
+        regenRt.anchorMax = new Vector2(1f, 0.5f);
+        regenRt.pivot = new Vector2(0f, 0.5f);
+        regenRt.anchoredPosition = new Vector2(10f, 0f);
+        regenRt.sizeDelta = new Vector2(60, 30);
+        _healthRegenText = regenGo.AddComponent<Text>();
+        _healthRegenText.font = font;
+        _healthRegenText.fontSize = 24;
+        _healthRegenText.fontStyle = FontStyle.Bold;
+        _healthRegenText.color = new Color(0.2f, 1f, 0.2f, 0.8f);
+        _healthRegenText.text = "+1";
+        _healthRegenText.alignment = TextAnchor.MiddleLeft;
+        regenGo.SetActive(false);
 
         // Row 1 — SHIELD
         currentY -= RowGap;
-        (_shieldFill, _shieldRowRt) = AddBarRow(panelGo.transform, ShieldIconPath, 0f, currentY, BarH, ShieldFull);
+        (_shieldFill, _shieldRowRt, _shieldValText) = AddBarRow(panelGo.transform, font, ShieldIconPath, 0f, currentY, BarH, ShieldFull);
 
         // Row 2 — HEAT
         currentY -= RowGap;
-        (_heatFill, _heatRowRt) = AddBarRow(panelGo.transform, HeatIconPath, 0f, currentY, BarH, HeatHot);
+        (_heatFill, _heatRowRt, _heatValText) = AddBarRow(panelGo.transform, font, HeatIconPath, 0f, currentY, BarH, HeatHot);
         _heatBarBg = _heatRowRt.GetComponent<Image>();
     }
 
@@ -278,8 +321,8 @@ public class PlayerHUD : MonoBehaviour
     {
     }
 
-    // Returns (fillImage, barBgRectTransform).
-    private (Image, RectTransform) AddBarRow(Transform parent, string iconPath, float x, float y, float h, Color initialCol)
+    // Returns (fillImage, barBgRectTransform, valText).
+    private (Image, RectTransform, Text) AddBarRow(Transform parent, Font font, string iconPath, float x, float y, float h, Color initialCol)
     {
         Sprite roundedSprite = RoundedRectSprite.Get();
 
@@ -316,6 +359,22 @@ public class PlayerHUD : MonoBehaviour
         fill.fillAmount = 1f;
         fill.color      = initialCol;
 
+        // Value Text
+        var valGo = new GameObject("ValueText");
+        valGo.transform.SetParent(bgGo.transform, false);
+        var valRt = valGo.AddComponent<RectTransform>();
+        valRt.anchorMin = Vector2.zero;
+        valRt.anchorMax = Vector2.one;
+        valRt.offsetMin = new Vector2(IconSize + 10f, 0);
+        valRt.offsetMax = new Vector2(-10f, 0);
+        var vText = valGo.AddComponent<Text>();
+        vText.font = font;
+        vText.fontSize = 14;
+        vText.fontStyle = FontStyle.Bold;
+        vText.color = Color.white;
+        vText.alignment = TextAnchor.MiddleRight;
+        vText.text = "0 / 0";
+
         // Icon (Created second so it's in front)
         var iconGo = new GameObject("Icon");
         iconGo.transform.SetParent(parent, false);
@@ -331,6 +390,6 @@ public class PlayerHUD : MonoBehaviour
         iconImg.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
 #endif
         
-        return (fill, bgRt);
+        return (fill, bgRt, vText);
     }
 }

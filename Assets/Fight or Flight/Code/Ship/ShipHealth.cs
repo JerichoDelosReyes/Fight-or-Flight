@@ -19,6 +19,8 @@ public class ShipHealth : MonoBehaviour
     public float regenDelay = 5f;
     private float lastDamageTime;
 
+    public bool IsRegenerating => currentHealth < maxHealth && Time.time >= lastDamageTime + regenDelay;
+
     public GameObject explosionPrefab;
 public AudioClip explosionSound;
 

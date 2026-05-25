@@ -114,20 +114,20 @@ public class DefeatScreen : MonoBehaviour
         const float BW = PW - 44f, BH = 60f;
         const float BY = -313f, STEP = -74f;
 
-        var retryBtn   = AddButton(panelRt.transform, "RETRY WAVE",     BY,        true,  BW, BH, null);
-        var quitBtn    = AddButton(panelRt.transform, "QUIT TO MENU",   BY + STEP, false, BW, BH, null);
-        var replayBtn  = AddButton(panelRt.transform, "REPLAY MISSION", BY+STEP*2, false, BW, BH, null);
+        var retryBtn    = AddButton(panelRt.transform, "RETRY MISSION", BY,          true,  BW, BH, null);
+        var settingsBtn = AddButton(panelRt.transform, "SETTINGS",      BY + STEP,   false, BW, BH, null);
+        var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU",  BY + STEP*2, false, BW, BH, null);
 
         retryBtn.onClick.AddListener(OnRetry);
+        settingsBtn.onClick.AddListener(OnSettings);
         quitBtn.onClick.AddListener(OnQuit);
-        replayBtn.onClick.AddListener(OnReplay);
     }
 
     // ─── Button actions ───────────────────────────────────────────────────────
 
-    private void OnRetry()   => StartCoroutine(LoadScene("MainScene"));
-    private void OnQuit()    => StartCoroutine(LoadScene("MainMenu"));
-    private void OnReplay()  => StartCoroutine(LoadScene("MainScene"));
+    private void OnRetry()    => StartCoroutine(LoadScene("MainScene"));
+    private void OnSettings() => SettingsMenu.Show();
+    private void OnQuit()     => StartCoroutine(LoadScene("MainMenu"));
 
     private IEnumerator LoadScene(string sceneName)
     {

@@ -94,7 +94,7 @@ public class GamePausedUI : MonoBehaviour
         else if (ControlSchemeManager.IsMouseKeyboard) ShipInput.LockCursor();
     }
 
-    private void DoSettings() { Debug.Log("Settings (Stub)"); }
+    private void DoSettings() { SettingsMenu.Show(); }
 
     private void DoRestartWave()
     {
