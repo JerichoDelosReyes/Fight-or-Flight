@@ -348,21 +348,6 @@ float labelX = -250f;
             if (lbl != null)
                 lbl.color = active ? Color.white : new Color(0.75f, 0.75f, 0.75f, 0.65f);
 
-            // Bottom underline — same teal as the sliders, always consistent.
-            const string barName = "ActiveBar";
-            var existing = buttons[i].transform.Find(barName);
-            if (existing != null) Destroy(existing.gameObject);
-            if (active)
-            {
-                var barGo = new GameObject(barName);
-                barGo.transform.SetParent(buttons[i].transform, false);
-                var barRt = barGo.AddComponent<RectTransform>();
-                barRt.anchorMin = new Vector2(0.1f, 0f);
-                barRt.anchorMax = new Vector2(0.9f, 0f);
-                barRt.offsetMin = new Vector2(0f, -4f);
-                barRt.offsetMax = new Vector2(0f, -1f);
-                barGo.AddComponent<Image>().color = new Color(0.18f, 0.72f, 0.88f, 0.9f);
-            }
 
         }
     }
