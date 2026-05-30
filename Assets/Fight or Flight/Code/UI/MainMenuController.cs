@@ -20,6 +20,7 @@ public class MainMenuController : MonoBehaviour
     public Sprite dividerSprite;
 
     private GameObject instrOverlay;
+    private GameObject modeOverlay;
 
     private void Start()
     {
@@ -213,7 +214,135 @@ public class MainMenuController : MonoBehaviour
         t.raycastTarget = false;
     }
 
-    public void StartGame() { SceneManager.LoadScene(startSceneName); }
+    // Start Game now opens the mode picker instead of loading the scene directly.
+    // The chosen mode's button is what actually loads MainScene.
+    public void StartGame() { OpenModeSelect(); }
+
+    public void OpenModeSelect()
+    {
+        if (modeOverlay != null) return;
+        modeOverlay = BuildModeSelectOverlay();
+    }
+
+    private void LaunchMode(GameModeManager.Mode mode)
+    {
+        GameModeManager.Select(mode);
+        if (modeOverlay != null) { Destroy(modeOverlay); modeOverlay = null; }
+        SceneManager.LoadScene(startSceneName);
+    }
+
+    private GameObject BuildModeSelectOverlay()
+    {
+        var root = new GameObject("ModeSelectOverlay");
+        var canvas = root.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 450;
+        var scaler = root.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight = 0.5f;
+        root.AddComponent<GraphicRaycaster>();
+
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        var dimGo = new GameObject("Dim");
+        dimGo.transform.SetParent(root.transform, false);
+        var dimRt = dimGo.AddComponent<RectTransform>();
+        dimRt.anchorMin = Vector2.zero; dimRt.anchorMax = Vector2.one;
+        dimRt.offsetMin = dimRt.offsetMax = Vector2.zero;
+        dimGo.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0.75f);
+
+        var panelGo = new GameObject("Panel");
+        panelGo.transform.SetParent(root.transform, false);
+        var panelRt = panelGo.AddComponent<RectTransform>();
+        panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
+        panelRt.anchoredPosition = Vector2.zero;
+        panelRt.sizeDelta = new Vector2(820f, 620f);
+        var panelImg = panelGo.AddComponent<UnityEngine.UI.Image>();
+        panelImg.sprite = panelFrameSprite;
+        panelImg.type = UnityEngine.UI.Image.Type.Sliced;
+        panelImg.color = Color.white;
+
+        AddLabel(panelGo.transform, font, "SELECT MODE", 50, new Color(0.3f, 1f, 1f), FontStyle.Bold,
+                 new Vector2(0f, 240f), new Vector2(700f, 60f));
+
+        // CAMPAIGN — always available.
+        var campaign = AddModeButton(panelGo.transform, font, "CAMPAIGN", "5 WAVES",
+                                     new Vector2(0f, 120f), new Color(0f, 0.8f, 1f, 1f), true);
+        campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
+
+        // SURVIVAL — locked until Campaign is cleared.
+        bool unlocked = GameModeManager.SurvivalUnlocked;
+        string survSub = unlocked ? "ENDLESS · SURVIVE AS LONG AS YOU CAN"
+                                  : "LOCKED — COMPLETE CAMPAIGN TO UNLOCK";
+        var survival = AddModeButton(panelGo.transform, font, "SURVIVAL", survSub,
+                                     new Vector2(0f, -20f),
+                                     unlocked ? new Color(1f, 0.55f, 0.1f, 1f) : new Color(0.4f, 0.4f, 0.4f, 1f),
+                                     unlocked);
+        if (unlocked)
+            survival.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Survival));
+
+        // BACK
+        var back = AddModeButton(panelGo.transform, font, "BACK", null,
+                                 new Vector2(0f, -210f), new Color(1f, 0.31f, 0.31f, 1f), true);
+        back.onClick.AddListener(() => { Destroy(root); modeOverlay = null; });
+
+        return root;
+    }
+
+    // Builds a large overlay button with an optional sub-label and a transparent
+    // hitbox child (matching the menu's other buttons). Returns the Button.
+    private UnityEngine.UI.Button AddModeButton(Transform parent, Font font, string label, string subLabel,
+                                                Vector2 pos, Color colour, bool interactable)
+    {
+        var btnGo = new GameObject(label + "Btn");
+        btnGo.transform.SetParent(parent, false);
+        var rt = btnGo.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(620f, subLabel != null ? 120f : 80f);
+
+        var img = btnGo.AddComponent<UnityEngine.UI.Image>();
+        img.sprite = buttonLargeSprite;
+        img.type = UnityEngine.UI.Image.Type.Sliced;
+        img.color = colour;
+        img.raycastTarget = false;
+
+        var btn = btnGo.AddComponent<UnityEngine.UI.Button>();
+        btn.targetGraphic = img;
+        btn.interactable = interactable;
+        var c = btn.colors;
+        c.normalColor = Color.white;
+        c.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
+        c.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        c.disabledColor = new Color(1f, 1f, 1f, 1f); // keep our grey tint, don't fade further
+        btn.colors = c;
+
+        // Hitbox child carries the raycast so clicks register reliably.
+        var hitGo = new GameObject("Hitbox");
+        hitGo.transform.SetParent(btnGo.transform, false);
+        var hitRt = hitGo.AddComponent<RectTransform>();
+        hitRt.anchorMin = Vector2.zero; hitRt.anchorMax = Vector2.one;
+        hitRt.offsetMin = hitRt.offsetMax = Vector2.zero;
+        var hitImg = hitGo.AddComponent<UnityEngine.UI.Image>();
+        hitImg.color = new Color(0, 0, 0, 0);
+        hitImg.raycastTarget = true;
+
+        if (subLabel != null)
+        {
+            AddLabel(btnGo.transform, font, label, 34, Color.white, FontStyle.Bold,
+                     new Vector2(0f, 20f), new Vector2(580f, 44f));
+            AddLabel(btnGo.transform, font, subLabel, 20, new Color(1f, 1f, 1f, 0.85f), FontStyle.Normal,
+                     new Vector2(0f, -24f), new Vector2(580f, 32f));
+        }
+        else
+        {
+            AddLabel(btnGo.transform, font, label, 30, Color.white, FontStyle.Bold,
+                     Vector2.zero, new Vector2(580f, 52f));
+        }
+
+        return btn;
+    }
     public void OpenInstructions() 
     { 
         if (instrOverlay != null) return;

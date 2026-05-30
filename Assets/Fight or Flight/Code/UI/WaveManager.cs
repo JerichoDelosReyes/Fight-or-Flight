@@ -20,7 +20,11 @@ public class WaveManager : MonoBehaviour
     private const float MinPlayerDist    = 800f;
     private const int   BaseEnemyCount   = 10;
     private const int   EnemyIncrement   = 5;
-    private const int   MaxWave          = 5;
+    public  const int   MaxWave          = 5;
+    // Survival mode keeps adding +5 enemies/wave forever; clamp the per-wave
+    // count here so very high waves don't spawn 100+ ships and tank the framerate.
+    // Campaign tops out at wave 5 = 30 enemies, so this only ever bites in Survival.
+    private const int   MaxEnemiesPerWave = 60;
 
     // ── Runtime state ─────────────────────────────────────────────────────────
 private GameObject enemyPrefab;
@@ -28,7 +32,10 @@ private GameObject enemyPrefab;
     private bool       gameActive;
     private bool       waveInProgress;
     private bool       _started;
-    private float      matchStartTime;
+    private static float _matchStartTime;
+
+    /// <summary>Real-time seconds since the current match began (used by the end screens).</summary>
+    public static float MatchElapsedTime => Time.realtimeSinceStartup - _matchStartTime;
 
     // Persistent top-center header ("WAVE 3") + transient announcement overlay.
     private Text   headerText;
@@ -112,7 +119,7 @@ private GameObject enemyPrefab;
         CurrentWave   = 0;
         activeEnemies = 0;
         gameActive    = true;
-        matchStartTime = Time.realtimeSinceStartup;
+        _matchStartTime = Time.realtimeSinceStartup;
         StartCoroutine(BeginNextWave());
     }
 
@@ -154,10 +161,19 @@ private GameObject enemyPrefab;
     private void WaveCompleted()
     {
         waveInProgress = false;
-        if (CurrentWave >= MaxWave)
+
+        // Only Campaign ends at MaxWave. Survival loops forever (it ends only when
+        // the player dies, via the DefeatScreen). Clearing Campaign's final wave is
+        // what unlocks Survival.
+        bool campaignFinished =
+            GameModeManager.Selected == GameModeManager.Mode.Campaign &&
+            CurrentWave >= MaxWave;
+
+        if (campaignFinished)
         {
+            GameModeManager.UnlockSurvival();
             gameActive = false;
-            MissionCompleteScreen.Show(ScoreManager.Score, Time.realtimeSinceStartup - matchStartTime, ScoreManager.Kills, CurrentWave, MaxWave);
+            MissionCompleteScreen.Show(ScoreManager.Score, MatchElapsedTime, ScoreManager.Kills, CurrentWave, MaxWave);
         }
         else
         {
@@ -295,7 +311,9 @@ private GameObject enemyPrefab;
         int count = ComputeEnemyCount(wave);
         activeEnemies = count;
 
-        WaveStatusText = string.Format("WAVE {0}", wave);
+        bool survival = GameModeManager.Selected == GameModeManager.Mode.Survival;
+        WaveStatusText = survival ? string.Format("SURVIVAL — WAVE {0}", wave)
+                                  : string.Format("WAVE {0}", wave);
         if (headerText != null) headerText.text = WaveStatusText;
         ShowAnnouncement(string.Format("WAVE {0}", wave));
 
@@ -305,6 +323,7 @@ private GameObject enemyPrefab;
     private static int ComputeEnemyCount(int wave)
     {
         int baseCount = BaseEnemyCount + EnemyIncrement * (wave - 1);
+        baseCount = Mathf.Min(baseCount, MaxEnemiesPerWave); // cap so Survival doesn't flood the arena
         return Mathf.Max(1, Mathf.RoundToInt(baseCount * DifficultyManager.EnemyCountMultiplier));
     }
 

@@ -12,12 +12,12 @@ public class DefeatScreen : MonoBehaviour
 {
     private static DefeatScreen instance;
 
-    public static void Show(int score, int kills)
+    public static void Show(int score, int kills, float time, int waves, int totalWaves, bool survival)
     {
         if (instance != null) return;
         var go = new GameObject("DefeatScreen");
         instance = go.AddComponent<DefeatScreen>();
-        instance.Init(score, kills);
+        instance.Init(score, kills, time, waves, totalWaves, survival);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -28,6 +28,13 @@ public class DefeatScreen : MonoBehaviour
     private static readonly Color Red    = new Color(0.90f, 0.22f, 0.04f, 1f);
     private static readonly Color RedDim = new Color(0.90f, 0.22f, 0.04f, 0.38f);
 
+    private int   _score;
+    private int   _kills;
+    private float _time;
+    private int   _waves;
+    private int   _totalWaves;
+    private bool  _survival;
+
     private void Awake()
     {
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -37,8 +44,10 @@ public class DefeatScreen : MonoBehaviour
         Cursor.visible   = true;
     }
 
-    private void Init(int score, int kills)
+    private void Init(int score, int kills, float time, int waves, int totalWaves, bool survival)
     {
+        _score = score; _kills = kills; _time = time;
+        _waves = waves; _totalWaves = totalWaves; _survival = survival;
         BuildUI();
     }
 
@@ -67,8 +76,8 @@ public class DefeatScreen : MonoBehaviour
         drt.offsetMin = drt.offsetMax = Vector2.zero;
         dimmerGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.72f);
 
-        // Panel
-        const float PW = 480f, PH = 486f;
+        // Panel — taller than the original to fit the stats block below the helmet.
+        const float PW = 520f, PH = 720f;
         var panelRt = NewRt("Panel", transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
@@ -99,26 +108,84 @@ public class DefeatScreen : MonoBehaviour
         divTopRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divTopRt.gameObject.AddComponent<Image>().color = RedDim;
 
-        // Helmet icon — centered, large
+        // Helmet icon — centered, slightly smaller to leave room for the stats
         var helmetRt = NewRt("Helmet", panelRt.transform);
         helmetRt.anchorMin = helmetRt.anchorMax = helmetRt.pivot = new Vector2(0.5f, 1f);
-        helmetRt.anchoredPosition = new Vector2(0f, -118f);
-        helmetRt.sizeDelta = new Vector2(180f, 180f); // Larger focus
+        helmetRt.anchoredPosition = new Vector2(0f, -112f);
+        helmetRt.sizeDelta = new Vector2(130f, 130f);
         var helmetImg = helmetRt.gameObject.AddComponent<Image>();
         helmetImg.sprite = Resources.Load<Sprite>("UI/Sprites/defeat_helmet_new");
         helmetImg.preserveAspect = true;
         helmetImg.raycastTarget  = false;
         helmetImg.color          = Color.white; // The sprite itself is red/glowy now
 
-        // Buttons — vertically centered in space below the helmet
+        // Stats block (SCORE / TIME / KILLS / WAVES) — same data the
+        // Mission Complete overlay shows, so a Survival run still reports a result.
+        BuildStats(panelRt.transform, PW);
+
+        // Buttons — anchored near the bottom of the taller panel
         const float BW = PW - 44f, BH = 60f;
-        const float BY = -313f, STEP = -74f;
+        const float BY = -566f, STEP = -74f;
 
         var retryBtn = AddButton(panelRt.transform, "RETRY MISSION", BY,        true,  BW, BH, null);
         var quitBtn  = AddButton(panelRt.transform, "QUIT TO MENU",  BY + STEP, false, BW, BH, null);
 
         retryBtn.onClick.AddListener(OnRetry);
         quitBtn.onClick.AddListener(OnQuit);
+    }
+
+    // ─── Stats block ──────────────────────────────────────────────────────────
+
+    private void BuildStats(Transform panelT, float PW)
+    {
+        string wavesLabel = _survival ? "WAVES SURVIVED:" : "WAVES COMPLETED:";
+        string wavesValue = _survival ? _waves.ToString() : $"{_waves} OF {_totalWaves}";
+
+        var rows = new (string label, string value)[]
+        {
+            ("SCORE:",     _score.ToString("N0")),
+            ("TIME:",      FormatTime(_time)),
+            ("KILLS:",     _kills.ToString()),
+            (wavesLabel,   wavesValue),
+        };
+
+        float rowY = -262f;
+        const float ROW_H = 40f, ROW_STEP = -46f;
+        const float sideMargin = 56f;
+
+        foreach (var (label, value) in rows)
+        {
+            // Label (left)
+            var lblRt = NewRt(label + "_Lbl", panelT);
+            lblRt.anchorMin = lblRt.anchorMax = lblRt.pivot = new Vector2(0f, 1f);
+            lblRt.anchoredPosition = new Vector2(sideMargin, rowY);
+            lblRt.sizeDelta = new Vector2(PW * 0.5f, ROW_H);
+            var lt = lblRt.gameObject.AddComponent<Text>();
+            lt.font = uiFont; lt.fontSize = 26; lt.fontStyle = FontStyle.Bold;
+            lt.color = Color.white;
+            lt.alignment = TextAnchor.MiddleLeft;
+            lt.text = label;
+
+            // Value (right)
+            var valRt = NewRt(label + "_Val", panelT);
+            valRt.anchorMin = valRt.anchorMax = valRt.pivot = new Vector2(1f, 1f);
+            valRt.anchoredPosition = new Vector2(-sideMargin, rowY);
+            valRt.sizeDelta = new Vector2(PW * 0.5f, ROW_H);
+            var vt = valRt.gameObject.AddComponent<Text>();
+            vt.font = uiFont; vt.fontSize = 26; vt.fontStyle = FontStyle.Bold;
+            vt.color = new Color(1f, 0.78f, 0.2f, 1f); // amber, readable over the red panel
+            vt.alignment = TextAnchor.MiddleRight;
+            vt.text = value;
+
+            rowY += ROW_STEP;
+        }
+    }
+
+    private static string FormatTime(float seconds)
+    {
+        int m = Mathf.FloorToInt(seconds / 60f);
+        int s = Mathf.FloorToInt(seconds % 60f);
+        return $"{m}:{s:D2}";
     }
 
     // ─── Button actions ───────────────────────────────────────────────────────

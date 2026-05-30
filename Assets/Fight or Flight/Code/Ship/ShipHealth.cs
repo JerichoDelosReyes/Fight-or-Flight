@@ -169,7 +169,13 @@ public AudioClip explosionSound;
             ScreenFlash.Clear(); // remove any lingering flash before the defeat screen freezes time
             Debug.Log("Player Ship Destroyed!");
             GameEventManager.PlayerDestroyed();
-            DefeatScreen.Show(ScoreManager.Score, ScoreManager.Kills);
+            DefeatScreen.Show(
+                ScoreManager.Score,
+                ScoreManager.Kills,
+                WaveManager.MatchElapsedTime,
+                WaveManager.CurrentWave,
+                WaveManager.MaxWave,
+                GameModeManager.Selected == GameModeManager.Mode.Survival);
 
             // Disable the ship so it can't keep firing / shaking the camera while
             // the defeat screen is up, but leave the GameObject around in case other
