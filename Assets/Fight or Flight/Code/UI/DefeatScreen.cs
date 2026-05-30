@@ -76,8 +76,8 @@ public class DefeatScreen : MonoBehaviour
         drt.offsetMin = drt.offsetMax = Vector2.zero;
         dimmerGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.72f);
 
-        // Panel — taller than the original to fit the stats block below the helmet.
-        const float PW = 520f, PH = 720f;
+        // Panel — sized to fit the stats block + buttons with a small bottom margin.
+        const float PW = 520f, PH = 660f;
         var panelRt = NewRt("Panel", transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
@@ -108,11 +108,12 @@ public class DefeatScreen : MonoBehaviour
         divTopRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divTopRt.gameObject.AddComponent<Image>().color = RedDim;
 
-        // Helmet icon — centered, slightly smaller to leave room for the stats
+        // Helmet icon — centered, slightly smaller to leave room for the stats.
+        // Pushed down a touch to add breathing room between it and the divider.
         var helmetRt = NewRt("Helmet", panelRt.transform);
         helmetRt.anchorMin = helmetRt.anchorMax = helmetRt.pivot = new Vector2(0.5f, 1f);
-        helmetRt.anchoredPosition = new Vector2(0f, -112f);
-        helmetRt.sizeDelta = new Vector2(130f, 130f);
+        helmetRt.anchoredPosition = new Vector2(0f, -128f);
+        helmetRt.sizeDelta = new Vector2(122f, 122f);
         var helmetImg = helmetRt.gameObject.AddComponent<Image>();
         helmetImg.sprite = Resources.Load<Sprite>("UI/Sprites/defeat_helmet_new");
         helmetImg.preserveAspect = true;
@@ -123,9 +124,10 @@ public class DefeatScreen : MonoBehaviour
         // Mission Complete overlay shows, so a Survival run still reports a result.
         BuildStats(panelRt.transform, PW);
 
-        // Buttons — anchored near the bottom of the taller panel
+        // Buttons — nudged up so they sit in the gap below the stats rather than
+        // hugging the very bottom of the panel.
         const float BW = PW - 44f, BH = 60f;
-        const float BY = -566f, STEP = -74f;
+        const float BY = -496f, STEP = -74f;
 
         var retryBtn = AddButton(panelRt.transform, "RETRY MISSION", BY,        true,  BW, BH, null);
         var quitBtn  = AddButton(panelRt.transform, "QUIT TO MENU",  BY + STEP, false, BW, BH, null);
