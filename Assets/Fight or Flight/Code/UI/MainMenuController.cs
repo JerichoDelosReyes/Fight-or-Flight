@@ -257,18 +257,18 @@ public class MainMenuController : MonoBehaviour
         var panelRt = panelGo.AddComponent<RectTransform>();
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
-        panelRt.sizeDelta = new Vector2(820f, 620f);
+        panelRt.sizeDelta = new Vector2(980f, 800f);
         var panelImg = panelGo.AddComponent<UnityEngine.UI.Image>();
         panelImg.sprite = panelFrameSprite;
         panelImg.type = UnityEngine.UI.Image.Type.Sliced;
         panelImg.color = Color.white;
 
         AddLabel(panelGo.transform, font, "SELECT MODE", 50, new Color(0.3f, 1f, 1f), FontStyle.Bold,
-                 new Vector2(0f, 240f), new Vector2(700f, 60f));
+                 new Vector2(0f, 350f), new Vector2(750f, 65f));
 
         // CAMPAIGN — always available.
         var campaign = AddModeButton(panelGo.transform, font, "CAMPAIGN", "5 WAVES",
-                                     new Vector2(0f, 120f), new Color(0f, 0.8f, 1f, 1f), true);
+                                     new Vector2(0f, 160f), new Color(0f, 0.8f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
         // SURVIVAL — locked until Campaign is cleared.
@@ -284,7 +284,7 @@ public class MainMenuController : MonoBehaviour
 
         // BACK
         var back = AddModeButton(panelGo.transform, font, "BACK", null,
-                                 new Vector2(0f, -210f), new Color(1f, 0.31f, 0.31f, 1f), true);
+                                 new Vector2(0f, -240f), new Color(1f, 0.31f, 0.31f, 1f), true);
         back.onClick.AddListener(() => { Destroy(root); modeOverlay = null; });
 
         return root;
@@ -295,16 +295,51 @@ public class MainMenuController : MonoBehaviour
     private UnityEngine.UI.Button AddModeButton(Transform parent, Font font, string label, string subLabel,
                                                 Vector2 pos, Color colour, bool interactable)
     {
+        // Bar sprite renders at a fixed visual height (~62px). When a subLabel is present,
+        // wrap the bar + subtext in an invisible container so both sit inside a clear layout
+        // rather than cramming both into the bar's height.
+        const float BarH  = 92f;
+        const float SubH  = 32f;
+        const float Gap   = 10f;
+
+        Transform btnParent;
+        Vector2   btnLocalPos;
+
+        if (subLabel != null)
+        {
+            var wrapGo = new GameObject(label + "Wrap");
+            wrapGo.transform.SetParent(parent, false);
+            var wrapRt = wrapGo.AddComponent<RectTransform>();
+            wrapRt.anchorMin = wrapRt.anchorMax = wrapRt.pivot = new Vector2(0.5f, 0.5f);
+            wrapRt.anchoredPosition = pos;
+            wrapRt.sizeDelta = new Vector2(700f, BarH + Gap + SubH);
+
+            // Bar sits in the top portion; subtext in the bottom portion.
+            btnParent   = wrapGo.transform;
+            btnLocalPos = new Vector2(0f, (SubH + Gap) * 0.5f);
+
+            float subY = -(BarH + Gap) * 0.5f;
+            AddLabel(wrapGo.transform, font, subLabel, 19,
+                     new Color(1f, 1f, 1f, 0.85f), FontStyle.Normal,
+                     new Vector2(0f, subY), new Vector2(660f, SubH));
+        }
+        else
+        {
+            btnParent   = parent;
+            btnLocalPos = pos;
+        }
+
         var btnGo = new GameObject(label + "Btn");
-        btnGo.transform.SetParent(parent, false);
+        btnGo.transform.SetParent(btnParent, false);
         var rt = btnGo.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(620f, subLabel != null ? 120f : 80f);
+        rt.anchoredPosition = btnLocalPos;
+        rt.sizeDelta = new Vector2(700f, BarH);
 
         var img = btnGo.AddComponent<UnityEngine.UI.Image>();
         img.sprite = buttonLargeSprite;
-        img.type = UnityEngine.UI.Image.Type.Sliced;
+        img.type = UnityEngine.UI.Image.Type.Simple;   // Simple stretches to full BarH; Sliced clips to sprite borders
+        img.preserveAspect = false;
         img.color = colour;
         img.raycastTarget = false;
 
@@ -315,7 +350,7 @@ public class MainMenuController : MonoBehaviour
         c.normalColor = Color.white;
         c.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
         c.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
-        c.disabledColor = new Color(1f, 1f, 1f, 1f); // keep our grey tint, don't fade further
+        c.disabledColor = new Color(1f, 1f, 1f, 1f);
         btn.colors = c;
 
         // Hitbox child carries the raycast so clicks register reliably.
@@ -328,18 +363,10 @@ public class MainMenuController : MonoBehaviour
         hitImg.color = new Color(0, 0, 0, 0);
         hitImg.raycastTarget = true;
 
-        if (subLabel != null)
-        {
-            AddLabel(btnGo.transform, font, label, 34, Color.white, FontStyle.Bold,
-                     new Vector2(0f, 20f), new Vector2(580f, 44f));
-            AddLabel(btnGo.transform, font, subLabel, 20, new Color(1f, 1f, 1f, 0.85f), FontStyle.Normal,
-                     new Vector2(0f, -24f), new Vector2(580f, 32f));
-        }
-        else
-        {
-            AddLabel(btnGo.transform, font, label, 30, Color.white, FontStyle.Bold,
-                     Vector2.zero, new Vector2(580f, 52f));
-        }
+        // Main label: centered inside the bar sprite.
+        int mainSize = subLabel != null ? 34 : 30;
+        AddLabel(btnGo.transform, font, label, mainSize, Color.white, FontStyle.Bold,
+                 Vector2.zero, new Vector2(660f, BarH - 10f));
 
         return btn;
     }
