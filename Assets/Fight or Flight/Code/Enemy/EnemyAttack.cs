@@ -5,8 +5,10 @@ public class EnemyAttack : MonoBehaviour
     [Header("Laser Projectile Settings")]
     public GameObject laserPrefab;
     public Transform[] firePoints;
-    public float fireRate = 0.8f; // Changed to 0.8s as requested
-    public float bulletSpeed = 3200f; // Increased speed from 2500f
+    public float fireRate    = 0.8f;
+    public float bulletSpeed = 3200f;
+    public float laserDamage = 8f;
+    public float fireArc     = 45f;
 
     private Transform _target;
     private float _nextFireTime;
@@ -31,8 +33,7 @@ public class EnemyAttack : MonoBehaviour
         Vector3 directionToTarget = (_target.position - transform.position).normalized;
         float angle = Vector3.Angle(transform.forward, directionToTarget);
         
-        // Widened arc to 90 degrees (45 each side) for more aggressive initial fire
-        return angle < 45f;
+        return angle < fireArc;
     }
 
     private bool HaveLineOfSight()
@@ -89,7 +90,8 @@ public class EnemyAttack : MonoBehaviour
             {
                 script.targetTag = "Player";
                 script.Initialize(direction);
-                script.speed = bulletSpeed;
+                script.speed  = bulletSpeed;
+                script.damage = laserDamage;
             }
         }
     }

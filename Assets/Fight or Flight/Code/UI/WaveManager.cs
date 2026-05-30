@@ -27,6 +27,7 @@ private GameObject enemyPrefab;
     private int        activeEnemies;
     private bool       gameActive;
     private bool       waveInProgress;
+    private bool       _started;
     private float      matchStartTime;
 
     // Persistent top-center header ("WAVE 3") + transient announcement overlay.
@@ -93,8 +94,9 @@ private GameObject enemyPrefab;
 
     private void OnGameStart()
     {
-        // Reset score/kills here as a static call so it always happens regardless
-        // of whether a ScoreManager MonoBehaviour instance is present in the scene.
+        if (_started) return;
+        _started = true;
+
         ScoreManager.ResetScore();
 
         // Grab enemy prefab from the scene's EnemySpawner and shut it down so we
@@ -141,26 +143,41 @@ private GameObject enemyPrefab;
         if (!gameActive || !waveInProgress) yield break;
 
         if (EnemyMovement.allEnemies.Count == 0)
-        {
-            waveInProgress = false;
-            
-            // Check for game completion
-            if (CurrentWave >= MaxWave)
-            {
-                gameActive = false;
-                MissionCompleteScreen.Show(ScoreManager.Score, Time.realtimeSinceStartup - matchStartTime, ScoreManager.Kills, CurrentWave, MaxWave);
-            }
-            else
-            {
-                StartCoroutine(InterWaveCountdown());
-            }
-        }
+            WaveCompleted();
         else
         {
             // Enemies are still alive (counter drifted); resync to the real list.
             activeEnemies = EnemyMovement.allEnemies.Count;
         }
     }
+
+    private void WaveCompleted()
+    {
+        waveInProgress = false;
+        if (CurrentWave >= MaxWave)
+        {
+            gameActive = false;
+            MissionCompleteScreen.Show(ScoreManager.Score, Time.realtimeSinceStartup - matchStartTime, ScoreManager.Kills, CurrentWave, MaxWave);
+        }
+        else
+        {
+            StartCoroutine(InterWaveCountdown());
+        }
+    }
+
+#if UNITY_EDITOR
+    // Dev shortcut: X key instantly kills all enemies and advances the wave.
+    private void Update()
+    {
+        if (!gameActive || !waveInProgress || !Input.GetKeyDown(KeyCode.X)) return;
+
+        foreach (var e in EnemyMovement.allEnemies.ToArray())
+            if (e != null) Destroy(e.gameObject);
+        EnemyMovement.allEnemies.Clear();
+        activeEnemies = 0;
+        WaveCompleted();
+    }
+#endif
 
     // ── Wave flow ─────────────────────────────────────────────────────────────
 
@@ -282,7 +299,7 @@ private GameObject enemyPrefab;
         if (headerText != null) headerText.text = WaveStatusText;
         ShowAnnouncement(string.Format("WAVE {0}", wave));
 
-        StartCoroutine(SpawnEnemies(count));
+        StartCoroutine(SpawnEnemies(count, wave));
     }
 
     private static int ComputeEnemyCount(int wave)
@@ -291,41 +308,67 @@ private GameObject enemyPrefab;
         return Mathf.Max(1, Mathf.RoundToInt(baseCount * DifficultyManager.EnemyCountMultiplier));
     }
 
-    private IEnumerator SpawnEnemies(int count)
+    private IEnumerator SpawnEnemies(int count, int wave)
     {
         if (enemyPrefab == null) yield break;
 
         for (int i = 0; i < count; i++)
         {
-            SpawnEnemy();
-            yield return new WaitForSeconds(2.5f); // Increased delay for "one by one" feel
+            SpawnEnemy(wave);
+            yield return new WaitForSeconds(2.5f);
         }
     }
 
-    private void SpawnEnemy()
+    private void SpawnEnemy(int wave)
     {
-        // Spawn within 60 user units of Vector3.zero (= ArenaRadius * 0.5).
-        // The AI immediately switches to chase mode and hunts the player from
-        // there, so spawn POSITION doesn't need to be near the player.
         float arenaR     = ScriptsReference.ArenaRadius;
         float spawnLimit = arenaR * 0.5f;
 
         Vector3 pos = Random.insideUnitSphere * spawnLimit;
-        pos.y *= 0.5f; // pinch vertical so enemies aren't all stacked above/below
+        pos.y *= 0.5f;
+        if (pos.magnitude > spawnLimit) pos = pos.normalized * spawnLimit;
 
-        if (pos.magnitude > spawnLimit)
-            pos = pos.normalized * spawnLimit;
-
-        // Face the player immediately upon spawn
         Quaternion rotation = Quaternion.identity;
         if (Ship.PlayerShip != null)
         {
             Vector3 toPlayer = (Ship.PlayerShip.transform.position - pos).normalized;
-            if (toPlayer != Vector3.zero)
-                rotation = Quaternion.LookRotation(toPlayer);
+            if (toPlayer != Vector3.zero) rotation = Quaternion.LookRotation(toPlayer);
         }
 
-        Instantiate(enemyPrefab, pos, rotation);
+        var go = Instantiate(enemyPrefab, pos, rotation);
+        ApplyWaveScaling(go, wave);
+    }
+
+    // Scales a freshly spawned enemy's stats based on the current wave number.
+    // Wave 1 is unmodified baseline; each subsequent wave applies a cumulative bonus.
+    private static void ApplyWaveScaling(GameObject go, int wave)
+    {
+        if (wave <= 1) return;
+
+        float waveIndex = wave - 1; // 0 on wave 1, grows each wave
+
+        var health = go.GetComponent<ShipHealth>();
+        if (health != null)
+        {
+            health.maxHealth     *= 1f + waveIndex * 0.30f; // +30% hp per wave
+            health.currentHealth  = health.maxHealth;
+        }
+
+        var movement = go.GetComponent<EnemyMovement>();
+        if (movement != null)
+        {
+            movement._movementSpeed *= 1f + waveIndex * 0.12f; // +12% speed per wave
+            movement._turnSpeed     *= 1f + waveIndex * 0.06f; // +6% turn speed per wave
+        }
+
+        var attack = go.GetComponent<EnemyAttack>();
+        if (attack != null)
+        {
+            // Shorter interval = faster fire; clamped so it never becomes absurd.
+            attack.fireRate    = Mathf.Max(0.25f, attack.fireRate * (1f - waveIndex * 0.10f));
+            attack.bulletSpeed *= 1f + waveIndex * 0.07f;
+            attack.laserDamage *= 1f + waveIndex * 0.20f; // +20% damage per wave
+        }
     }
 
     // ── HUD UI (built at runtime — no scene wiring needed) ────────────────────

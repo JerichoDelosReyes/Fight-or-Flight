@@ -6,8 +6,8 @@ public class EnemyMovement : MonoBehaviour
     private enum State { Chase, FlyPast, Reposition }
     [SerializeField] private State _state = State.Chase;
 
-    [SerializeField] private float _movementSpeed = 600f; // Reduced further
-    [SerializeField] private float _turnSpeed = 4.5f;
+    public float _movementSpeed = 600f;
+    public float _turnSpeed = 4.5f;
     [SerializeField] private float _rayCastOffset = 500f;
     [SerializeField] private float _rayCastRange = 3000f;
     [SerializeField] private int _points = 100;
