@@ -38,8 +38,8 @@ public class SettingsMenu : MonoBehaviour
 
     private Color[]  schemeColors = new[]
     {
-        new Color(0.13f, 0.40f, 0.80f),
-        new Color(0.55f, 0.30f, 0.75f),
+        new Color(0.13f, 0.50f, 0.80f),  // blue
+        new Color(0.13f, 0.72f, 0.72f),  // teal — matches panel accent
     };
 
     private Font uiFont;
@@ -336,12 +336,35 @@ float labelX = -250f;
         for (int i = 0; i < buttons.Length; i++)
         {
             if (buttons[i] == null) continue;
-            var img = buttons[i].GetComponent<Image>();
-            if (img == null) continue;
+            bool active = i == selectedIdx;
             Color c = baseColors[i];
-            img.color = (i == selectedIdx)
-                ? c
-                : new Color(c.r * 0.45f, c.g * 0.45f, c.b * 0.45f, 0.75f);
+
+            // Button sprite tint — full bright when active, visibly dim when not.
+            var img = buttons[i].GetComponent<Image>();
+            if (img != null)
+                img.color = active ? c : new Color(c.r * 0.38f, c.g * 0.38f, c.b * 0.38f, 0.7f);
+
+            // Label — white when active, half-opacity when not (still legible).
+            var lbl = buttons[i].GetComponentInChildren<Text>();
+            if (lbl != null)
+                lbl.color = active ? Color.white : new Color(0.75f, 0.75f, 0.75f, 0.65f);
+
+            // Bottom underline — same teal as the sliders, always consistent.
+            const string barName = "ActiveBar";
+            var existing = buttons[i].transform.Find(barName);
+            if (existing != null) Destroy(existing.gameObject);
+            if (active)
+            {
+                var barGo = new GameObject(barName);
+                barGo.transform.SetParent(buttons[i].transform, false);
+                var barRt = barGo.AddComponent<RectTransform>();
+                barRt.anchorMin = new Vector2(0.1f, 0f);
+                barRt.anchorMax = new Vector2(0.9f, 0f);
+                barRt.offsetMin = new Vector2(0f, -4f);
+                barRt.offsetMax = new Vector2(0f, -1f);
+                barGo.AddComponent<Image>().color = new Color(0.18f, 0.72f, 0.88f, 0.9f);
+            }
+
         }
     }
 
@@ -489,28 +512,37 @@ float labelX = -250f;
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(50, 50);
+        rt.sizeDelta = new Vector2(48, 28);
 
-        var bg = new GameObject("BG");
-        bg.transform.SetParent(go.transform, false);
-        var bgRt = bg.AddComponent<RectTransform>();
-        bgRt.anchorMin = bgRt.anchorMax = new Vector2(0.5f, 0.5f);
-        bgRt.sizeDelta = new Vector2(50, 50);
-        bgRt.anchoredPosition = Vector2.zero;
-        var bgImg = bg.AddComponent<Image>();
-        bgImg.sprite = checkboxSprite;
-        bgImg.type = Image.Type.Sliced;
-        bgImg.color = Color.white;
+        // Outer border — fully procedural, always visible regardless of sprite loading.
+        var bgGo = new GameObject("BG");
+        bgGo.transform.SetParent(go.transform, false);
+        var bgRt = bgGo.AddComponent<RectTransform>();
+        bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
+        bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
+        var bgImg = bgGo.AddComponent<Image>();
+        bgImg.color = new Color(0.18f, 0.72f, 0.88f, 0.8f); // teal border
 
-        var check = new GameObject("Checkmark");
-        check.transform.SetParent(bg.transform, false);
-        var checkRt = check.AddComponent<RectTransform>();
-        checkRt.anchorMin = checkRt.anchorMax = new Vector2(0.5f, 0.5f);
-        checkRt.sizeDelta = new Vector2(36, 36);
-        checkRt.anchoredPosition = Vector2.zero;
-        var checkImg = check.AddComponent<Image>();
-        checkImg.sprite = checkmarkSprite;
-        checkImg.color = Color.white;
+        // Dark fill inside border
+        var innerGo = new GameObject("Inner");
+        innerGo.transform.SetParent(bgGo.transform, false);
+        var innerRt = innerGo.AddComponent<RectTransform>();
+        innerRt.anchorMin = Vector2.zero; innerRt.anchorMax = Vector2.one;
+        innerRt.offsetMin = new Vector2(2f, 2f);
+        innerRt.offsetMax = new Vector2(-2f, -2f);
+        innerGo.AddComponent<Image>().color = new Color(0.04f, 0.12f, 0.18f, 1f);
+        innerGo.GetComponent<Image>().raycastTarget = false;
+
+        // Checkmark fill — shown when ON, hidden when OFF.
+        var checkGo = new GameObject("Checkmark");
+        checkGo.transform.SetParent(bgGo.transform, false);
+        var checkRt = checkGo.AddComponent<RectTransform>();
+        checkRt.anchorMin = new Vector2(0.15f, 0.15f);
+        checkRt.anchorMax = new Vector2(0.85f, 0.85f);
+        checkRt.offsetMin = checkRt.offsetMax = Vector2.zero;
+        var checkImg = checkGo.AddComponent<Image>();
+        checkImg.color = new Color(0.18f, 0.88f, 0.88f, 1f); // bright teal fill when ON
+        checkImg.raycastTarget = false;
 
         var toggle = go.AddComponent<Toggle>();
         toggle.targetGraphic = bgImg;
@@ -527,25 +559,24 @@ float labelX = -250f;
         rt.anchoredPosition = pos;
         rt.sizeDelta = new Vector2(width, 40);
 
-        var bgGo = new GameObject("BG");
-        bgGo.transform.SetParent(go.transform, false);
-        var bgRt = bgGo.AddComponent<RectTransform>();
-        bgRt.anchorMin = new Vector2(0f, 0.5f);
-        bgRt.anchorMax = new Vector2(1f, 0.5f);
-        bgRt.anchoredPosition = Vector2.zero;
-        bgRt.sizeDelta = new Vector2(0, 8);
-        var bgImg = bgGo.AddComponent<Image>();
-        bgImg.sprite = sliderTrackSprite;
-        bgImg.type = Image.Type.Sliced;
-        bgImg.color = Color.white;
+        // ── Track background — dark visible bar ──────────────────────────────
+        var trackGo = new GameObject("Track");
+        trackGo.transform.SetParent(go.transform, false);
+        var trackRt = trackGo.AddComponent<RectTransform>();
+        trackRt.anchorMin = new Vector2(0f, 0.5f);
+        trackRt.anchorMax = new Vector2(1f, 0.5f);
+        trackRt.anchoredPosition = Vector2.zero;
+        trackRt.sizeDelta = new Vector2(0f, 12f);
+        trackGo.AddComponent<Image>().color = new Color(0.08f, 0.18f, 0.26f, 1f);
 
+        // ── Fill area ────────────────────────────────────────────────────────
         var fillAreaGo = new GameObject("FillArea");
         fillAreaGo.transform.SetParent(go.transform, false);
         var fillAreaRt = fillAreaGo.AddComponent<RectTransform>();
-        fillAreaRt.anchorMin = new Vector2(0f, 0f);
-        fillAreaRt.anchorMax = new Vector2(1f, 1f);
-        fillAreaRt.offsetMin = new Vector2(5, 0); // Slight offset to stay inside frame
-        fillAreaRt.offsetMax = new Vector2(-5, 0);
+        fillAreaRt.anchorMin = new Vector2(0f, 0.5f);
+        fillAreaRt.anchorMax = new Vector2(1f, 0.5f);
+        fillAreaRt.anchoredPosition = Vector2.zero;
+        fillAreaRt.sizeDelta = new Vector2(-20f, 12f);
 
         var fillGo = new GameObject("Fill");
         fillGo.transform.SetParent(fillAreaGo.transform, false);
@@ -553,36 +584,44 @@ float labelX = -250f;
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = new Vector2(0f, 1f);
         fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
-        var fillImg = fillGo.AddComponent<Image>();
-        fillImg.sprite = sliderTrackSprite;
-        fillImg.type = Image.Type.Sliced;
-        fillImg.color = new Color(0.3f, 1f, 1f, 1f);
+        fillGo.AddComponent<Image>().color = new Color(0.18f, 0.72f, 0.88f, 1f); // teal fill, matches panel accent
 
+        // ── Handle area ──────────────────────────────────────────────────────
         var handleAreaGo = new GameObject("HandleArea");
         handleAreaGo.transform.SetParent(go.transform, false);
         var handleAreaRt = handleAreaGo.AddComponent<RectTransform>();
-        handleAreaRt.anchorMin = new Vector2(0f, 0f);
-        handleAreaRt.anchorMax = new Vector2(1f, 1f);
-        handleAreaRt.offsetMin = new Vector2(10, 0);
-        handleAreaRt.offsetMax = new Vector2(-10, 0);
+        handleAreaRt.anchorMin = new Vector2(0f, 0.5f);
+        handleAreaRt.anchorMax = new Vector2(1f, 0.5f);
+        handleAreaRt.anchoredPosition = Vector2.zero;
+        handleAreaRt.sizeDelta = new Vector2(-20f, 0f);
 
         var handleGo = new GameObject("Handle");
         handleGo.transform.SetParent(handleAreaGo.transform, false);
         var handleRt = handleGo.AddComponent<RectTransform>();
         handleRt.anchorMin = handleRt.anchorMax = new Vector2(0f, 0.5f);
-        handleRt.sizeDelta = new Vector2(24, 50);
+        handleRt.sizeDelta = new Vector2(22f, 34f);
         var handleImg = handleGo.AddComponent<Image>();
-        handleImg.sprite = sliderHandleSprite;
-        handleImg.color = Color.white;
+        handleImg.color = new Color(0.85f, 0.97f, 1f, 1f); // near-white with faint teal tint
+
+        // Subtle teal outline so the handle is visible on both dark track and fill
+        var outlineGo = new GameObject("HandleOutline");
+        outlineGo.transform.SetParent(handleGo.transform, false);
+        var outlineRt = outlineGo.AddComponent<RectTransform>();
+        outlineRt.anchorMin = Vector2.zero; outlineRt.anchorMax = Vector2.one;
+        outlineRt.offsetMin = new Vector2(-2f, -2f);
+        outlineRt.offsetMax = new Vector2(2f, 2f);
+        var outlineImg = outlineGo.AddComponent<Image>();
+        outlineImg.color = new Color(0.18f, 0.72f, 0.88f, 0.55f);
+        outlineImg.raycastTarget = false;
+        outlineGo.transform.SetAsFirstSibling();
 
         var slider = go.AddComponent<Slider>();
-        slider.fillRect = fillRt;
-        slider.handleRect = handleRt;
-        slider.targetGraphic = handleImg;
+        slider.fillRect       = fillRt;
+        slider.handleRect     = handleRt;
+        slider.targetGraphic  = handleImg;
         slider.minValue = 0f;
         slider.maxValue = 1f;
-        slider.value = initialValue;
-
+        slider.value    = initialValue;
         return slider;
     }
 }
