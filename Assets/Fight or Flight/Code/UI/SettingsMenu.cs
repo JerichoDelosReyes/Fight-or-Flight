@@ -536,6 +536,8 @@ float labelX = -250f;
 
     private Slider MakeSlider(GameObject parent, Vector2 pos, float width, float initialValue)
     {
+        var rounded = RoundedRectSprite.Get();
+
         var go = new GameObject("Slider");
         go.transform.SetParent(parent.transform, false);
         var rt = go.AddComponent<RectTransform>();
@@ -543,24 +545,27 @@ float labelX = -250f;
         rt.anchoredPosition = pos;
         rt.sizeDelta = new Vector2(width, 40);
 
-        // ── Track background — dark visible bar ──────────────────────────────
+        // ── Track — rounded, dark ────────────────────────────────────────────
         var trackGo = new GameObject("Track");
         trackGo.transform.SetParent(go.transform, false);
         var trackRt = trackGo.AddComponent<RectTransform>();
         trackRt.anchorMin = new Vector2(0f, 0.5f);
         trackRt.anchorMax = new Vector2(1f, 0.5f);
         trackRt.anchoredPosition = Vector2.zero;
-        trackRt.sizeDelta = new Vector2(0f, 12f);
-        trackGo.AddComponent<Image>().color = new Color(0.08f, 0.18f, 0.26f, 1f);
+        trackRt.sizeDelta = new Vector2(0f, 14f);
+        var trackImg = trackGo.AddComponent<Image>();
+        trackImg.sprite = rounded;
+        trackImg.type   = Image.Type.Sliced;
+        trackImg.color  = new Color(0.08f, 0.18f, 0.26f, 1f);
 
-        // ── Fill area ────────────────────────────────────────────────────────
+        // ── Fill area — rounded, teal ────────────────────────────────────────
         var fillAreaGo = new GameObject("FillArea");
         fillAreaGo.transform.SetParent(go.transform, false);
         var fillAreaRt = fillAreaGo.AddComponent<RectTransform>();
         fillAreaRt.anchorMin = new Vector2(0f, 0.5f);
         fillAreaRt.anchorMax = new Vector2(1f, 0.5f);
         fillAreaRt.anchoredPosition = Vector2.zero;
-        fillAreaRt.sizeDelta = new Vector2(-20f, 12f);
+        fillAreaRt.sizeDelta = new Vector2(-20f, 14f);
 
         var fillGo = new GameObject("Fill");
         fillGo.transform.SetParent(fillAreaGo.transform, false);
@@ -568,7 +573,10 @@ float labelX = -250f;
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = new Vector2(0f, 1f);
         fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
-        fillGo.AddComponent<Image>().color = new Color(0.18f, 0.72f, 0.88f, 1f); // teal fill, matches panel accent
+        var fillImg = fillGo.AddComponent<Image>();
+        fillImg.sprite = rounded;
+        fillImg.type   = Image.Type.Sliced;
+        fillImg.color  = new Color(0.18f, 0.72f, 0.88f, 1f);
 
         // ── Handle area ──────────────────────────────────────────────────────
         var handleAreaGo = new GameObject("HandleArea");
@@ -583,21 +591,11 @@ float labelX = -250f;
         handleGo.transform.SetParent(handleAreaGo.transform, false);
         var handleRt = handleGo.AddComponent<RectTransform>();
         handleRt.anchorMin = handleRt.anchorMax = new Vector2(0f, 0.5f);
-        handleRt.sizeDelta = new Vector2(22f, 34f);
+        handleRt.sizeDelta = new Vector2(20f, 28f);
         var handleImg = handleGo.AddComponent<Image>();
-        handleImg.color = new Color(0.85f, 0.97f, 1f, 1f); // near-white with faint teal tint
-
-        // Subtle teal outline so the handle is visible on both dark track and fill
-        var outlineGo = new GameObject("HandleOutline");
-        outlineGo.transform.SetParent(handleGo.transform, false);
-        var outlineRt = outlineGo.AddComponent<RectTransform>();
-        outlineRt.anchorMin = Vector2.zero; outlineRt.anchorMax = Vector2.one;
-        outlineRt.offsetMin = new Vector2(-2f, -2f);
-        outlineRt.offsetMax = new Vector2(2f, 2f);
-        var outlineImg = outlineGo.AddComponent<Image>();
-        outlineImg.color = new Color(0.18f, 0.72f, 0.88f, 0.55f);
-        outlineImg.raycastTarget = false;
-        outlineGo.transform.SetAsFirstSibling();
+        handleImg.sprite = rounded;
+        handleImg.type   = Image.Type.Sliced;
+        handleImg.color  = new Color(0.88f, 0.97f, 1f, 1f);
 
         var slider = go.AddComponent<Slider>();
         slider.fillRect       = fillRt;
