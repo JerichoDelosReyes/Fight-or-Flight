@@ -339,10 +339,9 @@ float labelX = -250f;
             bool active = i == selectedIdx;
             Color c = baseColors[i];
 
-            // Button sprite tint — full bright when active, visibly dim when not.
+            // No background — button is text + underline only.
             var img = buttons[i].GetComponent<Image>();
-            if (img != null)
-                img.color = active ? c : new Color(c.r * 0.38f, c.g * 0.38f, c.b * 0.38f, 0.7f);
+            if (img != null) img.color = Color.clear;
 
             // Label — white when active, half-opacity when not (still legible).
             var lbl = buttons[i].GetComponentInChildren<Text>();
