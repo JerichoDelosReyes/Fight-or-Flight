@@ -489,48 +489,89 @@ float labelX = -250f;
         return go;
     }
 
+    // Procedural circle sprite — anti-aliased, no 9-slice needed.
+    private static Sprite _circleSprite;
+    private static Sprite GetCircleSprite()
+    {
+        if (_circleSprite != null) return _circleSprite;
+        const int size = 64;
+        var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        tex.filterMode = FilterMode.Bilinear;
+        float r = size * 0.5f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float dx = x - r + 0.5f, dy = y - r + 0.5f;
+            float a = Mathf.Clamp01(r - Mathf.Sqrt(dx * dx + dy * dy));
+            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+        }
+        tex.Apply();
+        _circleSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        return _circleSprite;
+    }
+
     private Toggle MakeToggle(GameObject parent, Vector2 pos)
     {
+        var circle = GetCircleSprite();
+
         var go = new GameObject("Toggle");
         go.transform.SetParent(parent.transform, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(48, 28);
+        rt.sizeDelta = new Vector2(30, 30);
 
-        // Outer border — fully procedural, always visible regardless of sprite loading.
-        var bgGo = new GameObject("BG");
-        bgGo.transform.SetParent(go.transform, false);
-        var bgRt = bgGo.AddComponent<RectTransform>();
-        bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
-        bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
-        var bgImg = bgGo.AddComponent<Image>();
-        bgImg.color = new Color(0.18f, 0.72f, 0.88f, 0.8f); // teal border
+        // Teal ring ON the root go — targetGraphic on the same object as Toggle
+        // so clicks always register and Unity's state machine drives colours correctly.
+        var ringImg = go.AddComponent<Image>();
+        ringImg.sprite = circle;
+        ringImg.color  = new Color(0.18f, 0.72f, 0.88f, 1f);
+        ringImg.raycastTarget = true;
 
-        // Dark fill inside border
-        var innerGo = new GameObject("Inner");
-        innerGo.transform.SetParent(bgGo.transform, false);
-        var innerRt = innerGo.AddComponent<RectTransform>();
-        innerRt.anchorMin = Vector2.zero; innerRt.anchorMax = Vector2.one;
-        innerRt.offsetMin = new Vector2(2f, 2f);
-        innerRt.offsetMax = new Vector2(-2f, -2f);
-        innerGo.AddComponent<Image>().color = new Color(0.04f, 0.12f, 0.18f, 1f);
-        innerGo.GetComponent<Image>().raycastTarget = false;
+        // Dark centre — non-raycasting child, always visible, gives ring its hollow look.
+        var darkGo = new GameObject("Dark");
+        darkGo.transform.SetParent(go.transform, false);
+        var darkRt = darkGo.AddComponent<RectTransform>();
+        darkRt.anchorMin = Vector2.zero; darkRt.anchorMax = Vector2.one;
+        darkRt.offsetMin = new Vector2(4f, 4f);
+        darkRt.offsetMax = new Vector2(-4f, -4f);
+        var darkImg = darkGo.AddComponent<Image>();
+        darkImg.sprite = circle;
+        darkImg.color  = new Color(0.04f, 0.12f, 0.18f, 1f);
+        darkImg.raycastTarget = false;
 
-        // Checkmark fill — shown when ON, hidden when OFF.
-        var checkGo = new GameObject("Checkmark");
-        checkGo.transform.SetParent(bgGo.transform, false);
-        var checkRt = checkGo.AddComponent<RectTransform>();
-        checkRt.anchorMin = new Vector2(0.15f, 0.15f);
-        checkRt.anchorMax = new Vector2(0.85f, 0.85f);
-        checkRt.offsetMin = checkRt.offsetMax = Vector2.zero;
-        var checkImg = checkGo.AddComponent<Image>();
-        checkImg.color = new Color(0.18f, 0.88f, 0.88f, 1f); // bright teal fill when ON
-        checkImg.raycastTarget = false;
+        // ON fill — starts hidden (alpha 0). We drive it manually via onValueChanged
+        // instead of Toggle.graphic so there's no dependency on CrossFadeAlpha timing.
+        var onGo = new GameObject("OnFill");
+        onGo.transform.SetParent(go.transform, false);
+        var onRt = onGo.AddComponent<RectTransform>();
+        onRt.anchorMin = Vector2.zero; onRt.anchorMax = Vector2.one;
+        onRt.offsetMin = new Vector2(4f, 4f);
+        onRt.offsetMax = new Vector2(-4f, -4f);
+        var onImg = onGo.AddComponent<Image>();
+        onImg.sprite = circle;
+        onImg.color  = new Color(0.2f, 1f, 1f, 0f); // hidden by default (OFF)
+        onImg.raycastTarget = false;
 
         var toggle = go.AddComponent<Toggle>();
-        toggle.targetGraphic = bgImg;
-        toggle.graphic = checkImg;
+        toggle.targetGraphic    = ringImg;
+        toggle.graphic          = null; // skip Unity's automatic fade
+        toggle.toggleTransition = Toggle.ToggleTransition.None;
+        var cols = toggle.colors;
+        cols.normalColor      = Color.white;
+        cols.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+        cols.pressedColor     = new Color(0.75f, 0.75f, 0.75f, 1f);
+        toggle.colors = cols;
+
+        // Directly set fill colour whenever the value changes.
+        toggle.onValueChanged.AddListener(isOn =>
+        {
+            onImg.color = isOn
+                ? new Color(0.2f, 1f, 1f, 1f)   // bright teal = ON
+                : new Color(0.2f, 1f, 1f, 0f);  // transparent = OFF
+        });
+
         return toggle;
     }
 
