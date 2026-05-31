@@ -93,7 +93,7 @@ public class DefeatScreen : MonoBehaviour
         // "MISSION FAILED" header — no border box, just bold text
         var headerRt = NewRt("Header", panelRt.transform);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
-        headerRt.anchoredPosition = new Vector2(0f, -28f);
+        headerRt.anchoredPosition = new Vector2(0f, -34f);
         headerRt.sizeDelta = new Vector2(PW - 30f, 60f);
         var ht = headerRt.gameObject.AddComponent<Text>();
         ht.font = uiFont; ht.fontSize = 40; ht.fontStyle = FontStyle.Bold;
@@ -127,7 +127,7 @@ public class DefeatScreen : MonoBehaviour
         // Buttons — nudged up so they sit in the gap below the stats rather than
         // hugging the very bottom of the panel.
         const float BW = PW - 44f, BH = 60f;
-        const float BY = -496f, STEP = -74f;
+        const float BY = -476f, STEP = -74f;
 
         var retryBtn = AddButton(panelRt.transform, "RETRY MISSION", BY,        true,  BW, BH, null);
         var quitBtn  = AddButton(panelRt.transform, "QUIT TO MENU",  BY + STEP, false, BW, BH, null);
