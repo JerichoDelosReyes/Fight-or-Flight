@@ -642,7 +642,7 @@ float labelX = -250f;
     {
         GameModeManager.ResetData();
         DismissConfirm();
-        ShowToast("Save data cleared. Survival mode locked.", true);
+        ShowToast("Data deleted successfully.", true);
     }
 
     private void ShowToast(string message, bool success)
