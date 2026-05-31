@@ -277,7 +277,7 @@ public class MainMenuController : MonoBehaviour
         bool unlocked = GameModeManager.SurvivalUnlocked;
         string survTag  = unlocked ? "Survive the Onslaught"  : "LOCKED - COMPLETE CAMPAIGN FIRST";
         string survDesc = unlocked
-            ? "Face never-ending waves of enemies. No lives, no limits - survive\nas long as you can and chase the highest score."
+            ? "Face never-ending surge of enemies. No lives, no limits - survive\nas long as you can and obtain the highest score."
             : "Prove yourself in Campaign first.\nClear all 5 waves to unlock this mode and face the endless onslaught.";
         Color survAccent = unlocked ? new Color(0f, 0.88f, 1f, 1f) : new Color(0.72f, 0.72f, 0.72f, 1f);
         var survival = AddModeCard(panelGo.transform, font,

@@ -210,7 +210,9 @@ private GameObject enemyPrefab;
 
         for (int t = (int)InterWaveDelay; t > 0; t--)
         {
-            WaveStatusText = string.Format("NEXT WAVE IN {0}s", t);
+            bool isSurvival = GameModeManager.Selected == GameModeManager.Mode.Survival;
+            WaveStatusText = isSurvival ? string.Format("NEXT SURGE IN {0}s", t)
+                                        : string.Format("NEXT WAVE IN {0}s", t);
             if (headerText != null) headerText.text = WaveStatusText;
 
             // Center number only flashes on 3, 2, 1
@@ -334,10 +336,11 @@ private GameObject enemyPrefab;
         activeEnemies = count;
 
         bool survival = GameModeManager.Selected == GameModeManager.Mode.Survival;
-        WaveStatusText = survival ? string.Format("SURVIVAL — WAVE {0}", wave)
+        WaveStatusText = survival ? string.Format("SURGE {0}", wave)
                                   : string.Format("WAVE {0}", wave);
         if (headerText != null) headerText.text = WaveStatusText;
-        ShowAnnouncement(string.Format("WAVE {0}", wave));
+        ShowAnnouncement(survival ? string.Format("SURGE {0}", wave)
+                                  : string.Format("WAVE {0}", wave));
 
         StartCoroutine(SpawnEnemies(count, wave));
     }
