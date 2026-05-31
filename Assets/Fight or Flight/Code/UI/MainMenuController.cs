@@ -268,18 +268,18 @@ public class MainMenuController : MonoBehaviour
 
         // CAMPAIGN — always available.
         var campaign = AddModeCard(panelGo.transform, font,
-            "CAMPAIGN", "5 WAVES",
+            "CAMPAIGN", "Beat the enemy per wave and survive the onslaught.",
             "Fight through 5 increasingly difficult waves of enemy ships.\nClear all waves to complete the run and unlock Survival Mode.",
-            new Vector2(0f, 130f), new Color(0f, 0.8f, 1f, 1f), true);
+            new Vector2(0f, 142f), new Color(0f, 0.88f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
         // SURVIVAL — locked until Campaign is cleared.
         bool unlocked = GameModeManager.SurvivalUnlocked;
-        string survTag  = unlocked ? "ENDLESS MODE"  : "LOCKED — COMPLETE CAMPAIGN FIRST";
+        string survTag  = unlocked ? "ENDLESS • Beat your high score"  : "LOCKED - COMPLETE CAMPAIGN FIRST";
         string survDesc = unlocked
-            ? "Face never-ending waves of enemies. No lives, no limits — survive\nas long as you can and chase the highest score."
+            ? "Face never-ending waves of enemies. No lives, no limits - survive\nas long as you can and chase the highest score."
             : "Prove yourself in Campaign first.\nClear all 5 waves to unlock this mode and face the endless onslaught.";
-        Color survAccent = unlocked ? new Color(1f, 0.75f, 0.1f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
+        Color survAccent = unlocked ? new Color(0f, 1f, 0.65f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
         var survival = AddModeCard(panelGo.transform, font,
             "SURVIVAL", survTag, survDesc,
             new Vector2(0f, -130f), survAccent, unlocked);
@@ -440,8 +440,8 @@ public class MainMenuController : MonoBehaviour
         AddLabel(cardGo.transform, font, title, 38, Color.white, FontStyle.Bold,
                  new Vector2(0f, 67f), new Vector2(720f, 48f));
 
-        // Tagline — centered, white
-        AddLabel(cardGo.transform, font, tagline, 22, Color.white, FontStyle.Bold,
+        // Tagline — centered, accent color for visual importance
+        AddLabel(cardGo.transform, font, tagline, 22, accent, FontStyle.Bold,
                  new Vector2(0f, 38f), new Vector2(720f, 30f));
 
         // Thin divider
