@@ -414,19 +414,27 @@ public class MainMenuController : MonoBehaviour
         rt.anchoredPosition = pos;
         rt.sizeDelta = new Vector2(760f, 205f);
 
-        // Dark card background
-        var bgImg = cardGo.AddComponent<UnityEngine.UI.Image>();
-        bgImg.color = new Color(0.04f, 0.10f, 0.17f, 0.88f);
-        bgImg.raycastTarget = false;
+        // RectMask2D container — clips the tall sprite to the card's visible bounds
+        var maskGo = new GameObject("Mask");
+        maskGo.transform.SetParent(cardGo.transform, false);
+        var maskRt = maskGo.AddComponent<RectTransform>();
+        maskRt.anchorMin = Vector2.zero; maskRt.anchorMax = Vector2.one;
+        maskRt.offsetMin = maskRt.offsetMax = Vector2.zero;
+        maskGo.AddComponent<RectMask2D>();
 
-        // Left accent bar
-        var barGo = new GameObject("AccentBar");
-        barGo.transform.SetParent(cardGo.transform, false);
-        var barRt = barGo.AddComponent<RectTransform>();
-        barRt.anchorMin = new Vector2(0f, 0f); barRt.anchorMax = new Vector2(0f, 1f);
-        barRt.pivot = new Vector2(0f, 0.5f);
-        barRt.offsetMin = Vector2.zero; barRt.offsetMax = new Vector2(7f, 0f);
-        barGo.AddComponent<UnityEngine.UI.Image>().color = accent;
+        // Sprite stretched tall (920px) so its bar portion (~21% = 193px) fills the 205px card
+        var bgGo = new GameObject("Bg");
+        bgGo.transform.SetParent(maskGo.transform, false);
+        var bgRt = bgGo.AddComponent<RectTransform>();
+        bgRt.anchorMin = bgRt.anchorMax = bgRt.pivot = new Vector2(0.5f, 0.5f);
+        bgRt.anchoredPosition = Vector2.zero;
+        bgRt.sizeDelta = new Vector2(760f, 920f);
+        var bgImg = bgGo.AddComponent<UnityEngine.UI.Image>();
+        bgImg.sprite = buttonLargeSprite;
+        bgImg.type = UnityEngine.UI.Image.Type.Simple;
+        bgImg.preserveAspect = false;
+        bgImg.color = accent;
+        bgImg.raycastTarget = false;
 
         // Title — horizontally + vertically centered
         AddLabel(cardGo.transform, font, title, 38, Color.white, FontStyle.Bold,
