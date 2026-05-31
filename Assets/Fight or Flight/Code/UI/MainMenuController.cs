@@ -270,19 +270,19 @@ public class MainMenuController : MonoBehaviour
         var campaign = AddModeCard(panelGo.transform, font,
             "CAMPAIGN", "5 WAVES",
             "Fight through 5 increasingly difficult waves of enemy ships.\nClear all waves to complete the run and unlock Survival Mode.",
-            new Vector2(0f, 115f), new Color(0f, 0.8f, 1f, 1f), true);
+            new Vector2(0f, 130f), new Color(0f, 0.8f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
         // SURVIVAL — locked until Campaign is cleared.
         bool unlocked = GameModeManager.SurvivalUnlocked;
-        string survTag  = unlocked ? "ENDLESS · NO CHECKPOINTS"  : "LOCKED — COMPLETE CAMPAIGN FIRST";
+        string survTag  = unlocked ? "ENDLESS MODE"  : "LOCKED — COMPLETE CAMPAIGN FIRST";
         string survDesc = unlocked
             ? "Face never-ending waves of enemies. No lives, no limits — survive\nas long as you can and chase the highest score."
             : "Prove yourself in Campaign first.\nClear all 5 waves to unlock this mode and face the endless onslaught.";
         Color survAccent = unlocked ? new Color(1f, 0.75f, 0.1f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
         var survival = AddModeCard(panelGo.transform, font,
             "SURVIVAL", survTag, survDesc,
-            new Vector2(0f, -115f), survAccent, unlocked);
+            new Vector2(0f, -130f), survAccent, unlocked);
         if (unlocked)
             survival.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Survival));
 
@@ -412,7 +412,7 @@ public class MainMenuController : MonoBehaviour
         var rt = cardGo.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(760f, 205f);
+        rt.sizeDelta = new Vector2(760f, 235f);
 
         // RectMask2D container — clips the tall sprite to the card's visible bounds
         var maskGo = new GameObject("Mask");
@@ -428,7 +428,7 @@ public class MainMenuController : MonoBehaviour
         var bgRt = bgGo.AddComponent<RectTransform>();
         bgRt.anchorMin = bgRt.anchorMax = bgRt.pivot = new Vector2(0.5f, 0.5f);
         bgRt.anchoredPosition = Vector2.zero;
-        bgRt.sizeDelta = new Vector2(760f, 920f);
+        bgRt.sizeDelta = new Vector2(760f, 1060f);
         var bgImg = bgGo.AddComponent<UnityEngine.UI.Image>();
         bgImg.sprite = buttonLargeSprite;
         bgImg.type = UnityEngine.UI.Image.Type.Simple;
@@ -440,31 +440,31 @@ public class MainMenuController : MonoBehaviour
         AddLabel(cardGo.transform, font, title, 38, Color.white, FontStyle.Bold,
                  new Vector2(0f, 67f), new Vector2(720f, 48f));
 
-        // Tagline — centered, accent colour
-        AddLabel(cardGo.transform, font, tagline, 22, accent, FontStyle.Bold,
-                 new Vector2(0f, 20f), new Vector2(720f, 30f));
+        // Tagline — centered, white
+        AddLabel(cardGo.transform, font, tagline, 22, Color.white, FontStyle.Bold,
+                 new Vector2(0f, 38f), new Vector2(720f, 30f));
 
         // Thin divider
         var divGo = new GameObject("Div");
         divGo.transform.SetParent(cardGo.transform, false);
         var divRt = divGo.AddComponent<RectTransform>();
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 0.5f);
-        divRt.anchoredPosition = new Vector2(0f, -4f);
+        divRt.anchoredPosition = new Vector2(0f, 8f);
         divRt.sizeDelta = new Vector2(700f, 1f);
-        divGo.AddComponent<UnityEngine.UI.Image>().color = new Color(accent.r, accent.g, accent.b, 0.35f);
+        divGo.AddComponent<UnityEngine.UI.Image>().color = new Color(1f, 1f, 1f, 0.25f);
 
-        // Description — centered, wrapping
+        // Description — centered, white, wrapping
         var descGo = new GameObject("Desc");
         descGo.transform.SetParent(cardGo.transform, false);
         var descRt = descGo.AddComponent<RectTransform>();
         descRt.anchorMin = descRt.anchorMax = descRt.pivot = new Vector2(0.5f, 0.5f);
-        descRt.anchoredPosition = new Vector2(0f, -52f);
+        descRt.anchoredPosition = new Vector2(0f, -38f);
         descRt.sizeDelta = new Vector2(710f, 78f);
         var descTxt = descGo.AddComponent<UnityEngine.UI.Text>();
         descTxt.text = description;
         descTxt.font = font;
         descTxt.fontSize = 19;
-        descTxt.color = new Color(0.82f, 0.82f, 0.82f, 1f);
+        descTxt.color = Color.white;
         descTxt.fontStyle = FontStyle.Normal;
         descTxt.alignment = TextAnchor.MiddleCenter;
         descTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
