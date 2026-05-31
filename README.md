@@ -33,37 +33,42 @@ Control scheme is switchable in the in-game Settings menu.
 ## Project Layout
 
 ```
-Assets/Fight or Flight/
-├── Code/
-│   ├── Camera/       — LagCamera follow system
-│   ├── Combat/       — Laser projectile, Billboard
-│   ├── Editor/       — Editor-only setup tools (GamePausedUISetup, PrefabSetup, LegacyHudCleanupTool)
-│   ├── Enemy/        — EnemyAI, EnemyMovement, EnemyAttack, EnemyHealthBar
-│   ├── Ship/         — Ship coordinator, ShipInput, ShipPhysics, ShipCombat, ShipHealth
-│   ├── UI/           — HUD, menus, radar, wave display, settings, pause, defeat/victory screens
-│   └── Utils/        — ArenaBoundary, DebrisScatter, GameModeManager, DifficultyManager, Explosion
+Assets/
+├── Fight or Flight/
+│   ├── Code/
+│   │   ├── Camera/       - LagCamera follow system
+│   │   ├── Combat/       - Laser projectile, Billboard
+│   │   ├── Editor/       - Editor-only setup tools (GamePausedUISetup, PrefabSetup, LegacyHudCleanupTool)
+│   │   ├── Enemy/        - EnemyAI, EnemyMovement, EnemyAttack, EnemyHealthBar
+│   │   ├── Ship/         - Ship coordinator, ShipInput, ShipPhysics, ShipCombat, ShipHealth
+│   │   ├── UI/           - HUD, menus, radar, wave display, settings, pause, defeat/victory screens
+│   │   └── Utils/        - ArenaBoundary, DebrisScatter, GameModeManager, DifficultyManager, Explosion
+│   │
+│   └── Content/
+│       ├── Audio/SFX/    - Sound effects (.wav, .mp3)
+│       ├── Fonts/        - Inter variable font
+│       ├── Materials/    - Laser materials
+│       ├── Models/       - Ship and environment GLB models
+│       │   └── Enemies/  - Enemy GLB models (boss, vulcan_dkyr_class, enemy)
+│       ├── Prefabs/
+│       │   ├── Enemies/  - Enemy and player ship prefabs
+│       │   ├── Environment/ - Asteroid and rock prefabs
+│       │   ├── UI/       - UI prefabs (CloseBtn, ButtonBG_Refined, PlayerHUD, etc.)
+│       │   └── VFX/      - Explosion and laser VFX prefabs
+│       ├── Resources/    - Runtime-loaded assets (SciFiUI sprites, UI overlays)
+│       ├── Scenes/       - MainMenu and MainScene scene files
+│       ├── Sprites/      - UI sprite sheets and extracted assets
+│       ├── Textures/
+│       │   └── UI/       - HUD icon textures (health, shield, heat)
+│       └── UI/           - UI background and icon images
 │
-└── Content/
-    ├── Audio/SFX/    — Sound effects (.wav, .mp3)
-    ├── Fonts/        — Inter variable font
-    ├── Materials/    — Laser materials
-    ├── Models/       — Ship and environment GLB models
-    │   └── Enemies/  — Enemy GLB models (boss, vulcan_dkyr_class, enemy)
-    ├── Prefabs/
-    │   ├── Enemies/  — Enemy and player ship prefabs
-    │   ├── Environment/ — Asteroid and rock prefabs
-    │   ├── UI/       — UI prefabs (CloseBtn, ButtonBG_Refined, PlayerHUD, etc.)
-    │   └── VFX/      — Explosion and laser VFX prefabs
-    ├── Resources/    — Runtime-loaded assets (SciFiUI sprites, UI overlays)
-    ├── Scenes/       — MainMenu and MainScene scene files
-    ├── Sprites/      — UI sprite sheets and extracted assets
-    ├── Textures/
-    │   └── UI/       — HUD icon textures (health, shield, heat)
-    └── UI/           — UI background and icon images
+├── Vendor/               - Third-party packages (CartoonFX, BrokenVector, TextMesh Pro, RandomAreaSpawner)
+└── _Archive/             - Legacy prototype scripts and scenes (read-only reference)
 
-Assets/Vendor/        — Third-party packages (CartoonFX, BrokenVector, TextMesh Pro, RandomAreaSpawner)
-Assets/_Archive/      — Legacy prototype scripts and scenes (read-only reference)
-_quarantine/          — Files moved here during cleanup (not deleted — restorable)
+GeneratedAssets/          - Auto-generated content
+Packages/                 - Unity package manifest and lockfile
+ProjectSettings/          - Unity project settings
+UserSettings/             - Local editor settings
 ```
 
 ## Core Systems
@@ -96,10 +101,14 @@ Save data (scores, unlocks) is stored in `PlayerPrefs`. Can be reset from the Se
 
 ## Dependencies
 
-- `com.unity.inputsystem` `1.19.0`
-- `com.unity.ugui` `2.0.0`
-- `com.unity.ai.assistant` `2.8.0-pre.1`
+- `com.besty.unity-skills` (git)
+- `com.unity.ai.assistant` `2.9.0-pre.2`
 - `com.unity.ai.inference` `2.6.1`
+- `com.unity.inputsystem` `1.19.0`
+- `com.unity.multiplayer.center` `1.0.1`
+- `com.unity.ugui` `2.0.0`
+
+Built-in Unity modules are listed under `com.unity.modules.*` in `Packages/manifest.json`.
 
 ## Attribution
 
