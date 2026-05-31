@@ -264,7 +264,7 @@ public class MainMenuController : MonoBehaviour
         panelImg.color = Color.white;
 
         AddLabel(panelGo.transform, font, "SELECT MODE", 50, new Color(0.3f, 1f, 1f), FontStyle.Bold,
-                 new Vector2(0f, 350f), new Vector2(750f, 65f));
+                 new Vector2(0f, 323f), new Vector2(750f, 65f));
 
         // CAMPAIGN — always available.
         var campaign = AddModeButton(panelGo.transform, font, "CAMPAIGN", "5 WAVES",
@@ -282,10 +282,34 @@ public class MainMenuController : MonoBehaviour
         if (unlocked)
             survival.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Survival));
 
-        // BACK
-        var back = AddModeButton(panelGo.transform, font, "BACK", null,
-                                 new Vector2(0f, -240f), new Color(1f, 0.31f, 0.31f, 1f), true);
-        back.onClick.AddListener(() => { Destroy(root); modeOverlay = null; });
+        // CLOSE — plain text button sitting inside the panel's bottom decorative strip (no sprite)
+        var closeGo = new GameObject("CloseBtn");
+        closeGo.transform.SetParent(panelGo.transform, false);
+        var closeRt = closeGo.AddComponent<RectTransform>();
+        closeRt.anchorMin = closeRt.anchorMax = closeRt.pivot = new Vector2(0.5f, 0.5f);
+        closeRt.anchoredPosition = new Vector2(0f, -335f);
+        closeRt.sizeDelta = new Vector2(220f, 55f);
+        var closeImg = closeGo.AddComponent<UnityEngine.UI.Image>();
+        closeImg.color = new Color(0f, 0f, 0f, 0f);
+        closeImg.raycastTarget = false;
+        var closeBtn = closeGo.AddComponent<UnityEngine.UI.Button>();
+        closeBtn.targetGraphic = closeImg;
+        var cc2 = closeBtn.colors;
+        cc2.normalColor = Color.white;
+        cc2.highlightedColor = new Color(0.3f, 1f, 1f, 1f);
+        cc2.pressedColor = new Color(0.15f, 0.7f, 0.7f, 1f);
+        closeBtn.colors = cc2;
+        var closeHitGo = new GameObject("Hitbox");
+        closeHitGo.transform.SetParent(closeGo.transform, false);
+        var closeHitRt = closeHitGo.AddComponent<RectTransform>();
+        closeHitRt.anchorMin = Vector2.zero; closeHitRt.anchorMax = Vector2.one;
+        closeHitRt.offsetMin = closeHitRt.offsetMax = Vector2.zero;
+        var closeHitImg = closeHitGo.AddComponent<UnityEngine.UI.Image>();
+        closeHitImg.color = new Color(0, 0, 0, 0);
+        closeHitImg.raycastTarget = true;
+        AddLabel(closeGo.transform, font, "CLOSE", 30, Color.white, FontStyle.Bold,
+                 Vector2.zero, new Vector2(200f, 44f));
+        closeBtn.onClick.AddListener(() => { Destroy(root); modeOverlay = null; });
 
         return root;
     }
