@@ -96,7 +96,7 @@ public class GamePausedUI : MonoBehaviour
 
     private void DoSettings() { SettingsMenu.Show(); }
 
-    private void DoRestartWave()
+    private void DoRestart()
     {
         IsPaused = false;
         Time.timeScale = 1f;
@@ -216,12 +216,12 @@ public class GamePausedUI : MonoBehaviour
 
         var resumeBtn   = AddButton(panelRt.transform, "RESUME",       BY,          true,  BW, BH, "Boxy/Icons/resume");
         var settingsBtn = AddButton(panelRt.transform, "SETTINGS",     BY + STEP,   false, BW, BH, "Boxy/Icons/settings");
-        var restartBtn  = AddButton(panelRt.transform, "RESTART WAVE", BY + STEP*2, false, BW, BH, "Boxy/Icons/restart");
+        var restartBtn  = AddButton(panelRt.transform, "RESTART",      BY + STEP*2, false, BW, BH, "Boxy/Icons/restart");
         var quitBtn     = AddButton(panelRt.transform, "QUIT TO MENU", BY + STEP*3, false, BW, BH, "Boxy/Icons/quit");
 
         resumeBtn.onClick.AddListener(DoResume);
         settingsBtn.onClick.AddListener(DoSettings);
-        restartBtn.onClick.AddListener(DoRestartWave);
+        restartBtn.onClick.AddListener(DoRestart);
         quitBtn.onClick.AddListener(DoQuitToMenu);
 
         pauseOverlay.SetActive(false);
