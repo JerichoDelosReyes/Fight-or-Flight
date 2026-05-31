@@ -68,7 +68,7 @@ public class SettingsMenu : MonoBehaviour
 
         // Priority 1: MainMenu folder prefab
         #if UNITY_EDITOR
-        prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fight or Flight/Content/Scenes/MainMenu/SettingsMenu.prefab");
+        prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fight or Flight/Content/Prefabs/UI/SettingsMenu.prefab");
         #endif
 
         // Priority 2: Resources

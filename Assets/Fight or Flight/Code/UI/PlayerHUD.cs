@@ -44,9 +44,9 @@ public class PlayerHUD : MonoBehaviour
     private const float IconSize = 40f;
     private const float IconGap  = 12f;
 
-    private const string HealthIconPath = "Assets/Fight or Flight/Content/Materials/health.png";
-    private const string ShieldIconPath = "Assets/Fight or Flight/Content/Materials/shield.png";
-    private const string HeatIconPath   = "Assets/Fight or Flight/Content/Materials/heat.png";
+    private const string HealthIconPath = "Assets/Fight or Flight/Content/Textures/UI/health.png";
+    private const string ShieldIconPath = "Assets/Fight or Flight/Content/Textures/UI/shield.png";
+    private const string HeatIconPath   = "Assets/Fight or Flight/Content/Textures/UI/heat.png";
 
     private static readonly Color PanelBG     = new Color(0f, 0f, 0f, 0f);
     private static readonly Color HealthFull  = new Color(0.15f, 0.85f, 0.15f, 1f);

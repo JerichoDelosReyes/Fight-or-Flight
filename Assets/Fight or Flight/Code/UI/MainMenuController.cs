@@ -55,7 +55,7 @@ public class MainMenuController : MonoBehaviour
         if (menuFont == null)
         {
             #if UNITY_EDITOR
-            menuFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>("Assets/Fight or Flight/Content/Models/Inter-VariableFont_opsz,wght.ttf");
+            menuFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>("Assets/Fight or Flight/Content/Fonts/Inter-VariableFont_opsz,wght.ttf");
             #endif
         }
 
