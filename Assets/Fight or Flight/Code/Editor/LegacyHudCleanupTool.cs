@@ -6,21 +6,8 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Editor menu command that deletes legacy HUD GameObjects from the currently
-/// open scene and marks it dirty for saving.
-///
-/// Why this exists: at runtime, LegacyHUDCleanup destroys these objects on
-/// every play — but the scene file itself still contains them, so they
-/// flash briefly when the scene loads and they're impossible to remove
-/// permanently without editing the scene from inside the Unity Editor.
-///
-/// Usage:
-///   1. In Unity, open the scene you want to clean (MainScene or MainMenu).
-///   2. Click  "Fight or Flight  →  Clean Legacy HUD (Active Scene)".
-///   3. Save the scene (Ctrl+S).
-///
-/// You can also click "Clean Legacy HUD (All Scenes)" to process both
-/// MainScene and MainMenu back-to-back without manually opening each.
+/// Editor menu command that deletes legacy HUD GameObjects from the active scene and marks it dirty.
+/// Use "Fight or Flight → Clean Legacy HUD (Active Scene)" then Ctrl+S to save.
 /// </summary>
 public static class LegacyHudCleanupTool
 {
@@ -82,9 +69,7 @@ public static class LegacyHudCleanupTool
 
     private static readonly HashSet<string> SafeCanvasNames = new HashSet<string>
     {
-        // None of these should exist in the SCENE file — they're all runtime-created.
-        // If a scene happens to contain one with these exact names, we keep it
-        // (the user may have deliberately staged it for testing).
+        // Runtime-created canvases — kept even if found staged in a scene.
         "RadarCanvas", "HeadingStripCanvas",
         "PlayerHUDCanvas", "ScoreHUDCanvas",
         "WaveHUD",

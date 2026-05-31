@@ -6,17 +6,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Editor tool: "Fight or Flight → Setup Game Paused UI"
-/// Builds a live-editable preview of the pause panel in the currently open scene.
-/// The preview mirrors GamePausedUI.cs exactly — sprites, sizes, and layout.
-///
-/// HOW TO USE:
-///   1. Click  Fight or Flight → Setup Game Paused UI
-///   2. In the Hierarchy find  GamePausedUI_Preview → PauseCanvas → PauseOverlay
-///   3. Tick "Active" on PauseOverlay in the Inspector to make it visible
-///   4. Select any child to move / resize / recolour it in the Scene view (just like Figma)
-///   5. When you're happy, copy the numeric values back into GamePausedUI.cs
-///   6. Delete the preview object before shipping
+/// Editor tool: "Fight or Flight → Setup Game Paused UI". Builds a live-editable preview of
+/// the pause panel in the active scene mirroring GamePausedUI.cs. Delete preview before shipping.
 /// </summary>
 public static class GamePausedUISetup
 {

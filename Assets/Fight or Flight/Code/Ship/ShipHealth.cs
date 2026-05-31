@@ -156,11 +156,7 @@ public AudioClip explosionSound;
         // Sound - Use spatialized audio source if available, otherwise fallback
         if (explosionSound != null)
         {
-            // Instead of PlayClipAtPoint which leaks, we try to use a persistent audio source
-            // But since this object is being destroyed, we use a static method or similar
-            // For now, let's use a simpler approach: play it at camera position or similar
-            // Actually, I'll use a simple pooler for audio if possible, but let's just use 
-            // AudioSource.PlayClipAtPoint sparingly or ensure it's not called 100 times.
+            // PlayClipAtPoint is used sparingly here; object is being destroyed so no persistent source is available.
             AudioSource.PlayClipAtPoint(explosionSound, transform.position, 1.0f);
         }
 

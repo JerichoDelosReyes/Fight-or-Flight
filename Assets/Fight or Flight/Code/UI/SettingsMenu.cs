@@ -256,7 +256,7 @@ float labelX = -250f;
                   new Vector2(labelX, -120), new Vector2(380, 40));
         sfxSlider = MakeSlider(panel, new Vector2(sliderX, -120), sliderWidth, PlayerPrefs.GetFloat(KeyVolSFX, 1f));
 
-        // ── Apply / Back ──────────────────────────────────────────────────────
+        // ── Delete Data / Apply / Close ───────────────────────────────────────
         var bottomDivider = MakeDivider(panel, new Vector2(0, -200));
         bottomDivider.transform.localScale = new Vector3(1f, 110.874985f, 1f);
         
