@@ -12,7 +12,6 @@ public class SettingsMenu : MonoBehaviour
     // ── PlayerPrefs keys ──────────────────────────────────────────────────────
 
     private const string KeyControlScheme = "ControlScheme";
-    private const string KeyInvertY       = "InvertY";
     private const string KeyVolMaster     = "VolMaster";
     private const string KeyVolMusic      = "VolMusic";
     private const string KeyVolSFX        = "VolSFX";
@@ -26,10 +25,6 @@ public class SettingsMenu : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private GameObject panel;
     [SerializeField] private Button[] schemeButtons = new Button[2];
-    [SerializeField] private GameObject invertYRow;
-    [SerializeField] private Toggle invertYToggle;
-    [SerializeField] private GameObject invertPitchKbRow;
-    [SerializeField] private Toggle invertPitchKbToggle;
     [SerializeField] private Slider masterSlider;
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider sfxSlider;
@@ -127,8 +122,6 @@ public class SettingsMenu : MonoBehaviour
         {
             WireListeners();
         }
-        
-        RefreshInvertYVisibility();
     }
 
     private void WireListeners()
@@ -238,32 +231,6 @@ backingImg.sprite = headerSprite;
             schemeButtons[i] = btn.GetComponent<Button>();
         }
 
-        // ── Invert Y (only visible in Mouse + Keyboard) ───────────────────────
-        invertYRow = new GameObject("InvertYRow");
-        invertYRow.transform.SetParent(panel.transform, false);
-        var rowRt = invertYRow.AddComponent<RectTransform>();
-        rowRt.anchorMin = rowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        rowRt.anchoredPosition = new Vector2(41, 135);
-        rowRt.sizeDelta = new Vector2(840, 50);
-
-        MakeLabel(invertYRow, "INVERT Y-AXIS (MOUSE)", 24, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-150, 0), new Vector2(500, 40));
-        invertYToggle = MakeToggle(invertYRow, new Vector2(250, 0));
-        invertYToggle.isOn = PlayerPrefs.GetInt(KeyInvertY, 0) == 1;
-
-        // ── Invert Pitch (only visible in Keyboard Only) ──────────────────────
-        invertPitchKbRow = new GameObject("InvertPitchKbRow");
-        invertPitchKbRow.transform.SetParent(panel.transform, false);
-        var ipRowRt = invertPitchKbRow.AddComponent<RectTransform>();
-        ipRowRt.anchorMin = ipRowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        ipRowRt.anchoredPosition = new Vector2(41, 135);
-        ipRowRt.sizeDelta = new Vector2(840, 50);
-
-        MakeLabel(invertPitchKbRow, "INVERT PITCH (KEYBOARD)", 24, new Color(0.7f, 0.7f, 0.7f), FontStyle.Normal,
-                  new Vector2(-150, 0), new Vector2(500, 40));
-        invertPitchKbToggle = MakeToggle(invertPitchKbRow, new Vector2(250, 0));
-        invertPitchKbToggle.isOn = PlayerPrefs.GetInt("InvertPitchKeyboard", 0) == 1;
-
         // ── Audio Settings Header ─────────────────────────────────────────────
         var audioHeader = MakeHeaderBar(panel, "AUDIO SETTINGS", 26, new Vector2(0, 60));
         audioHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
@@ -368,7 +335,6 @@ float labelX = -250f;
     {
         selectedScheme = idx;
         ApplyButtonHighlight(schemeButtons, schemeColors, idx);
-        RefreshInvertYVisibility();
     }
 
     private void ApplyButtonHighlight(Button[] buttons, Color[] baseColors, int selectedIdx)
@@ -392,13 +358,6 @@ float labelX = -250f;
         }
     }
 
-    private void RefreshInvertYVisibility()
-    {
-        bool mouseMode = selectedScheme == 1;
-        if (invertYRow != null) invertYRow.SetActive(mouseMode);
-        if (invertPitchKbRow != null) invertPitchKbRow.SetActive(!mouseMode);
-    }
-
     // ── Apply / Close ─────────────────────────────────────────────────────────
 
     private void ApplySettings()
@@ -406,8 +365,6 @@ float labelX = -250f;
         // Control scheme + invert toggles → routed through ControlSchemeManager so
         // the static caches stay in sync with PlayerPrefs without a scene reload.
         ControlSchemeManager.SetScheme((ControlSchemeManager.Scheme)selectedScheme);
-        ControlSchemeManager.SetInvertY(invertYToggle.isOn);
-        ControlSchemeManager.SetInvertPitchKeyboard(invertPitchKbToggle.isOn);
 
         // Volume — master applies live via AudioListener; music/SFX are persisted
         // for AudioSource components / future mixers to read.
@@ -537,92 +494,6 @@ float labelX = -250f;
 
         MakeLabel(go, label, 26, Color.white, FontStyle.Bold, Vector2.zero, size);
         return go;
-    }
-
-    // Procedural circle sprite — anti-aliased, no 9-slice needed.
-    private static Sprite _circleSprite;
-    private static Sprite GetCircleSprite()
-    {
-        if (_circleSprite != null) return _circleSprite;
-        const int size = 64;
-        var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
-        tex.wrapMode = TextureWrapMode.Clamp;
-        tex.filterMode = FilterMode.Bilinear;
-        float r = size * 0.5f;
-        for (int y = 0; y < size; y++)
-        for (int x = 0; x < size; x++)
-        {
-            float dx = x - r + 0.5f, dy = y - r + 0.5f;
-            float a = Mathf.Clamp01(r - Mathf.Sqrt(dx * dx + dy * dy));
-            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
-        }
-        tex.Apply();
-        _circleSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
-        return _circleSprite;
-    }
-
-    private Toggle MakeToggle(GameObject parent, Vector2 pos)
-    {
-        var circle = GetCircleSprite();
-
-        var go = new GameObject("Toggle");
-        go.transform.SetParent(parent.transform, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(30, 30);
-
-        // Teal ring ON the root go — targetGraphic on the same object as Toggle
-        // so clicks always register and Unity's state machine drives colours correctly.
-        var ringImg = go.AddComponent<Image>();
-        ringImg.sprite = circle;
-        ringImg.color  = new Color(0.18f, 0.72f, 0.88f, 1f);
-        ringImg.raycastTarget = true;
-
-        // Dark centre — non-raycasting child, always visible, gives ring its hollow look.
-        var darkGo = new GameObject("Dark");
-        darkGo.transform.SetParent(go.transform, false);
-        var darkRt = darkGo.AddComponent<RectTransform>();
-        darkRt.anchorMin = Vector2.zero; darkRt.anchorMax = Vector2.one;
-        darkRt.offsetMin = new Vector2(4f, 4f);
-        darkRt.offsetMax = new Vector2(-4f, -4f);
-        var darkImg = darkGo.AddComponent<Image>();
-        darkImg.sprite = circle;
-        darkImg.color  = new Color(0.04f, 0.12f, 0.18f, 1f);
-        darkImg.raycastTarget = false;
-
-        // ON fill — starts hidden (alpha 0). We drive it manually via onValueChanged
-        // instead of Toggle.graphic so there's no dependency on CrossFadeAlpha timing.
-        var onGo = new GameObject("OnFill");
-        onGo.transform.SetParent(go.transform, false);
-        var onRt = onGo.AddComponent<RectTransform>();
-        onRt.anchorMin = Vector2.zero; onRt.anchorMax = Vector2.one;
-        onRt.offsetMin = new Vector2(4f, 4f);
-        onRt.offsetMax = new Vector2(-4f, -4f);
-        var onImg = onGo.AddComponent<Image>();
-        onImg.sprite = circle;
-        onImg.color  = new Color(0.2f, 1f, 1f, 0f); // hidden by default (OFF)
-        onImg.raycastTarget = false;
-
-        var toggle = go.AddComponent<Toggle>();
-        toggle.targetGraphic    = ringImg;
-        toggle.graphic          = null; // skip Unity's automatic fade
-        toggle.toggleTransition = Toggle.ToggleTransition.None;
-        var cols = toggle.colors;
-        cols.normalColor      = Color.white;
-        cols.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-        cols.pressedColor     = new Color(0.75f, 0.75f, 0.75f, 1f);
-        toggle.colors = cols;
-
-        // Directly set fill colour whenever the value changes.
-        toggle.onValueChanged.AddListener(isOn =>
-        {
-            onImg.color = isOn
-                ? new Color(0.2f, 1f, 1f, 1f)   // bright teal = ON
-                : new Color(0.2f, 1f, 1f, 0f);  // transparent = OFF
-        });
-
-        return toggle;
     }
 
     private Slider MakeSlider(GameObject parent, Vector2 pos, float width, float initialValue)
