@@ -390,7 +390,17 @@ float labelX = -250f;
 
     private void Close()
     {
+        if (_confirmOverlay != null) { Destroy(_confirmOverlay); _confirmOverlay = null; }
         Destroy(gameObject);
+    }
+
+    private void SetSettingsVisible(bool visible)
+    {
+        var cg = gameObject.GetComponent<CanvasGroup>();
+        if (cg == null) cg = gameObject.AddComponent<CanvasGroup>();
+        cg.alpha          = visible ? 1f : 0f;
+        cg.interactable   = visible;
+        cg.blocksRaycasts = visible;
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────────
@@ -664,7 +674,7 @@ float labelX = -250f;
         if (_confirmOverlay != null) return;
 
         _confirmOverlay = new GameObject("DeleteConfirmOverlay");
-        _confirmOverlay.transform.SetParent(transform, false);
+        // Root-level so the settings CanvasGroup hide doesn't swallow it.
 
         var canvas = _confirmOverlay.AddComponent<Canvas>();
         canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
@@ -694,7 +704,7 @@ float labelX = -250f;
         if (panelSprite != null) { dialogImg.sprite = panelSprite; dialogImg.type = Image.Type.Sliced; }
         dialogImg.color = Color.white;
 
-        MakeLabel(dialogGo, "DELETE ALL DATA?", 36, new Color(1f, 0.31f, 0.31f),
+        MakeLabel(dialogGo, "DELETE ALL DATA?", 36, Color.white,
                   FontStyle.Bold, new Vector2(0f, 80f), new Vector2(580f, 55f));
         MakeLabel(dialogGo, "This will lock Survival mode again.", 22, new Color(0.75f, 0.75f, 0.75f),
                   FontStyle.Normal, new Vector2(0f, 22f), new Vector2(560f, 36f));
@@ -710,11 +720,14 @@ float labelX = -250f;
         cancelBtn.transform.localScale = new Vector3(1.44599998f, 1.40919995f, 1f);
         var cancelLbl = cancelBtn.transform.Find("Lbl");
         if (cancelLbl != null) cancelLbl.localScale = new Vector3(1f, 0.815180004f, 1f);
+
+        SetSettingsVisible(false);
     }
 
     private void DismissConfirm()
     {
         if (_confirmOverlay != null) { Destroy(_confirmOverlay); _confirmOverlay = null; }
+        SetSettingsVisible(true);
     }
 
     private void DoDeleteData()
