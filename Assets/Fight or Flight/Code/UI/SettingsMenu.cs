@@ -196,7 +196,7 @@ public class SettingsMenu : MonoBehaviour
         var topDivider = MakeDivider(panel, new Vector2(0, 315));
 
         // ── Type Header (Formerly Control Scheme) ─────────────────────────────
-        var typeHeader = MakeHeaderBar(panel, "TYPE", 26, new Vector2(0, 265));
+        var typeHeader = MakeHeaderBar(panel, "CHOOSE TYPE OF CONTROLS", 26, new Vector2(0, 265));
         typeHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
         foreach (Transform child in typeHeader.transform)
         {
