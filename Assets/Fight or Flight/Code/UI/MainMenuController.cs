@@ -270,19 +270,19 @@ public class MainMenuController : MonoBehaviour
         var campaign = AddModeCard(panelGo.transform, font,
             "CAMPAIGN", "Be the last ship standing.",
             "Fight through 5 increasingly difficult waves of enemy ships.\nClear all waves to complete the run and unlock Survival Mode.",
-            new Vector2(0f, 142f), new Color(0f, 0.88f, 1f, 1f), true);
+            new Vector2(0f, 138f), new Color(0f, 0.88f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
         // SURVIVAL — locked until Campaign is cleared.
         bool unlocked = GameModeManager.SurvivalUnlocked;
-        string survTag  = unlocked ? "ENDLESS • Survive the Onslaught"  : "LOCKED - COMPLETE CAMPAIGN FIRST";
+        string survTag  = unlocked ? "Survive the Onslaught"  : "LOCKED - COMPLETE CAMPAIGN FIRST";
         string survDesc = unlocked
             ? "Face never-ending waves of enemies. No lives, no limits - survive\nas long as you can and chase the highest score."
             : "Prove yourself in Campaign first.\nClear all 5 waves to unlock this mode and face the endless onslaught.";
         Color survAccent = unlocked ? new Color(0f, 1f, 0.65f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
         var survival = AddModeCard(panelGo.transform, font,
             "SURVIVAL", survTag, survDesc,
-            new Vector2(0f, -130f), survAccent, unlocked);
+            new Vector2(0f, -138f), survAccent, unlocked);
         if (unlocked)
             survival.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Survival));
 
@@ -438,18 +438,18 @@ public class MainMenuController : MonoBehaviour
 
         // Title — horizontally + vertically centered
         AddLabel(cardGo.transform, font, title, 38, Color.white, FontStyle.Bold,
-                 new Vector2(0f, 67f), new Vector2(720f, 48f));
+                 new Vector2(0f, 57f), new Vector2(720f, 48f));
 
         // Tagline — centered, accent color for visual importance
         AddLabel(cardGo.transform, font, tagline, 22, accent, FontStyle.Bold,
-                 new Vector2(0f, 38f), new Vector2(720f, 30f));
+                 new Vector2(0f, 24f), new Vector2(720f, 30f));
 
         // Thin divider
         var divGo = new GameObject("Div");
         divGo.transform.SetParent(cardGo.transform, false);
         var divRt = divGo.AddComponent<RectTransform>();
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 0.5f);
-        divRt.anchoredPosition = new Vector2(0f, 8f);
+        divRt.anchoredPosition = new Vector2(0f, -6f);
         divRt.sizeDelta = new Vector2(700f, 1f);
         divGo.AddComponent<UnityEngine.UI.Image>().color = new Color(1f, 1f, 1f, 0.25f);
 
@@ -458,7 +458,7 @@ public class MainMenuController : MonoBehaviour
         descGo.transform.SetParent(cardGo.transform, false);
         var descRt = descGo.AddComponent<RectTransform>();
         descRt.anchorMin = descRt.anchorMax = descRt.pivot = new Vector2(0.5f, 0.5f);
-        descRt.anchoredPosition = new Vector2(0f, -38f);
+        descRt.anchoredPosition = new Vector2(0f, -46f);
         descRt.sizeDelta = new Vector2(710f, 78f);
         var descTxt = descGo.AddComponent<UnityEngine.UI.Text>();
         descTxt.text = description;
