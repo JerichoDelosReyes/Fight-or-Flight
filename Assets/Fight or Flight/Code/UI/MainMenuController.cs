@@ -444,15 +444,6 @@ public class MainMenuController : MonoBehaviour
         AddLabel(cardGo.transform, font, tagline, 22, accent, FontStyle.Bold,
                  new Vector2(0f, 24f), new Vector2(720f, 30f));
 
-        // Thin divider
-        var divGo = new GameObject("Div");
-        divGo.transform.SetParent(cardGo.transform, false);
-        var divRt = divGo.AddComponent<RectTransform>();
-        divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 0.5f);
-        divRt.anchoredPosition = new Vector2(0f, -6f);
-        divRt.sizeDelta = new Vector2(700f, 1f);
-        divGo.AddComponent<UnityEngine.UI.Image>().color = new Color(1f, 1f, 1f, 0.25f);
-
         // Description — centered, white, wrapping
         var descGo = new GameObject("Desc");
         descGo.transform.SetParent(cardGo.transform, false);
