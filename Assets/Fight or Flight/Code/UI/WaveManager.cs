@@ -206,13 +206,35 @@ private GameObject enemyPrefab;
 
     private IEnumerator InterWaveCountdown()
     {
+        var vignette = SpawnDarkVignette();
+
         for (int t = (int)InterWaveDelay; t > 0; t--)
         {
             WaveStatusText = string.Format("NEXT WAVE IN {0}s", t);
             if (headerText != null) headerText.text = WaveStatusText;
-            yield return new WaitForSeconds(1f);
+
+            // Center number only flashes on 3, 2, 1
+            if (t <= 3)
+            {
+                if (announcementText != null) { announcementText.text = t.ToString(); announcementText.fontSize = 140; }
+                if (announcementGroup != null) announcementGroup.alpha = 1f;
+                yield return new WaitForSeconds(0.6f);
+                if (announcementGroup != null) announcementGroup.alpha = 0f;
+                yield return new WaitForSeconds(0.4f);
+            }
+            else
+            {
+                yield return new WaitForSeconds(1f);
+            }
         }
-        yield return StartCoroutine(PreWaveCountdown());
+
+        // Brief FIGHT! cue then go
+        if (announcementText != null) { announcementText.text = "FIGHT!"; announcementText.fontSize = 170; }
+        if (announcementGroup != null) announcementGroup.alpha = 1f;
+        yield return new WaitForSeconds(0.6f);
+        if (announcementGroup != null) announcementGroup.alpha = 0f;
+
+        if (vignette != null) Destroy(vignette);
         StartWave(CurrentWave + 1);
     }
 

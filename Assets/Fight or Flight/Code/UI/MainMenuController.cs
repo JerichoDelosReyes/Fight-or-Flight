@@ -279,7 +279,7 @@ public class MainMenuController : MonoBehaviour
         string survDesc = unlocked
             ? "Face never-ending waves of enemies. No lives, no limits - survive\nas long as you can and chase the highest score."
             : "Prove yourself in Campaign first.\nClear all 5 waves to unlock this mode and face the endless onslaught.";
-        Color survAccent = unlocked ? new Color(0f, 0.88f, 1f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
+        Color survAccent = unlocked ? new Color(0f, 0.88f, 1f, 1f) : new Color(0.72f, 0.72f, 0.72f, 1f);
         var survival = AddModeCard(panelGo.transform, font,
             "SURVIVAL", survTag, survDesc,
             new Vector2(0f, -138f), survAccent, unlocked);
