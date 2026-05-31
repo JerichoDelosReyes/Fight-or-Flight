@@ -1,83 +1,106 @@
 # Fight or Flight
 
-Fight or Flight is a 3D space-flight action game where the player pilots a ship through an asteroid field, fights enemy ships, collects pickups, and pushes for a high score.
-
-This repository currently contains two gameplay stacks:
-- A newer gameplay stack under `Assets/Fight or Flight/Code`
-- A legacy prototype stack under `Assets/ScriptsReference`
-
-Keep this split in mind when wiring scenes and prefabs.
+A 3D space-flight action game. The player pilots a ship through an asteroid field, battles enemy waves, and pushes for a high score across two modes: Campaign and Survival.
 
 ## Quick Facts
-- Genre: third-person space flight shooter
-- Core scenes:
-	- `Assets/Fight or Flight/Content/Scenes/MainMenu.unity`
-	- `Assets/Fight or Flight/Content/Scenes/MainScene.unity`
-- Recommended Unity editor: `6000.4.6f1`
-- Input package in project: `com.unity.inputsystem` (`1.19.0`)
+
+- **Genre:** Third-person space flight shooter
+- **Unity version:** `6000.4.6f1`
+- **Core scenes:**
+  - `Assets/Fight or Flight/Content/Scenes/MainMenu/MainMenu.unity`
+  - `Assets/Fight or Flight/Content/Scenes/MainScene/MainScene.unity`
 
 ## Getting Started
+
 1. Open the project in Unity `6000.4.6f1`.
-2. Open `Assets/Fight or Flight/Content/Scenes/MainMenu.unity`.
+2. Open `Assets/Fight or Flight/Content/Scenes/MainMenu/MainMenu.unity`.
 3. Press Play.
-4. Start the game from the menu to load `MainScene`.
 
 ## Controls
-Based on `ShipInput` and `ShipCombat` in the current stack:
-- Pitch: `W/S` (inverted: `W` noses down, `S` noses up)
-- Yaw: `A/D`
-- Roll: `Q/E`
-- Throttle: `Left Shift`
-- Fire: `Space` or `Fire1` (typically left mouse)
-- Camera zoom: `Shift` + `Up/Down Arrow` (or `PageUp/PageDown`)
 
-Legacy scenes may still expect `Fire3` (throttle) and `Roll` axes.
+| Action | Mouse + Keyboard | Keyboard Only |
+|--------|-----------------|---------------|
+| Thrust / Brake | `W / S` | `Left Shift` |
+| Strafe | `A / D` | — |
+| Pitch | Mouse Y | `W / S` |
+| Yaw | Mouse X | `A / D` |
+| Roll | `Q / E` | `Q / E` |
+| Boost | `Left Shift` | — |
+| Fire | `Space` or `LMB` | `Space` or `LMB` |
+
+Control scheme is switchable in the in-game Settings menu.
 
 ## Project Layout
-Main gameplay code:
-- `Assets/Fight or Flight/Code/Ship` - player ship systems (input, physics, combat, health)
-- `Assets/Fight or Flight/Code/AI` - enemy behavior and health bar logic
-- `Assets/Fight or Flight/Code/Combat` - projectiles and combat helpers
-- `Assets/Fight or Flight/Code/UI` - HUD, menu, pause/settings, radar, wave UI
-- `Assets/Fight or Flight/Code/Camera` - follow/lag camera scripts
-- `Assets/Fight or Flight/Code/Utils` - shared gameplay utility components
 
-Content and assets:
-- `Assets/Fight or Flight/Content` - scenes, prefabs, audio, models, textures, materials, UI assets
-- `Assets/TextMesh Pro` - TMP resources
-- `Assets/RandomAreaSpawner` - optional random spawn utility
-- `Assets/AI Toolkit` - Unity AI tooling assets
+```
+Assets/Fight or Flight/
+├── Code/
+│   ├── Camera/       — LagCamera follow system
+│   ├── Combat/       — Laser projectile, Billboard
+│   ├── Editor/       — Editor-only setup tools (GamePausedUISetup, PrefabSetup, LegacyHudCleanupTool)
+│   ├── Enemy/        — EnemyAI, EnemyMovement, EnemyAttack, EnemyHealthBar
+│   ├── Ship/         — Ship coordinator, ShipInput, ShipPhysics, ShipCombat, ShipHealth
+│   ├── UI/           — HUD, menus, radar, wave display, settings, pause, defeat/victory screens
+│   └── Utils/        — ArenaBoundary, DebrisScatter, GameModeManager, DifficultyManager, Explosion
+│
+└── Content/
+    ├── Audio/SFX/    — Sound effects (.wav, .mp3)
+    ├── Fonts/        — Inter variable font
+    ├── Materials/    — Laser materials
+    ├── Models/       — Ship and environment GLB models
+    │   └── Enemies/  — Enemy GLB models (boss, vulcan_dkyr_class, enemy)
+    ├── Prefabs/
+    │   ├── Enemies/  — Enemy and player ship prefabs
+    │   ├── Environment/ — Asteroid and rock prefabs
+    │   ├── UI/       — UI prefabs (CloseBtn, ButtonBG_Refined, PlayerHUD, etc.)
+    │   └── VFX/      — Explosion and laser VFX prefabs
+    ├── Resources/    — Runtime-loaded assets (SciFiUI sprites, UI overlays)
+    ├── Scenes/       — MainMenu and MainScene scene files
+    ├── Sprites/      — UI sprite sheets and extracted assets
+    ├── Textures/
+    │   └── UI/       — HUD icon textures (health, shield, heat)
+    └── UI/           — UI background and icon images
 
-Legacy prototype scripts:
-- `Assets/ScriptsReference`
+Assets/Vendor/        — Third-party packages (CartoonFX, BrokenVector, TextMesh Pro, RandomAreaSpawner)
+Assets/_Archive/      — Legacy prototype scripts and scenes (read-only reference)
+_quarantine/          — Files moved here during cleanup (not deleted — restorable)
+```
 
-## Current Core Systems
-- Ship coordinator: `Assets/Fight or Flight/Code/Ship/Ship.cs`
-- Input: `Assets/Fight or Flight/Code/Ship/ShipInput.cs`
-- Movement and boundaries: `Assets/Fight or Flight/Code/Ship/ShipPhysics.cs`
-- Weapons and heat/overheat: `Assets/Fight or Flight/Code/Ship/ShipCombat.cs`
-- Damage and death flow: `Assets/Fight or Flight/Code/Ship/ShipHealth.cs`
-- Enemy AI: `Assets/Fight or Flight/Code/AI/EnemyAI.cs`
-- Laser projectile: `Assets/Fight or Flight/Code/Combat/ShipLaserProjectile.cs`
-- HUD manager: `Assets/Fight or Flight/Code/UI/HUDManager.cs`
-- Radar UI: `Assets/Fight or Flight/Code/UI/Radar.cs`
-- Camera follow: `Assets/Fight or Flight/Code/Camera/LagCamera.cs`
+## Core Systems
+
+| System | Script |
+|--------|--------|
+| Ship coordinator | `Code/Ship/Ship.cs` |
+| Input | `Code/Ship/ShipInput.cs` |
+| Physics & boundaries | `Code/Ship/ShipPhysics.cs` |
+| Weapons & heat | `Code/Ship/ShipCombat.cs` |
+| Damage & death | `Code/Ship/ShipHealth.cs` |
+| Enemy AI | `Code/Enemy/EnemyAI.cs` |
+| Enemy movement | `Code/Enemy/EnemyMovement.cs` |
+| Laser projectile | `Code/Combat/ShipLaserProjectile.cs` |
+| Wave spawning | `Code/UI/WaveManager.cs` |
+| HUD | `Code/UI/PlayerHUD.cs`, `HUDManager.cs` |
+| Radar | `Code/UI/Radar.cs` |
+| Settings menu | `Code/UI/SettingsMenu.cs` |
+| Pause menu | `Code/UI/GamePausedUI.cs` |
+| Camera | `Code/Camera/LagCamera.cs` |
+| Arena boundary | `Code/Utils/ArenaBoundary.cs` |
+| Game mode | `Code/Utils/GameModeManager.cs` |
+
+## Game Modes
+
+- **Campaign** — Survive 5 waves of enemies. Clearing all waves unlocks Survival Mode.
+- **Survival** — Endless enemy waves. Locked until Campaign is completed.
+
+Save data (scores, unlocks) is stored in `PlayerPrefs`. Can be reset from the Settings menu.
 
 ## Dependencies
-From `Packages/manifest.json`:
-- `com.unity.inputsystem` (`1.19.0`)
-- `com.unity.ugui` (`2.0.0`)
-- `com.unity.ai.assistant` (`2.8.0-pre.1`)
-- `com.unity.ai.inference` (`2.6.1`)
-- Standard Unity modules for physics, audio, particles, UI, and rendering
 
-## Known Risks
-Non-exhaustive list of issues to watch for:
-- Mixing legacy and current stacks in one scene can cause duplicate UI/input/score behavior.
-- Legacy enemy spawning can drift if destroy events are missed.
-- Some legacy spawners start immediately in `Start()` before menu/game start state is validated.
-- Some UI scripts assume references are assigned and can throw null reference exceptions if not wired.
-- Legacy laser scripts can spam the console during rapid fire.
+- `com.unity.inputsystem` `1.19.0`
+- `com.unity.ugui` `2.0.0`
+- `com.unity.ai.assistant` `2.8.0-pre.1`
+- `com.unity.ai.inference` `2.6.1`
 
 ## Attribution
-Some utility scripts (for example `RandomAreaSpawner`, `ShipPhysics`, and `LagCamera`) include MIT-licensed code by Brian Hernandez. See script headers for source and license details.
+
+`RandomAreaSpawner`, portions of `ShipPhysics`, and `LagCamera` include MIT-licensed code by Brian Hernandez. See script headers for details.
