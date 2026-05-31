@@ -181,20 +181,6 @@ private GameObject enemyPrefab;
         }
     }
 
-#if UNITY_EDITOR
-    // Dev shortcut: X key instantly kills all enemies and advances the wave.
-    private void Update()
-    {
-        if (!gameActive || !waveInProgress || !Input.GetKeyDown(KeyCode.X)) return;
-
-        foreach (var e in EnemyMovement.allEnemies.ToArray())
-            if (e != null) Destroy(e.gameObject);
-        EnemyMovement.allEnemies.Clear();
-        activeEnemies = 0;
-        WaveCompleted();
-    }
-#endif
-
     // ── Wave flow ─────────────────────────────────────────────────────────────
 
     private IEnumerator BeginNextWave()
