@@ -55,6 +55,8 @@ public class SettingsMenu : MonoBehaviour
     private Sprite sliderHandleSprite;
     private Sprite dividerSprite;
 
+    private GameObject _confirmOverlay;
+
     // ── Static entry point ────────────────────────────────────────────────────
 
     private static SettingsMenu instance;
@@ -291,8 +293,15 @@ float labelX = -250f;
         var bottomDivider = MakeDivider(panel, new Vector2(0, -200));
         bottomDivider.transform.localScale = new Vector3(1f, 110.874985f, 1f);
         
+        // DELETE DATA (left) and APPLY (right) — identical size/scale, side by side
+        var deleteDataBtn = MakeButton(panel, "DELETE DATA", new Color(1f, 0.31f, 0.31f),
+                                       new Vector2(-195f, -263f), new Vector2(350, 70), ShowDeleteConfirm, false);
+        deleteDataBtn.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
+        var deleteDataLbl = deleteDataBtn.transform.Find("Lbl");
+        if (deleteDataLbl != null) deleteDataLbl.localScale = new Vector3(1f, 0.604030013f, 1f);
+
         var applyBtn = MakeButton(panel, "APPLY", new Color(0.13f, 0.40f, 0.80f),
-                                  new Vector2(5, -263), new Vector2(350, 70), ApplySettings, false);
+                                  new Vector2(195f, -263f), new Vector2(350, 70), ApplySettings, false);
         applyBtn.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
         var applyLbl = applyBtn.transform.Find("Lbl");
         if (applyLbl != null) applyLbl.localScale = new Vector3(1f, 0.604030013f, 1f);
@@ -646,5 +655,112 @@ float labelX = -250f;
         slider.maxValue = 1f;
         slider.value    = initialValue;
         return slider;
+    }
+
+    // ── Delete Data flow ──────────────────────────────────────────────────────
+
+    private void ShowDeleteConfirm()
+    {
+        if (_confirmOverlay != null) return;
+
+        _confirmOverlay = new GameObject("DeleteConfirmOverlay");
+        _confirmOverlay.transform.SetParent(transform, false);
+
+        var canvas = _confirmOverlay.AddComponent<Canvas>();
+        canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 500;
+        var scaler = _confirmOverlay.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution  = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight   = 0.5f;
+        _confirmOverlay.AddComponent<GraphicRaycaster>();
+
+        // Dim
+        var dimGo = new GameObject("Dim");
+        dimGo.transform.SetParent(_confirmOverlay.transform, false);
+        var dimRt = dimGo.AddComponent<RectTransform>();
+        dimRt.anchorMin = Vector2.zero; dimRt.anchorMax = Vector2.one;
+        dimRt.offsetMin = dimRt.offsetMax = Vector2.zero;
+        dimGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.65f);
+
+        // Dialog panel
+        var dialogGo = new GameObject("Dialog");
+        dialogGo.transform.SetParent(_confirmOverlay.transform, false);
+        var dialogRt = dialogGo.AddComponent<RectTransform>();
+        dialogRt.anchorMin = dialogRt.anchorMax = dialogRt.pivot = new Vector2(0.5f, 0.5f);
+        dialogRt.anchoredPosition = Vector2.zero;
+        dialogRt.sizeDelta = new Vector2(640f, 300f);
+        var dialogImg = dialogGo.AddComponent<Image>();
+        if (panelSprite != null) { dialogImg.sprite = panelSprite; dialogImg.type = Image.Type.Sliced; }
+        dialogImg.color = Color.white;
+
+        MakeLabel(dialogGo, "DELETE ALL DATA?", 36, new Color(1f, 0.31f, 0.31f),
+                  FontStyle.Bold, new Vector2(0f, 80f), new Vector2(580f, 55f));
+        MakeLabel(dialogGo, "This will lock Survival mode again.", 22, new Color(0.75f, 0.75f, 0.75f),
+                  FontStyle.Normal, new Vector2(0f, 22f), new Vector2(560f, 36f));
+
+        var confirmBtn = MakeButton(dialogGo, "CONFIRM", new Color(1f, 0.31f, 0.31f),
+                                    new Vector2(-110f, -65f), new Vector2(220f, 60f), DoDeleteData, false);
+        confirmBtn.transform.localScale = new Vector3(1.44599998f, 1.40919995f, 1f);
+        var confirmLbl = confirmBtn.transform.Find("Lbl");
+        if (confirmLbl != null) confirmLbl.localScale = new Vector3(1f, 0.815180004f, 1f);
+
+        var cancelBtn = MakeButton(dialogGo, "CANCEL", new Color(0.4f, 0.4f, 0.4f),
+                                   new Vector2(110f, -65f), new Vector2(220f, 60f), DismissConfirm, false);
+        cancelBtn.transform.localScale = new Vector3(1.44599998f, 1.40919995f, 1f);
+        var cancelLbl = cancelBtn.transform.Find("Lbl");
+        if (cancelLbl != null) cancelLbl.localScale = new Vector3(1f, 0.815180004f, 1f);
+    }
+
+    private void DismissConfirm()
+    {
+        if (_confirmOverlay != null) { Destroy(_confirmOverlay); _confirmOverlay = null; }
+    }
+
+    private void DoDeleteData()
+    {
+        GameModeManager.ResetData();
+        DismissConfirm();
+        ShowToast("Save data cleared. Survival mode locked.", true);
+    }
+
+    private void ShowToast(string message, bool success)
+    {
+        var toastRoot = new GameObject("Toast");
+        var canvas = toastRoot.AddComponent<Canvas>();
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 600;
+        var scaler = toastRoot.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode        = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight  = 0.5f;
+        toastRoot.AddComponent<GraphicRaycaster>();
+
+        var bgGo = new GameObject("Bg");
+        bgGo.transform.SetParent(toastRoot.transform, false);
+        var bgRt = bgGo.AddComponent<RectTransform>();
+        bgRt.anchorMin = bgRt.anchorMax = bgRt.pivot = new Vector2(0.5f, 0f);
+        bgRt.anchoredPosition = new Vector2(0f, 50f);
+        bgRt.sizeDelta = new Vector2(560f, 60f);
+        var bgImg = bgGo.AddComponent<Image>();
+        bgImg.color = success ? new Color(0.08f, 0.38f, 0.08f, 0.93f)
+                              : new Color(0.38f, 0.08f, 0.08f, 0.93f);
+
+        var txtGo = new GameObject("Txt");
+        txtGo.transform.SetParent(bgGo.transform, false);
+        var txtRt = txtGo.AddComponent<RectTransform>();
+        txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = txtRt.offsetMax = Vector2.zero;
+        var txt = txtGo.AddComponent<Text>();
+        txt.text               = message;
+        txt.font               = uiFont;
+        txt.fontSize           = 21;
+        txt.color              = Color.white;
+        txt.fontStyle          = FontStyle.Bold;
+        txt.alignment          = TextAnchor.MiddleCenter;
+        txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+        txt.verticalOverflow   = VerticalWrapMode.Overflow;
+
+        Destroy(toastRoot, 3f);
     }
 }

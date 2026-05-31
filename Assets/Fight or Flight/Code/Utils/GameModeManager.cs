@@ -28,4 +28,10 @@ public static class GameModeManager
         PlayerPrefs.SetInt(UnlockKey, 1);
         PlayerPrefs.Save();
     }
+
+    public static void ResetData()
+    {
+        PlayerPrefs.DeleteKey(UnlockKey);
+        PlayerPrefs.Save();
+    }
 }
