@@ -318,7 +318,7 @@ float labelX = -250f;
             noteGo.transform.SetParent(panel.transform, false);
             var noteRt = noteGo.AddComponent<RectTransform>();
             noteRt.anchorMin = noteRt.anchorMax = noteRt.pivot = new Vector2(0.5f, 0.5f);
-            noteRt.anchoredPosition = new Vector2(-195f, -326f);
+            noteRt.anchoredPosition = new Vector2(-195f, -308f);
             noteRt.sizeDelta = new Vector2(370f, 26f);
             var noteTxt = noteGo.AddComponent<Text>();
             noteTxt.font      = uiFont;
@@ -785,53 +785,43 @@ float labelX = -250f;
         scaler.matchWidthOrHeight  = 0.5f;
         toastRoot.AddComponent<GraphicRaycaster>();
 
-        // Card — top-right corner
+        // Card — top center
         var card = new GameObject("Card");
         card.transform.SetParent(toastRoot.transform, false);
         var cardRt = card.AddComponent<RectTransform>();
-        cardRt.anchorMin = cardRt.anchorMax = cardRt.pivot = new Vector2(1f, 1f);
-        cardRt.anchoredPosition = new Vector2(-28f, -28f);
-        cardRt.sizeDelta = new Vector2(460f, 74f);
-        card.AddComponent<Image>().color = new Color(0.05f, 0.08f, 0.13f, 0.96f);
+        cardRt.anchorMin = cardRt.anchorMax = cardRt.pivot = new Vector2(0.5f, 1f);
+        cardRt.anchoredPosition = new Vector2(0f, -28f);
+        cardRt.sizeDelta = new Vector2(520f, 68f);
+        card.AddComponent<Image>().color = success
+            ? new Color(0.08f, 0.56f, 0.22f, 1f)
+            : new Color(0.72f, 0.12f, 0.08f, 1f);
 
-        // Accent strip (left edge)
-        Color accentColor = success ? new Color(0.18f, 0.85f, 0.38f, 1f) : new Color(0.92f, 0.22f, 0.12f, 1f);
-        var accent = new GameObject("Accent");
-        accent.transform.SetParent(card.transform, false);
-        var accentRt = accent.AddComponent<RectTransform>();
-        accentRt.anchorMin = Vector2.zero;
-        accentRt.anchorMax = new Vector2(0f, 1f);
-        accentRt.pivot     = new Vector2(0f, 0.5f);
-        accentRt.anchoredPosition = Vector2.zero;
-        accentRt.sizeDelta = new Vector2(5f, 0f);
-        accent.AddComponent<Image>().color = accentColor;
-
-        // Icon
+        // Icon — left portion, centered vertically
         var iconGo = new GameObject("Icon");
         iconGo.transform.SetParent(card.transform, false);
         var iconRt = iconGo.AddComponent<RectTransform>();
-        iconRt.anchorMin = new Vector2(0f, 0.5f);
-        iconRt.anchorMax = new Vector2(0f, 0.5f);
+        iconRt.anchorMin = new Vector2(0f, 0f);
+        iconRt.anchorMax = new Vector2(0f, 1f);
         iconRt.pivot     = new Vector2(0f, 0.5f);
-        iconRt.anchoredPosition = new Vector2(20f, 0f);
-        iconRt.sizeDelta = new Vector2(38f, 38f);
+        iconRt.anchoredPosition = Vector2.zero;
+        iconRt.sizeDelta = new Vector2(64f, 0f);
         var iconTxt = iconGo.AddComponent<Text>();
         iconTxt.font      = uiFont;
-        iconTxt.fontSize  = 28;
+        iconTxt.fontSize  = 30;
         iconTxt.fontStyle = FontStyle.Bold;
-        iconTxt.color     = accentColor;
+        iconTxt.color     = Color.white;
         iconTxt.alignment = TextAnchor.MiddleCenter;
         iconTxt.text      = success ? "✓" : "✗";
         iconTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
         iconTxt.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Message
+        // Message — fills remaining width, centered
         var txtGo = new GameObject("Txt");
         txtGo.transform.SetParent(card.transform, false);
         var txtRt = txtGo.AddComponent<RectTransform>();
         txtRt.anchorMin = Vector2.zero;
         txtRt.anchorMax = Vector2.one;
-        txtRt.offsetMin = new Vector2(68f,  0f);
+        txtRt.offsetMin = new Vector2(60f,  0f);
         txtRt.offsetMax = new Vector2(-16f, 0f);
         var txt = txtGo.AddComponent<Text>();
         txt.text               = message;
@@ -839,7 +829,7 @@ float labelX = -250f;
         txt.fontSize           = 21;
         txt.color              = Color.white;
         txt.fontStyle          = FontStyle.Bold;
-        txt.alignment          = TextAnchor.MiddleLeft;
+        txt.alignment          = TextAnchor.MiddleCenter;
         txt.horizontalOverflow = HorizontalWrapMode.Overflow;
         txt.verticalOverflow   = VerticalWrapMode.Overflow;
 
