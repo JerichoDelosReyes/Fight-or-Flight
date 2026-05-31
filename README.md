@@ -1,5 +1,7 @@
 # Fight or Flight
 
+![Fight or Flight](Assets/Fight%20or%20Flight/Content/Textures/MainMenuBackground.png)
+
 A 3D space-flight action game. The player pilots a ship through an asteroid field, battles enemy waves, and pushes for a high score across two modes: Campaign and Survival.
 
 ## Quick Facts
