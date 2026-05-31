@@ -374,6 +374,7 @@ float labelX = -250f;
         AudioListener.volume = masterSlider.value;
 
         PlayerPrefs.Save();
+        ShowToast("Settings applied successfully.", true);
     }
 
     private void Close()
