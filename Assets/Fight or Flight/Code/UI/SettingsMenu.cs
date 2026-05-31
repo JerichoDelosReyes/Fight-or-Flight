@@ -294,11 +294,42 @@ float labelX = -250f;
         bottomDivider.transform.localScale = new Vector3(1f, 110.874985f, 1f);
         
         // DELETE DATA (left) and APPLY (right) — identical size/scale, side by side
+        bool onMainMenu = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu";
+
         var deleteDataBtn = MakeButton(panel, "DELETE DATA", new Color(1f, 0.31f, 0.31f),
                                        new Vector2(-195f, -263f), new Vector2(350, 70), ShowDeleteConfirm, false);
         deleteDataBtn.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
         var deleteDataLbl = deleteDataBtn.transform.Find("Lbl");
         if (deleteDataLbl != null) deleteDataLbl.localScale = new Vector3(1f, 0.604030013f, 1f);
+
+        if (!onMainMenu)
+        {
+            var delBtn = deleteDataBtn.GetComponent<Button>();
+            if (delBtn != null) delBtn.interactable = false;
+            var delImg = deleteDataBtn.GetComponent<Image>();
+            if (delImg != null) delImg.color = new Color(0.28f, 0.28f, 0.28f, 0.6f);
+            if (deleteDataLbl != null)
+            {
+                var delTxt = deleteDataLbl.GetComponent<Text>();
+                if (delTxt != null) delTxt.color = new Color(0.55f, 0.55f, 0.55f, 0.65f);
+            }
+
+            var noteGo = new GameObject("DeleteNote");
+            noteGo.transform.SetParent(panel.transform, false);
+            var noteRt = noteGo.AddComponent<RectTransform>();
+            noteRt.anchorMin = noteRt.anchorMax = noteRt.pivot = new Vector2(0.5f, 0.5f);
+            noteRt.anchoredPosition = new Vector2(-195f, -326f);
+            noteRt.sizeDelta = new Vector2(370f, 26f);
+            var noteTxt = noteGo.AddComponent<Text>();
+            noteTxt.font      = uiFont;
+            noteTxt.fontSize  = 17;
+            noteTxt.color     = new Color(0.95f, 0.5f, 0.45f, 0.85f);
+            noteTxt.alignment = TextAnchor.MiddleCenter;
+            noteTxt.fontStyle = FontStyle.Italic;
+            noteTxt.text      = "Not available during a mission";
+            noteTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            noteTxt.verticalOverflow   = VerticalWrapMode.Overflow;
+        }
 
         var applyBtn = MakeButton(panel, "APPLY", new Color(0.13f, 0.40f, 0.80f),
                                   new Vector2(195f, -263f), new Vector2(350, 70), ApplySettings, false);
@@ -747,38 +778,71 @@ float labelX = -250f;
         var toastRoot = new GameObject("Toast");
         var canvas = toastRoot.AddComponent<Canvas>();
         canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 600;
+        canvas.sortingOrder = 900;
         var scaler = toastRoot.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode        = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight  = 0.5f;
         toastRoot.AddComponent<GraphicRaycaster>();
 
-        var bgGo = new GameObject("Bg");
-        bgGo.transform.SetParent(toastRoot.transform, false);
-        var bgRt = bgGo.AddComponent<RectTransform>();
-        bgRt.anchorMin = bgRt.anchorMax = bgRt.pivot = new Vector2(0.5f, 0f);
-        bgRt.anchoredPosition = new Vector2(0f, 50f);
-        bgRt.sizeDelta = new Vector2(560f, 60f);
-        var bgImg = bgGo.AddComponent<Image>();
-        bgImg.color = success ? new Color(0.08f, 0.38f, 0.08f, 0.93f)
-                              : new Color(0.38f, 0.08f, 0.08f, 0.93f);
+        // Card — top-right corner
+        var card = new GameObject("Card");
+        card.transform.SetParent(toastRoot.transform, false);
+        var cardRt = card.AddComponent<RectTransform>();
+        cardRt.anchorMin = cardRt.anchorMax = cardRt.pivot = new Vector2(1f, 1f);
+        cardRt.anchoredPosition = new Vector2(-28f, -28f);
+        cardRt.sizeDelta = new Vector2(460f, 74f);
+        card.AddComponent<Image>().color = new Color(0.05f, 0.08f, 0.13f, 0.96f);
 
+        // Accent strip (left edge)
+        Color accentColor = success ? new Color(0.18f, 0.85f, 0.38f, 1f) : new Color(0.92f, 0.22f, 0.12f, 1f);
+        var accent = new GameObject("Accent");
+        accent.transform.SetParent(card.transform, false);
+        var accentRt = accent.AddComponent<RectTransform>();
+        accentRt.anchorMin = Vector2.zero;
+        accentRt.anchorMax = new Vector2(0f, 1f);
+        accentRt.pivot     = new Vector2(0f, 0.5f);
+        accentRt.anchoredPosition = Vector2.zero;
+        accentRt.sizeDelta = new Vector2(5f, 0f);
+        accent.AddComponent<Image>().color = accentColor;
+
+        // Icon
+        var iconGo = new GameObject("Icon");
+        iconGo.transform.SetParent(card.transform, false);
+        var iconRt = iconGo.AddComponent<RectTransform>();
+        iconRt.anchorMin = new Vector2(0f, 0.5f);
+        iconRt.anchorMax = new Vector2(0f, 0.5f);
+        iconRt.pivot     = new Vector2(0f, 0.5f);
+        iconRt.anchoredPosition = new Vector2(20f, 0f);
+        iconRt.sizeDelta = new Vector2(38f, 38f);
+        var iconTxt = iconGo.AddComponent<Text>();
+        iconTxt.font      = uiFont;
+        iconTxt.fontSize  = 28;
+        iconTxt.fontStyle = FontStyle.Bold;
+        iconTxt.color     = accentColor;
+        iconTxt.alignment = TextAnchor.MiddleCenter;
+        iconTxt.text      = success ? "✓" : "✗";
+        iconTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+        iconTxt.verticalOverflow   = VerticalWrapMode.Overflow;
+
+        // Message
         var txtGo = new GameObject("Txt");
-        txtGo.transform.SetParent(bgGo.transform, false);
+        txtGo.transform.SetParent(card.transform, false);
         var txtRt = txtGo.AddComponent<RectTransform>();
-        txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
-        txtRt.offsetMin = txtRt.offsetMax = Vector2.zero;
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = new Vector2(68f,  0f);
+        txtRt.offsetMax = new Vector2(-16f, 0f);
         var txt = txtGo.AddComponent<Text>();
         txt.text               = message;
         txt.font               = uiFont;
         txt.fontSize           = 21;
         txt.color              = Color.white;
         txt.fontStyle          = FontStyle.Bold;
-        txt.alignment          = TextAnchor.MiddleCenter;
+        txt.alignment          = TextAnchor.MiddleLeft;
         txt.horizontalOverflow = HorizontalWrapMode.Overflow;
         txt.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        Destroy(toastRoot, 3f);
+        Destroy(toastRoot, 3.5f);
     }
 }
