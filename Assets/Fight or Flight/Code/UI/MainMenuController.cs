@@ -267,18 +267,22 @@ public class MainMenuController : MonoBehaviour
                  new Vector2(0f, 323f), new Vector2(750f, 65f));
 
         // CAMPAIGN — always available.
-        var campaign = AddModeButton(panelGo.transform, font, "CAMPAIGN", "5 WAVES",
-                                     new Vector2(0f, 160f), new Color(0f, 0.8f, 1f, 1f), true);
+        var campaign = AddModeCard(panelGo.transform, font,
+            "CAMPAIGN", "5 WAVES",
+            "Fight through 5 increasingly difficult waves of enemy ships.\nClear all waves to complete the run and unlock Survival Mode.",
+            new Vector2(0f, 135f), new Color(0f, 0.8f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
         // SURVIVAL — locked until Campaign is cleared.
         bool unlocked = GameModeManager.SurvivalUnlocked;
-        string survSub = unlocked ? "ENDLESS · SURVIVE AS LONG AS YOU CAN"
-                                  : "LOCKED — COMPLETE CAMPAIGN TO UNLOCK";
-        var survival = AddModeButton(panelGo.transform, font, "SURVIVAL", survSub,
-                                     new Vector2(0f, -20f),
-                                     unlocked ? new Color(1f, 0.55f, 0.1f, 1f) : new Color(0.4f, 0.4f, 0.4f, 1f),
-                                     unlocked);
+        string survTag  = unlocked ? "ENDLESS · NO CHECKPOINTS"  : "LOCKED — COMPLETE CAMPAIGN FIRST";
+        string survDesc = unlocked
+            ? "Face never-ending waves of enemies. No lives, no limits — survive\nas long as you can and chase the highest score."
+            : "Prove yourself in Campaign first.\nClear all 5 waves to unlock this mode and face the endless onslaught.";
+        Color survAccent = unlocked ? new Color(1f, 0.75f, 0.1f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
+        var survival = AddModeCard(panelGo.transform, font,
+            "SURVIVAL", survTag, survDesc,
+            new Vector2(0f, -100f), survAccent, unlocked);
         if (unlocked)
             survival.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Survival));
 
@@ -397,6 +401,91 @@ public class MainMenuController : MonoBehaviour
 
         return btn;
     }
+
+    // Rich mode-selection card: dark background, accent bar, title, tagline, description.
+    private UnityEngine.UI.Button AddModeCard(Transform parent, Font font,
+        string title, string tagline, string description,
+        Vector2 pos, Color accent, bool interactable)
+    {
+        var cardGo = new GameObject(title + "Card");
+        cardGo.transform.SetParent(parent, false);
+        var rt = cardGo.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(760f, 205f);
+
+        // Dark card background
+        var bgImg = cardGo.AddComponent<UnityEngine.UI.Image>();
+        bgImg.color = new Color(0.04f, 0.10f, 0.17f, 0.88f);
+        bgImg.raycastTarget = false;
+
+        // Left accent bar
+        var barGo = new GameObject("AccentBar");
+        barGo.transform.SetParent(cardGo.transform, false);
+        var barRt = barGo.AddComponent<RectTransform>();
+        barRt.anchorMin = new Vector2(0f, 0f); barRt.anchorMax = new Vector2(0f, 1f);
+        barRt.pivot = new Vector2(0f, 0.5f);
+        barRt.offsetMin = Vector2.zero; barRt.offsetMax = new Vector2(7f, 0f);
+        barGo.AddComponent<UnityEngine.UI.Image>().color = accent;
+
+        // Title — centered, large
+        AddLabel(cardGo.transform, font, title, 38, Color.white, FontStyle.Bold,
+                 new Vector2(0f, 72f), new Vector2(720f, 48f));
+
+        // Tagline — centered, accent colour
+        AddLabel(cardGo.transform, font, tagline, 22, accent, FontStyle.Bold,
+                 new Vector2(0f, 30f), new Vector2(720f, 30f));
+
+        // Thin divider
+        var divGo = new GameObject("Div");
+        divGo.transform.SetParent(cardGo.transform, false);
+        var divRt = divGo.AddComponent<RectTransform>();
+        divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 0.5f);
+        divRt.anchoredPosition = new Vector2(0f, 10f);
+        divRt.sizeDelta = new Vector2(700f, 1f);
+        divGo.AddComponent<UnityEngine.UI.Image>().color = new Color(accent.r, accent.g, accent.b, 0.35f);
+
+        // Description — centered, wrapping
+        var descGo = new GameObject("Desc");
+        descGo.transform.SetParent(cardGo.transform, false);
+        var descRt = descGo.AddComponent<RectTransform>();
+        descRt.anchorMin = descRt.anchorMax = descRt.pivot = new Vector2(0.5f, 0.5f);
+        descRt.anchoredPosition = new Vector2(0f, -42f);
+        descRt.sizeDelta = new Vector2(710f, 78f);
+        var descTxt = descGo.AddComponent<UnityEngine.UI.Text>();
+        descTxt.text = description;
+        descTxt.font = font;
+        descTxt.fontSize = 19;
+        descTxt.color = new Color(0.82f, 0.82f, 0.82f, 1f);
+        descTxt.fontStyle = FontStyle.Normal;
+        descTxt.alignment = TextAnchor.MiddleCenter;
+        descTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
+        descTxt.verticalOverflow = VerticalWrapMode.Overflow;
+
+        // Button + colours
+        var btn = cardGo.AddComponent<UnityEngine.UI.Button>();
+        btn.targetGraphic = bgImg;
+        btn.interactable = interactable;
+        var c = btn.colors;
+        c.normalColor    = Color.white;
+        c.highlightedColor = new Color(1.18f, 1.18f, 1.18f, 1f);
+        c.pressedColor   = new Color(0.78f, 0.78f, 0.78f, 1f);
+        c.disabledColor  = new Color(0.55f, 0.55f, 0.55f, 1f);
+        btn.colors = c;
+
+        // Hitbox
+        var hitGo = new GameObject("Hitbox");
+        hitGo.transform.SetParent(cardGo.transform, false);
+        var hitRt = hitGo.AddComponent<RectTransform>();
+        hitRt.anchorMin = Vector2.zero; hitRt.anchorMax = Vector2.one;
+        hitRt.offsetMin = hitRt.offsetMax = Vector2.zero;
+        var hitImg = hitGo.AddComponent<UnityEngine.UI.Image>();
+        hitImg.color = new Color(0, 0, 0, 0);
+        hitImg.raycastTarget = true;
+
+        return btn;
+    }
+
     public void OpenInstructions() 
     { 
         if (instrOverlay != null) return;
