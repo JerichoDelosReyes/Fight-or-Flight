@@ -268,14 +268,14 @@ public class MainMenuController : MonoBehaviour
 
         // CAMPAIGN — always available.
         var campaign = AddModeCard(panelGo.transform, font,
-            "CAMPAIGN", "Beat the enemy per wave and survive the onslaught.",
+            "CAMPAIGN", "Be the last ship standing.",
             "Fight through 5 increasingly difficult waves of enemy ships.\nClear all waves to complete the run and unlock Survival Mode.",
             new Vector2(0f, 142f), new Color(0f, 0.88f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
         // SURVIVAL — locked until Campaign is cleared.
         bool unlocked = GameModeManager.SurvivalUnlocked;
-        string survTag  = unlocked ? "ENDLESS • Beat your high score"  : "LOCKED - COMPLETE CAMPAIGN FIRST";
+        string survTag  = unlocked ? "ENDLESS • Survive the Onslaught"  : "LOCKED - COMPLETE CAMPAIGN FIRST";
         string survDesc = unlocked
             ? "Face never-ending waves of enemies. No lives, no limits - survive\nas long as you can and chase the highest score."
             : "Prove yourself in Campaign first.\nClear all 5 waves to unlock this mode and face the endless onslaught.";
