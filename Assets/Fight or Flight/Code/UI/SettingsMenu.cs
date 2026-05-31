@@ -705,26 +705,26 @@ float labelX = -250f;
         dialogImg.color = Color.white;
 
         MakeLabel(dialogGo, "DELETE ALL DATA?", 36, Color.white,
-                  FontStyle.Bold, new Vector2(0f, 175f), new Vector2(780f, 55f));
+                  FontStyle.Bold, new Vector2(0f, 156f), new Vector2(780f, 55f));
         MakeLabel(dialogGo, "This will lock Survival Mode again.", 20, new Color(0.85f, 0.85f, 0.85f),
-                  FontStyle.Normal, new Vector2(0f, 105f), new Vector2(760f, 34f));
+                  FontStyle.Normal, new Vector2(0f, 80f), new Vector2(760f, 34f));
         MakeLabel(dialogGo, "All save data will be permanently deleted.", 20, new Color(0.85f, 0.85f, 0.85f),
-                  FontStyle.Normal, new Vector2(0f, 65f), new Vector2(760f, 34f));
+                  FontStyle.Normal, new Vector2(0f, 40f), new Vector2(760f, 34f));
         MakeLabel(dialogGo, "This action cannot be undone.", 20, new Color(1f, 0.65f, 0.15f),
-                  FontStyle.Bold, new Vector2(0f, 22f), new Vector2(760f, 34f));
+                  FontStyle.Bold, new Vector2(0f, 0f), new Vector2(760f, 34f));
 
-        // Buttons separated far enough: visual width per button = 200 * 1.446 = ~289px, gap ~90px
+        // CONFIRM and CANCEL — same style as APPLY / DELETE DATA buttons
         var confirmBtn = MakeButton(dialogGo, "CONFIRM", new Color(1f, 0.31f, 0.31f),
-                                    new Vector2(-190f, -110f), new Vector2(200f, 55f), DoDeleteData, false);
-        confirmBtn.transform.localScale = new Vector3(1.44599998f, 1.40919995f, 1f);
+                                    new Vector2(-190f, -85f), new Vector2(350f, 70f), DoDeleteData, false);
+        confirmBtn.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
         var confirmLbl = confirmBtn.transform.Find("Lbl");
-        if (confirmLbl != null) confirmLbl.localScale = new Vector3(1f, 0.815180004f, 1f);
+        if (confirmLbl != null) confirmLbl.localScale = new Vector3(1f, 0.604030013f, 1f);
 
         var cancelBtn = MakeButton(dialogGo, "CANCEL", new Color(0.4f, 0.4f, 0.4f),
-                                   new Vector2(190f, -110f), new Vector2(200f, 55f), DismissConfirm, false);
-        cancelBtn.transform.localScale = new Vector3(1.44599998f, 1.40919995f, 1f);
+                                   new Vector2(190f, -85f), new Vector2(350f, 70f), DismissConfirm, false);
+        cancelBtn.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
         var cancelLbl = cancelBtn.transform.Find("Lbl");
-        if (cancelLbl != null) cancelLbl.localScale = new Vector3(1f, 0.815180004f, 1f);
+        if (cancelLbl != null) cancelLbl.localScale = new Vector3(1f, 0.604030013f, 1f);
 
         SetSettingsVisible(false);
     }
