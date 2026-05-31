@@ -270,7 +270,7 @@ public class MainMenuController : MonoBehaviour
         var campaign = AddModeCard(panelGo.transform, font,
             "CAMPAIGN", "5 WAVES",
             "Fight through 5 increasingly difficult waves of enemy ships.\nClear all waves to complete the run and unlock Survival Mode.",
-            new Vector2(0f, 135f), new Color(0f, 0.8f, 1f, 1f), true);
+            new Vector2(0f, 115f), new Color(0f, 0.8f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
         // SURVIVAL — locked until Campaign is cleared.
@@ -282,7 +282,7 @@ public class MainMenuController : MonoBehaviour
         Color survAccent = unlocked ? new Color(1f, 0.75f, 0.1f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
         var survival = AddModeCard(panelGo.transform, font,
             "SURVIVAL", survTag, survDesc,
-            new Vector2(0f, -100f), survAccent, unlocked);
+            new Vector2(0f, -115f), survAccent, unlocked);
         if (unlocked)
             survival.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Survival));
 
@@ -428,20 +428,20 @@ public class MainMenuController : MonoBehaviour
         barRt.offsetMin = Vector2.zero; barRt.offsetMax = new Vector2(7f, 0f);
         barGo.AddComponent<UnityEngine.UI.Image>().color = accent;
 
-        // Title — centered, large
+        // Title — horizontally + vertically centered
         AddLabel(cardGo.transform, font, title, 38, Color.white, FontStyle.Bold,
-                 new Vector2(0f, 72f), new Vector2(720f, 48f));
+                 new Vector2(0f, 67f), new Vector2(720f, 48f));
 
         // Tagline — centered, accent colour
         AddLabel(cardGo.transform, font, tagline, 22, accent, FontStyle.Bold,
-                 new Vector2(0f, 30f), new Vector2(720f, 30f));
+                 new Vector2(0f, 20f), new Vector2(720f, 30f));
 
         // Thin divider
         var divGo = new GameObject("Div");
         divGo.transform.SetParent(cardGo.transform, false);
         var divRt = divGo.AddComponent<RectTransform>();
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 0.5f);
-        divRt.anchoredPosition = new Vector2(0f, 10f);
+        divRt.anchoredPosition = new Vector2(0f, -4f);
         divRt.sizeDelta = new Vector2(700f, 1f);
         divGo.AddComponent<UnityEngine.UI.Image>().color = new Color(accent.r, accent.g, accent.b, 0.35f);
 
@@ -450,7 +450,7 @@ public class MainMenuController : MonoBehaviour
         descGo.transform.SetParent(cardGo.transform, false);
         var descRt = descGo.AddComponent<RectTransform>();
         descRt.anchorMin = descRt.anchorMax = descRt.pivot = new Vector2(0.5f, 0.5f);
-        descRt.anchoredPosition = new Vector2(0f, -42f);
+        descRt.anchoredPosition = new Vector2(0f, -52f);
         descRt.sizeDelta = new Vector2(710f, 78f);
         var descTxt = descGo.AddComponent<UnityEngine.UI.Text>();
         descTxt.text = description;
