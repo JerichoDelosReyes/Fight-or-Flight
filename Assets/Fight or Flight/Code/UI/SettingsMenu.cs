@@ -608,7 +608,7 @@ float labelX = -250f;
         dialogImg.color = Color.white;
 
         MakeLabel(dialogGo, "DELETE ALL DATA?", 36, Color.white,
-                  FontStyle.Bold, new Vector2(0f, 156f), new Vector2(780f, 55f));
+                  FontStyle.Bold, new Vector2(0f, 150f), new Vector2(780f, 55f));
         MakeLabel(dialogGo, "This will lock Survival Mode again.", 20, new Color(0.85f, 0.85f, 0.85f),
                   FontStyle.Normal, new Vector2(0f, 80f), new Vector2(760f, 34f));
         MakeLabel(dialogGo, "All save data will be permanently deleted.", 20, new Color(0.85f, 0.85f, 0.85f),

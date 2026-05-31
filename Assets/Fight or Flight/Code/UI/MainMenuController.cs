@@ -21,6 +21,7 @@ public class MainMenuController : MonoBehaviour
 
     private GameObject instrOverlay;
     private GameObject modeOverlay;
+    private GameObject _quitConfirmOverlay;
 
     private void Start()
     {
@@ -520,12 +521,127 @@ public class MainMenuController : MonoBehaviour
     }
 
     public void OpenSettings() { SettingsMenu.Show(); }
-public void QuitGame() { 
-        #if UNITY_EDITOR 
-        UnityEditor.EditorApplication.isPlaying = false; 
-        #else 
-        Application.Quit(); 
-        #endif 
+
+    public void QuitGame()
+    {
+        if (_quitConfirmOverlay != null) return;
+        _quitConfirmOverlay = BuildQuitConfirmOverlay();
+    }
+
+    private GameObject BuildQuitConfirmOverlay()
+    {
+        var root = new GameObject("QuitConfirmOverlay");
+        var canvas = root.AddComponent<Canvas>();
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 500;
+        var scaler = root.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight  = 0.5f;
+        root.AddComponent<GraphicRaycaster>();
+
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        var dimGo = new GameObject("Dim");
+        dimGo.transform.SetParent(root.transform, false);
+        var dimRt = dimGo.AddComponent<RectTransform>();
+        dimRt.anchorMin = Vector2.zero; dimRt.anchorMax = Vector2.one;
+        dimRt.offsetMin = dimRt.offsetMax = Vector2.zero;
+        dimGo.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0.65f);
+
+        var dialogGo = new GameObject("Dialog");
+        dialogGo.transform.SetParent(root.transform, false);
+        var dialogRt = dialogGo.AddComponent<RectTransform>();
+        dialogRt.anchorMin = dialogRt.anchorMax = dialogRt.pivot = new Vector2(0.5f, 0.5f);
+        dialogRt.anchoredPosition = Vector2.zero;
+        dialogRt.sizeDelta = new Vector2(840f, 440f);
+        var dialogImg = dialogGo.AddComponent<UnityEngine.UI.Image>();
+        if (panelFrameSprite != null) { dialogImg.sprite = panelFrameSprite; dialogImg.type = UnityEngine.UI.Image.Type.Sliced; }
+        dialogImg.color = Color.white;
+
+        AddLabel(dialogGo.transform, font, "QUIT GAME?", 42, Color.white,
+                 FontStyle.Bold, new Vector2(0f, 150f), new Vector2(780f, 55f));
+        AddLabel(dialogGo.transform, font, "Any unsaved progress will be lost.", 22,
+                 new Color(0.85f, 0.85f, 0.85f), FontStyle.Normal,
+                 new Vector2(0f, 68f), new Vector2(720f, 34f));
+        AddLabel(dialogGo.transform, font, "Are you sure you want to quit?", 22,
+                 new Color(1f, 0.65f, 0.15f), FontStyle.Bold,
+                 new Vector2(0f, 26f), new Vector2(720f, 34f));
+
+        var confirmGo = BuildDialogButton(dialogGo.transform, font, "CONFIRM",
+                                          new Color(1f, 0.31f, 0.31f), new Vector2(-190f, -90f));
+        confirmGo.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(DoQuit);
+
+        var cancelGo = BuildDialogButton(dialogGo.transform, font, "CANCEL",
+                                         new Color(0.4f, 0.4f, 0.4f), new Vector2(190f, -90f));
+        cancelGo.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(DismissQuitConfirm);
+
+        return root;
+    }
+
+    private GameObject BuildDialogButton(Transform parent, Font font, string label, Color bg, Vector2 pos)
+    {
+        var go = new GameObject("Btn_" + label);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(350f, 70f);
+        go.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
+
+        var img = go.AddComponent<UnityEngine.UI.Image>();
+        if (buttonLargeSprite != null) { img.sprite = buttonLargeSprite; img.type = UnityEngine.UI.Image.Type.Sliced; }
+        img.color = bg;
+        img.raycastTarget = false;
+
+        var btn = go.AddComponent<UnityEngine.UI.Button>();
+        btn.targetGraphic = img;
+        var c = btn.colors;
+        c.normalColor      = Color.white;
+        c.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
+        c.pressedColor     = new Color(0.75f, 0.75f, 0.75f, 1f);
+        c.colorMultiplier  = 1f;
+        btn.colors = c;
+
+        var hitGo = new GameObject("Hitbox");
+        hitGo.transform.SetParent(go.transform, false);
+        var hitRt = hitGo.AddComponent<RectTransform>();
+        hitRt.anchorMin = hitRt.anchorMax = hitRt.pivot = new Vector2(0.5f, 0.5f);
+        hitRt.anchoredPosition = Vector2.zero;
+        hitRt.sizeDelta = new Vector2(350f * 0.8f, 70f * 0.7f);
+        var hitImg = hitGo.AddComponent<UnityEngine.UI.Image>();
+        hitImg.color = new Color(0, 0, 0, 0);
+        hitImg.raycastTarget = true;
+
+        var lblGo = new GameObject("Lbl");
+        lblGo.transform.SetParent(go.transform, false);
+        var lblRt = lblGo.AddComponent<RectTransform>();
+        lblRt.anchorMin = lblRt.anchorMax = lblRt.pivot = new Vector2(0.5f, 0.5f);
+        lblRt.anchoredPosition = Vector2.zero;
+        lblRt.sizeDelta = new Vector2(350f, 70f);
+        lblRt.localScale = new Vector3(1f, 0.604030013f, 1f);
+        var txt = lblGo.AddComponent<UnityEngine.UI.Text>();
+        txt.text = label; txt.font = font; txt.fontSize = 26;
+        txt.color = Color.white; txt.fontStyle = FontStyle.Bold;
+        txt.alignment = TextAnchor.MiddleCenter;
+        txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+        txt.verticalOverflow   = VerticalWrapMode.Overflow;
+
+        return go;
+    }
+
+    private void DismissQuitConfirm()
+    {
+        if (_quitConfirmOverlay != null) { Destroy(_quitConfirmOverlay); _quitConfirmOverlay = null; }
+    }
+
+    private void DoQuit()
+    {
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #else
+        Application.Quit();
+        #endif
     }
 
     private GameObject BuildInstructionsOverlay()
