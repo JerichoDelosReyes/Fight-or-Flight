@@ -196,7 +196,7 @@ public class SettingsMenu : MonoBehaviour
         var topDivider = MakeDivider(panel, new Vector2(0, 315));
 
         // ── Type Header (Formerly Control Scheme) ─────────────────────────────
-        var typeHeader = MakeHeaderBar(panel, "CHOOSE TYPE OF CONTROLS", 26, new Vector2(0, 265));
+        var typeHeader = MakeHeaderBar(panel, "CONTROLS", 26, new Vector2(0, 265), 40.9f);
         typeHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
         foreach (Transform child in typeHeader.transform)
         {
@@ -207,13 +207,14 @@ public class SettingsMenu : MonoBehaviour
         var btnBacking = new GameObject("ButtonPanel");
         btnBacking.transform.SetParent(panel.transform, false);
         var backingRt = btnBacking.AddComponent<RectTransform>();
-        backingRt.anchoredPosition = new Vector2(0, 205);
+        backingRt.anchoredPosition = new Vector2(0, 168);
         backingRt.sizeDelta = new Vector2(680, 80);
         btnBacking.transform.localScale = new Vector3(1f, 6.67498636f, 1f);
         var backingImg = btnBacking.AddComponent<Image>();
 backingImg.sprite = headerSprite;
         backingImg.type = Image.Type.Sliced;
         backingImg.color = new Color(1, 1, 1, 0.3f);
+        backingImg.raycastTarget = false;
 
         string[] schemeNames = { "Keyboard Only", "Mouse + Keyboard" };
         schemeColors = new[]
@@ -226,13 +227,13 @@ backingImg.sprite = headerSprite;
             int idx = i;
             float xOff = (i == 0) ? -165f : 165f;
             var btn = MakeButton(panel, schemeNames[i], schemeColors[i],
-                                 new Vector2(xOff, 205), new Vector2(300, 60),
+                                 new Vector2(xOff, 168), new Vector2(300, 60),
                                  () => SelectScheme(idx), true);
             schemeButtons[i] = btn.GetComponent<Button>();
         }
 
         // ── Audio Settings Header ─────────────────────────────────────────────
-        var audioHeader = MakeHeaderBar(panel, "AUDIO SETTINGS", 26, new Vector2(0, 60));
+        var audioHeader = MakeHeaderBar(panel, "AUDIO SETTINGS", 26, new Vector2(0, 60), 30.7f);
         audioHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
         foreach (Transform child in audioHeader.transform)
         {
@@ -314,18 +315,18 @@ float labelX = -250f;
         SelectScheme(selectedScheme);
     }
 
-    private GameObject MakeHeaderBar(GameObject parent, string text, int size, Vector2 pos)
+    private GameObject MakeHeaderBar(GameObject parent, string text, int size, Vector2 pos, float height = 60f)
     {
         var go = new GameObject("HeaderBar");
         go.transform.SetParent(parent.transform, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(840, 60);
+        rt.sizeDelta = new Vector2(840, height);
         var img = go.AddComponent<Image>();
         img.sprite = headerSprite;
         img.type = Image.Type.Sliced;
-        MakeLabel(go, text, size, Color.white, FontStyle.Bold, Vector2.zero, new Vector2(840, 60));
+        MakeLabel(go, text, size, Color.white, FontStyle.Bold, Vector2.zero, new Vector2(840, height));
         return go;
     }
 
@@ -470,7 +471,7 @@ float labelX = -250f;
         img.sprite = isSmall ? btnSmallSprite : btnLargeSprite;
         img.type = Image.Type.Sliced;
         img.color = bg;
-        img.raycastTarget = false;
+        img.raycastTarget = true;
 
         var btn = go.AddComponent<Button>();
         var cols = btn.colors;
@@ -491,7 +492,7 @@ float labelX = -250f;
         hitboxRt.sizeDelta = new Vector2(size.x * 0.8f, size.y * 0.7f);
         var hitboxImg = hitboxGo.AddComponent<Image>();
         hitboxImg.color = new Color(0, 0, 0, 0);
-        hitboxImg.raycastTarget = true;
+        hitboxImg.raycastTarget = false;
 
         MakeLabel(go, label, 26, Color.white, FontStyle.Bold, Vector2.zero, size);
         return go;
