@@ -615,19 +615,20 @@ public class MainMenuController : MonoBehaviour
 
         AddLabel(dialogGo.transform, font, "QUIT GAME?", 42, Color.white,
                  FontStyle.Bold, new Vector2(0f, 150f), new Vector2(780f, 55f));
+        // Match dialog copy placement to the approved screenshot layout.
         AddLabel(dialogGo.transform, font, "Any unsaved progress will be lost.", 22,
-                 new Color(0.85f, 0.85f, 0.85f), FontStyle.Normal,
-                 new Vector2(0f, 68f), new Vector2(720f, 34f));
+             new Color(0.85f, 0.85f, 0.85f), FontStyle.Normal,
+             new Vector2(10f, 68f), new Vector2(720f, 34f));
         AddLabel(dialogGo.transform, font, "Are you sure you want to quit?", 22,
-                 new Color(1f, 0.65f, 0.15f), FontStyle.Bold,
-                 new Vector2(0f, 26f), new Vector2(720f, 34f));
+             new Color(1f, 0.65f, 0.15f), FontStyle.Bold,
+             new Vector2(10f, 26f), new Vector2(720f, 34f));
 
         var confirmGo = BuildDialogButton(dialogGo.transform, font, "CONFIRM",
-                                          new Color(1f, 0.31f, 0.31f), new Vector2(-190f, -90f));
+                          new Color(1f, 0.31f, 0.31f), new Vector2(2f, -50f));
         confirmGo.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(DoQuit);
 
         var cancelGo = BuildDialogButton(dialogGo.transform, font, "CANCEL",
-                                         new Color(0.4f, 0.4f, 0.4f), new Vector2(190f, -90f));
+                         new Color(0.3607843f, 0.6352941f, 0.6509804f, 1f), new Vector2(3f, -156f));
         cancelGo.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(DismissQuitConfirm);
 
         return root;

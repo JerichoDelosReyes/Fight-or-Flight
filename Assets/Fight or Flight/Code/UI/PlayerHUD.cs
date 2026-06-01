@@ -44,9 +44,9 @@ public class PlayerHUD : MonoBehaviour
     private const float IconSize = 40f;
     private const float IconGap  = 12f;
 
-    private const string HealthIconPath = "Assets/Fight or Flight/Content/Textures/UI/health.png";
-    private const string ShieldIconPath = "Assets/Fight or Flight/Content/Textures/UI/shield.png";
-    private const string HeatIconPath   = "Assets/Fight or Flight/Content/Textures/UI/heat.png";
+    private const string HealthIconResourcePath = "UI/Icons/health";
+    private const string ShieldIconResourcePath = "UI/Icons/shield";
+    private const string HeatIconResourcePath   = "UI/Icons/heat";
 
     private static readonly Color PanelBG     = new Color(0f, 0f, 0f, 0f);
     private static readonly Color HealthFull  = new Color(0.15f, 0.85f, 0.15f, 1f);
@@ -130,6 +130,37 @@ public class PlayerHUD : MonoBehaviour
                 else if (barIndex == 2) { _heatFill = fill; _heatFillRt = fillRt; _heatDimFill = dimFill; _heatRowRt = rt; _heatBarBg = child.GetComponent<Image>(); }
                 barIndex++;
             }
+        }
+
+        RestoreExistingIcons(panel);
+    }
+
+    private void RestoreExistingIcons(Transform panel)
+    {
+        int iconIndex = 0;
+        for (int i = 0; i < panel.childCount; i++)
+        {
+            Transform child = panel.GetChild(i);
+            if (child.name != "Icon") continue;
+
+            var iconImg = child.GetComponent<Image>();
+            if (iconImg == null)
+            {
+                iconIndex++;
+                continue;
+            }
+
+            string iconPath;
+            if (iconIndex == 0) iconPath = HealthIconResourcePath;
+            else if (iconIndex == 1) iconPath = ShieldIconResourcePath;
+            else if (iconIndex == 2) iconPath = HeatIconResourcePath;
+            else break;
+
+            iconImg.sprite = LoadHudIconSprite(iconPath);
+            iconImg.preserveAspect = true;
+            iconImg.enabled = iconImg.sprite != null;
+
+            iconIndex++;
         }
     }
 
@@ -293,7 +324,7 @@ public class PlayerHUD : MonoBehaviour
         float currentY = PanelH - 40f;
 
         // Row 0 — HEALTH
-        (_healthFill, _healthDimFill, _healthFillRt, _healthRowRt) = AddBarRow(panelGo.transform, font, HealthIconPath, 0f, currentY, BarH, HealthFull);
+        (_healthFill, _healthDimFill, _healthFillRt, _healthRowRt) = AddBarRow(panelGo.transform, font, HealthIconResourcePath, 0f, currentY, BarH, HealthFull);
         _healthRowBaseAnchor = _healthRowRt.anchoredPosition;
 
         // Add Regen Text specifically for health
@@ -316,11 +347,11 @@ public class PlayerHUD : MonoBehaviour
 
         // Row 1 — SHIELD
         currentY -= RowGap;
-        (_shieldFill, _shieldDimFill, _shieldFillRt, _shieldRowRt) = AddBarRow(panelGo.transform, font, ShieldIconPath, 0f, currentY, BarH, ShieldFull);
+        (_shieldFill, _shieldDimFill, _shieldFillRt, _shieldRowRt) = AddBarRow(panelGo.transform, font, ShieldIconResourcePath, 0f, currentY, BarH, ShieldFull);
 
         // Row 2 — HEAT
         currentY -= RowGap;
-        (_heatFill, _heatDimFill, _heatFillRt, _heatRowRt) = AddBarRow(panelGo.transform, font, HeatIconPath, 0f, currentY, BarH, HeatHot);
+        (_heatFill, _heatDimFill, _heatFillRt, _heatRowRt) = AddBarRow(panelGo.transform, font, HeatIconResourcePath, 0f, currentY, BarH, HeatHot);
         _heatBarBg = _heatRowRt.GetComponent<Image>();
     }
 
@@ -329,7 +360,7 @@ public class PlayerHUD : MonoBehaviour
     }
 
     // Returns (fillImage, dimFillImage, fillRt, barBgRectTransform, valText).
-    private (Image, Image, RectTransform, RectTransform) AddBarRow(Transform parent, Font font, string iconPath, float x, float y, float h, Color initialCol)
+    private (Image, Image, RectTransform, RectTransform) AddBarRow(Transform parent, Font font, string iconResourcePath, float x, float y, float h, Color initialCol)
     {
         Sprite roundedSprite = RoundedRectSprite.Get();
 
@@ -384,10 +415,26 @@ public class PlayerHUD : MonoBehaviour
         iconRt.localScale       = new Vector3(1.50000012f, 1.50000012f, 1.50000012f);
         var iconImg = iconGo.AddComponent<Image>();
         iconImg.preserveAspect = true;
-#if UNITY_EDITOR
-        iconImg.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
-#endif
+        iconImg.sprite = LoadHudIconSprite(iconResourcePath);
+        if (iconImg.sprite == null)
+        {
+            iconImg.enabled = false;
+        }
         
         return (fill, dimFill, fillRt, bgRt);
+    }
+
+    private static Sprite LoadHudIconSprite(string resourcePath)
+    {
+        var sprite = Resources.Load<Sprite>(resourcePath);
+        if (sprite != null) return sprite;
+
+        // Fallback for textures that are not imported as Sprite (Sprite(2D and UI)).
+        var tex = Resources.Load<Texture2D>(resourcePath);
+        if (tex == null) return null;
+
+        var rect = new Rect(0f, 0f, tex.width, tex.height);
+        var pivot = new Vector2(0.5f, 0.5f);
+        return Sprite.Create(tex, rect, pivot, 100f);
     }
 }
