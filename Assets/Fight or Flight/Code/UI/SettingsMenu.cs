@@ -373,6 +373,8 @@ float labelX = -250f;
         PlayerPrefs.SetFloat(KeyVolMusic,  musicSlider.value);
         PlayerPrefs.SetFloat(KeyVolSFX,    sfxSlider.value);
         AudioListener.volume = masterSlider.value;
+        WaveManager.SetMusicVolume(musicSlider.value);
+        MainMenuController.SetMenuMusicVolume(musicSlider.value);
 
         PlayerPrefs.Save();
         ShowToast("Settings applied successfully.", true);
@@ -433,6 +435,7 @@ float labelX = -250f;
         var img = go.AddComponent<Image>();
         img.sprite = dividerSprite;
         img.color = new Color(0.3f, 1f, 1f, 0.5f);
+        img.raycastTarget = false;
         return go;
     }
 
@@ -454,6 +457,7 @@ float labelX = -250f;
         t.alignment = TextAnchor.MiddleCenter;
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow = VerticalWrapMode.Overflow;
+        t.raycastTarget = false;
         return go;
     }
 

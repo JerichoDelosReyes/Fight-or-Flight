@@ -171,8 +171,12 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        float distToPlayer = Vector3.Distance(transform.position, player.position);
-        state = (distToPlayer > ChaseTriggerDist) ? AIState.Chase : AIState.Attack;
+        Vector3 toPlayer = player.position - transform.position;
+        float distToPlayerSq = toPlayer.sqrMagnitude;
+        float chaseTriggerSq = ChaseTriggerDist * ChaseTriggerDist;
+        state = (distToPlayerSq > chaseTriggerSq) ? AIState.Chase : AIState.Attack;
+
+        float distToPlayer = Mathf.Sqrt(distToPlayerSq);
 
         if (state == AIState.Chase) Chase();
         else                        Attack(distToPlayer);
@@ -237,7 +241,11 @@ public class EnemyAI : MonoBehaviour
     private bool PlayerInFiringArc()
     {
         if (player == null) return false;
-        return Vector3.Angle(transform.forward, player.position - transform.position) < 15f;
+        Vector3 toPlayer = player.position - transform.position;
+        if (toPlayer.sqrMagnitude < 0.001f) return true;
+
+        float dot = Vector3.Dot(transform.forward, toPlayer.normalized);
+        return dot > 0.9659258f; // cos(15 degrees)
     }
 
     private Vector3 ApplyBoundaryCorrection(Vector3 dir)

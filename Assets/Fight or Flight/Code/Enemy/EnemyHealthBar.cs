@@ -26,13 +26,35 @@ public class EnemyHealthBar : MonoBehaviour
     private Image        _fill;
     private CanvasGroup  _group;
     private bool         _everDamaged;
+    private bool         _subscribed;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
         _health = GetComponent<ShipHealth>();
-        BuildUI();
+
+        if (_health != null)
+        {
+            _health.OnDamaged += HandleDamaged;
+            _subscribed = true;
+        }
+
+        if (_health != null && _health.currentHealth < _health.maxHealth)
+        {
+            _everDamaged = true;
+            BuildUI();
+        }
+        else
+        {
+            enabled = false;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_subscribed && _health != null)
+            _health.OnDamaged -= HandleDamaged;
     }
 
     private void LateUpdate()
@@ -68,6 +90,20 @@ public class EnemyHealthBar : MonoBehaviour
         float frac = Mathf.Clamp01(_health.currentHealth / Mathf.Max(1f, _health.maxHealth));
         _fill.fillAmount = frac;
         _fill.color = Color.Lerp(new Color(0.9f, 0.1f, 0.1f), new Color(0.15f, 0.9f, 0.15f), frac);
+    }
+
+    private void HandleDamaged()
+    {
+        if (_health == null) return;
+
+        if (!_everDamaged)
+        {
+            _everDamaged = true;
+            if (_root == null)
+                BuildUI();
+        }
+
+        enabled = true;
     }
 
     // ── UI Construction ───────────────────────────────────────────────────────

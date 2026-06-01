@@ -16,6 +16,7 @@ public class ShipCombat : MonoBehaviour
 
     [Header("Audio")]
     public AudioClip laserShotSound;
+    public float laserShotVolume = 1f;
 
     private float _lastFireTime;
     private float _nextFireTime;
@@ -41,7 +42,7 @@ public class ShipCombat : MonoBehaviour
             _lastFireTime = Time.time;
 
             if (laserShotSound != null)
-                AudioSource.PlayClipAtPoint(laserShotSound, transform.position, 0.5f);
+                AudioSource.PlayClipAtPoint(laserShotSound, transform.position, laserShotVolume);
 
             // Tiny camera shake — adds weight to firing without being distracting.
             ScreenShake.Trigger(0.05f, 0.4f);

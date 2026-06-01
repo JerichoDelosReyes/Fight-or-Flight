@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 public class ShipHealth : MonoBehaviour
 {
@@ -23,6 +24,8 @@ public class ShipHealth : MonoBehaviour
 
     public GameObject explosionPrefab;
 public AudioClip explosionSound;
+
+    public event Action OnDamaged;
 
     private bool _hasDied;
 
@@ -82,6 +85,7 @@ public AudioClip explosionSound;
 
         currentHealth -= amount;
         lastDamageTime = Time.time;
+        OnDamaged?.Invoke();
 
         if (isPlayer)
         {
@@ -186,7 +190,7 @@ var combat = GetComponent<ShipCombat>(); if (combat != null) combat.enabled = fa
         else
         {
             // Enemy destroyed
-            EnemySpawner spawner = Object.FindAnyObjectByType<EnemySpawner>();
+            EnemySpawner spawner = UnityEngine.Object.FindAnyObjectByType<EnemySpawner>();
             if (spawner != null) spawner.OnEnemyDestroyed();
             GameEventManager.EnemyDestroyed();
 

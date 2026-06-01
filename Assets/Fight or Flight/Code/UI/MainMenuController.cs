@@ -5,6 +5,9 @@ using UnityEngine.UI;
 [ExecuteAlways]
 public class MainMenuController : MonoBehaviour
 {
+    private const float DefaultMenuMusicVolume = 0.35f;
+    private const string MenuMusicAssetPath = "Assets/Fight or Flight/Content/Background Music/bgm_mainmenu.mp3";
+
     public string startSceneName = "MainScene";
     public Sprite buttonFrameSprite;
     public Font menuFont;
@@ -22,10 +25,15 @@ public class MainMenuController : MonoBehaviour
     private GameObject instrOverlay;
     private GameObject modeOverlay;
     private GameObject _quitConfirmOverlay;
+    private AudioSource _menuMusicSource;
+
+    private static MainMenuController instance;
 
     private void Start()
     {
+        instance = this;
         InitializeAssets();
+        EnsureMenuMusic();
         EnsureSettingsButton();
         ApplyMenuPolish();
     }
@@ -40,6 +48,12 @@ public class MainMenuController : MonoBehaviour
             ApplyMenuPolish();
         }
         #endif
+    }
+
+    public static void SetMenuMusicVolume(float volume)
+    {
+        if (instance != null)
+            instance.ApplyMenuMusicVolume(volume);
     }
 
     private void InitializeAssets()
@@ -521,6 +535,46 @@ public class MainMenuController : MonoBehaviour
     }
 
     public void OpenSettings() { SettingsMenu.Show(); }
+
+    private void EnsureMenuMusic()
+    {
+        if (!Application.isPlaying) return;
+        if (_menuMusicSource == null)
+            _menuMusicSource = gameObject.GetComponent<AudioSource>();
+        if (_menuMusicSource == null)
+            _menuMusicSource = gameObject.AddComponent<AudioSource>();
+
+        _menuMusicSource.loop = true;
+        _menuMusicSource.playOnAwake = false;
+        _menuMusicSource.spatialBlend = 0f;
+        _menuMusicSource.priority = 128;
+
+        if (_menuMusicSource.clip == null)
+            _menuMusicSource.clip = LoadMenuMusicClip();
+
+        ApplyMenuMusicVolume(PlayerPrefs.GetFloat("VolMusic", DefaultMenuMusicVolume));
+
+        if (_menuMusicSource.clip != null && !_menuMusicSource.isPlaying)
+            _menuMusicSource.Play();
+    }
+
+    private void ApplyMenuMusicVolume(float volume)
+    {
+        if (_menuMusicSource == null) return;
+        _menuMusicSource.volume = volume;
+    }
+
+    private AudioClip LoadMenuMusicClip()
+    {
+#if UNITY_EDITOR
+        var clip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(MenuMusicAssetPath);
+        if (clip != null) return clip;
+#endif
+        var loaded = Resources.Load<AudioClip>("Background Music/bgm_mainmenu");
+        if (loaded != null) return loaded;
+
+        return Resources.Load<AudioClip>("bgm_mainmenu");
+    }
 
     public void QuitGame()
     {

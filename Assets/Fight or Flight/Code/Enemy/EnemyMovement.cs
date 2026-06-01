@@ -19,6 +19,7 @@ public class EnemyMovement : MonoBehaviour
     private float _stateTimer;
 
     private Transform _target;
+    private Rigidbody _targetRb;
     private bool _isBlowingUp = false;
 
     public static List<EnemyMovement> allEnemies = new List<EnemyMovement>();
@@ -51,8 +52,7 @@ public class EnemyMovement : MonoBehaviour
     private void UpdateState()
     {
         float distToTarget = Vector3.Distance(transform.position, _target.position);
-        Rigidbody targetRb = _target.GetComponent<Rigidbody>();
-        float playerVel = (targetRb != null) ? targetRb.linearVelocity.magnitude : 0f;
+        float playerVel = (_targetRb != null) ? _targetRb.linearVelocity.magnitude : 0f;
 
         switch (_state)
         {
@@ -122,8 +122,7 @@ public class EnemyMovement : MonoBehaviour
         // Slow down as we approach a stationary player to stay on target and avoid overshooting.
         if (_target != null)
         {
-            Rigidbody targetRb = _target.GetComponent<Rigidbody>();
-            float playerVel = (targetRb != null) ? targetRb.linearVelocity.magnitude : 0f;
+            float playerVel = (_targetRb != null) ? _targetRb.linearVelocity.magnitude : 0f;
             float dist = Vector3.Distance(transform.position, _target.position);
             
             if (playerVel < 0.5f && dist < _flyPastDist)
@@ -180,14 +179,19 @@ public class EnemyMovement : MonoBehaviour
     {
         if (_target == null)
         {
-            var player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                _target = player.transform;
-            }
-            else if (Ship.PlayerShip != null)
+            if (Ship.PlayerShip != null)
             {
                 _target = Ship.PlayerShip.transform;
+                _targetRb = Ship.PlayerShip.GetComponent<Rigidbody>();
+            }
+            else
+            {
+                var player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    _target = player.transform;
+                    _targetRb = player.GetComponent<Rigidbody>();
+                }
             }
         }
         return (_target != null);
@@ -199,6 +203,7 @@ public class EnemyMovement : MonoBehaviour
         if (mainCamera != null)
         {
             _target = mainCamera.transform;
+            _targetRb = null;
         }
     }
 

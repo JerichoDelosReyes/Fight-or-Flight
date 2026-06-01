@@ -14,6 +14,11 @@ public class WaveManager : MonoBehaviour
     public static int    CurrentWave    { get; private set; }
     public static string WaveStatusText { get; private set; } = "";
 
+    private static WaveManager instance;
+    private const float DefaultBgmVolume = 0.35f;
+    private const float BgmFadeDuration = 1.5f;
+    private const string KeyVolMusic = "VolMusic";
+    private const string BgmAssetPath = "Assets/Fight or Flight/Content/Background Music/bgm.mp3";
     // ── Config ────────────────────────────────────────────────────────────────
     private const float InterWaveDelay   = 5f;
     private const float SpawnRadius      = 2500f;
@@ -42,6 +47,8 @@ private GameObject enemyPrefab;
     private Text   announcementText;
     private CanvasGroup announcementGroup;
     private CanvasGroup headerGroup;
+    private AudioSource bgmSource;
+    private Coroutine bgmFadeRoutine;
 
     // ── Auto-creation ─────────────────────────────────────────────────────────
     // RuntimeInitializeOnLoadMethod fires once at game startup, NOT on every
@@ -78,6 +85,12 @@ private GameObject enemyPrefab;
         GameEventManager.OnStartGame       += OnGameStart;
         GameEventManager.OnPlayerDestroyed += OnPlayerDied;
         GameEventManager.OnEnemyDestroyed  += OnEnemyKilled;
+    }
+
+    private void Awake()
+    {
+        instance = this;
+        EnsureBgmSource();
     }
 
     private void OnDisable()
@@ -120,6 +133,7 @@ private GameObject enemyPrefab;
         activeEnemies = 0;
         gameActive    = true;
         _matchStartTime = Time.realtimeSinceStartup;
+        PlayBackgroundMusic();
         StartCoroutine(BeginNextWave());
     }
 
@@ -128,6 +142,7 @@ private GameObject enemyPrefab;
         gameActive     = false;
         waveInProgress = false;
         StopAllCoroutines();
+        StopBackgroundMusic();
         WaveStatusText = "";
         if (headerGroup != null) headerGroup.alpha = 0f;
     }
@@ -173,6 +188,7 @@ private GameObject enemyPrefab;
         {
             GameModeManager.UnlockSurvival();
             gameActive = false;
+            StopBackgroundMusic();
             MissionCompleteScreen.Show(ScoreManager.Score, MatchElapsedTime, ScoreManager.Kills, CurrentWave, MaxWave);
         }
         else
@@ -520,5 +536,122 @@ headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
             yield return null;
         }
         announcementGroup.alpha = 0f;
+    }
+    public static void StopBackgroundMusic()
+    {
+        if (instance != null)
+            instance.StopBgm();
+    }
+
+    private void EnsureBgmSource()
+    {
+        if (bgmSource != null) return;
+
+        bgmSource = gameObject.AddComponent<AudioSource>();
+        bgmSource.loop = true;
+        bgmSource.playOnAwake = false;
+        bgmSource.spatialBlend = 0f;
+        bgmSource.volume = GetMusicVolume();
+        bgmSource.priority = 128;
+    }
+
+    private void PlayBackgroundMusic()
+    {
+        EnsureBgmSource();
+
+        if (bgmSource.clip == null)
+            bgmSource.clip = LoadBgmClip();
+
+        if (bgmSource.clip == null)
+        {
+            Debug.LogWarning("WaveManager: bgm audio clip could not be found.");
+            return;
+        }
+
+        float targetVolume = GetMusicVolume();
+        bgmSource.volume = targetVolume;
+        bgmSource.loop = true;
+
+        if (!bgmSource.isPlaying)
+        {
+            bgmSource.volume = 0f;
+            bgmSource.Play();
+
+            if (bgmFadeRoutine != null) StopCoroutine(bgmFadeRoutine);
+            bgmFadeRoutine = StartCoroutine(FadeBgm(0f, targetVolume, BgmFadeDuration, false));
+        }
+    }
+
+    private void StopBgm()
+    {
+        if (bgmSource != null && bgmSource.isPlaying)
+            bgmSource.Stop();
+    }
+
+    public static void FadeOutBackgroundMusic()
+    {
+        if (instance != null)
+            instance.FadeOutBgm();
+    }
+
+    public static void SetMusicVolume(float volume)
+    {
+        PlayerPrefs.SetFloat(KeyVolMusic, volume);
+        if (instance != null)
+            instance.ApplyMusicVolume(volume);
+    }
+
+    private void FadeOutBgm()
+    {
+        if (bgmSource == null || !bgmSource.isPlaying)
+            return;
+
+        if (bgmFadeRoutine != null) StopCoroutine(bgmFadeRoutine);
+        bgmFadeRoutine = StartCoroutine(FadeBgm(bgmSource.volume, 0f, BgmFadeDuration, true));
+    }
+
+    private void ApplyMusicVolume(float volume)
+    {
+        EnsureBgmSource();
+        bgmSource.volume = volume;
+    }
+
+    private float GetMusicVolume()
+    {
+        return PlayerPrefs.GetFloat(KeyVolMusic, DefaultBgmVolume);
+    }
+
+    private IEnumerator FadeBgm(float from, float to, float duration, bool stopWhenDone)
+    {
+        if (bgmSource == null) yield break;
+
+        float elapsed = 0f;
+        bgmSource.volume = from;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            bgmSource.volume = Mathf.Lerp(from, to, t);
+            yield return null;
+        }
+
+        bgmSource.volume = to;
+        if (stopWhenDone && bgmSource.isPlaying)
+            bgmSource.Stop();
+
+        bgmFadeRoutine = null;
+    }
+
+    private AudioClip LoadBgmClip()
+    {
+#if UNITY_EDITOR
+        var clip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(BgmAssetPath);
+        if (clip != null) return clip;
+#endif
+        var loaded = Resources.Load<AudioClip>("Background Music/bgm");
+        if (loaded != null) return loaded;
+
+        return Resources.Load<AudioClip>("bgm");
     }
 }

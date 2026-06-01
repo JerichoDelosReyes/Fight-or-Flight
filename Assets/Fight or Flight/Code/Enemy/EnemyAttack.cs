@@ -30,10 +30,13 @@ public class EnemyAttack : MonoBehaviour
     {
         if (_target == null) return false;
         
-        Vector3 directionToTarget = (_target.position - transform.position).normalized;
-        float angle = Vector3.Angle(transform.forward, directionToTarget);
-        
-        return angle < fireArc;
+        Vector3 toTarget = _target.position - transform.position;
+        if (toTarget.sqrMagnitude < 0.001f) return true;
+
+        float dotThreshold = Mathf.Cos(fireArc * Mathf.Deg2Rad);
+        float dot = Vector3.Dot(transform.forward, toTarget.normalized);
+
+        return dot > dotThreshold;
     }
 
     private bool HaveLineOfSight()
@@ -100,16 +103,19 @@ public class EnemyAttack : MonoBehaviour
     {
         if (_target == null)
         {
-            var player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                _target = player.transform;
-                _targetRb = _target.GetComponent<Rigidbody>();
-            }
-            else if (Ship.PlayerShip != null)
+            if (Ship.PlayerShip != null)
             {
                 _target = Ship.PlayerShip.transform;
                 _targetRb = _target.GetComponent<Rigidbody>();
+            }
+            else
+            {
+                var player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    _target = player.transform;
+                    _targetRb = player.GetComponent<Rigidbody>();
+                }
             }
         }
         return (_target != null);

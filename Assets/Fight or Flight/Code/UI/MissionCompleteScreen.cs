@@ -39,6 +39,7 @@ public class MissionCompleteScreen : MonoBehaviour
     {
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         EnsureEventSystem();
+        WaveManager.FadeOutBackgroundMusic();
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;

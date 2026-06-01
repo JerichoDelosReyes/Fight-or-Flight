@@ -32,6 +32,7 @@ public class VictoryScreen : MonoBehaviour
     {
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         EnsureEventSystem();
+        WaveManager.FadeOutBackgroundMusic();
         Time.timeScale = 0f;
 
         // Unlock cursor so buttons are clickable
