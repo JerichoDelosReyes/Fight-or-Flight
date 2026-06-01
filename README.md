@@ -2,6 +2,8 @@
 
 A 3D space-flight action game. The player pilots a ship through an asteroid field, battles enemy waves, and pushes for a high score across two modes: Campaign and Survival.
 
+![Main Menu UI](Assets/Fight%20or%20Flight/Content/Reference/MainMenu.png)
+
 ## Quick Facts
 
 - **Genre:** Third-person space flight shooter
