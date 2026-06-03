@@ -39,12 +39,10 @@ public class Explosion : MonoBehaviour
             var spawnedExplosion = Instantiate(_blowUp, transform.position, Quaternion.identity);
             Destroy(spawnedExplosion, _explosionDuration);
         }
-        
-        // Let the object be destroyed by ShipHealth or manually if no health script
+
         ShipHealth health = GetComponent<ShipHealth>();
         if (health != null)
         {
-            // Health script handles Destroy(gameObject)
         }
         else
         {

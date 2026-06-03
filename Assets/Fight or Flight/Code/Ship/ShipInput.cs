@@ -1,7 +1,3 @@
-//
-// Copyright (c) Brian Hernandez. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
 
 using UnityEngine;
 
@@ -69,9 +65,6 @@ public class ShipInput : MonoBehaviour
 
     private void UpdateKeyboardOnly()
     {
-        // W/S = pitch, A/D = yaw, Q/E = roll.
-        // Default behaviour: W = nose UP (forward/climb). The InvertPitchKeyboard
-        // toggle restores the old W = nose DOWN convention for players who prefer it.
         float verticalInput = Input.GetAxis("Vertical");
         if (!ControlSchemeManager.InvertPitchKeyboard) verticalInput = -verticalInput;
         pitch = verticalInput * pitchSensitivity * SensitivityScale;
@@ -86,7 +79,6 @@ public class ShipInput : MonoBehaviour
 
     private void UpdateMouseKeyboard()
     {
-        // WASD = throttle / strafe, Shift = boost
         float wsAxis = Input.GetAxisRaw("Vertical");
         float adAxis = Input.GetAxisRaw("Horizontal");
 
@@ -100,12 +92,9 @@ public class ShipInput : MonoBehaviour
                 throttle = boostMultiplier * movementSensitivity;
         }
 
-        // Direct transform rotation — bypasses physics torque entirely for zero-lag FPS feel.
-        // GetAxisRaw gives unsmoothed per-frame delta.
         float mouseX = Input.GetAxisRaw("Mouse X");
         float mouseY = Input.GetAxisRaw("Mouse Y");
 
-        // Mouse up → nose up: negate mouseY because positive local-X rotation tilts nose down.
         float pitchAngle = -mouseY * directMouseSensitivity;
         if (ControlSchemeManager.InvertY) pitchAngle = -pitchAngle;
         float yawAngle   =  mouseX * directMouseSensitivity;
@@ -116,13 +105,9 @@ public class ShipInput : MonoBehaviour
 
         transform.Rotate(pitchAngle, yawAngle, rollAngle, Space.Self);
 
-        // Zero angular velocity so the Rigidbody can't fight our direct rotation.
-        // Only do this if the body is not kinematic to avoid console warnings.
-        if (cachedRb != null && !cachedRb.isKinematic) 
+        if (cachedRb != null && !cachedRb.isKinematic)
             cachedRb.angularVelocity = Vector3.zero;
 
-        // Leave pitch/yaw/roll at zero — no physics torque for rotation in this mode.
-        // throttle and strafe still flow through physics for translation.
     }
 
     public void ApplyCursorState()

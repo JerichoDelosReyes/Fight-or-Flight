@@ -3,22 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Nukes every legacy Canvas in MainScene.
-///
-/// Strategy: there is exactly one whitelist of NEW HUD canvases we created.
-/// Anything else (including the green square panel, the old radar/minimap,
-/// the old health/score/heat bars, etc.) is destroyed wholesale — regardless
-/// of its color, sprite, or hierarchy.
-///
-/// Runs three passes (immediate, 0.3s, 1.5s) to catch any late-spawning UI.
-///
-/// Auto-runs on MainScene load — no scene wiring required.
-/// </summary>
 public class LegacyHUDCleanup : MonoBehaviour
 {
-    // Canvas GameObject names we explicitly create. Anything NOT in this set,
-    // and not parented under one of these, will be destroyed.
     private static readonly HashSet<string> SafeCanvasNames = new HashSet<string>
     {
         "RadarCanvas", "HeadingStripCanvas",
@@ -33,8 +19,6 @@ public class LegacyHUDCleanup : MonoBehaviour
         "ScanlineCanvas",
     };
 
-    // GameObject names (containers of the canvases above). Anything parented
-    // beneath one of these is also safe.
     private static readonly HashSet<string> SafeRootNames = new HashSet<string>
     {
         "PlayerHUD", "ScoreHUD", "Radar", "WaveManager",
@@ -67,9 +51,9 @@ public class LegacyHUDCleanup : MonoBehaviour
 
     private IEnumerator Run()
     {
-        Cleanup();                                     // immediate pass
-        yield return new WaitForSeconds(0.3f); Cleanup(); // late spawner pass
-        yield return new WaitForSeconds(1.5f); Cleanup(); // very late pass
+        Cleanup();
+        yield return new WaitForSeconds(0.3f); Cleanup();
+        yield return new WaitForSeconds(1.5f); Cleanup();
         Destroy(gameObject);
     }
 

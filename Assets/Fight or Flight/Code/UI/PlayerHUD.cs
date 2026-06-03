@@ -2,15 +2,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Self-building HUD panel at the bottom-left of the screen.
-/// Shows HEALTH, SHIELD, and AMMO bars with exact values displayed inside each bar.
-/// Low-health warning: health bar pulses red when below 30%.
-/// Auto-creates itself in MainScene — no scene wiring required.
-/// </summary>
 public class PlayerHUD : MonoBehaviour
 {
-    // ── Auto-creation ─────────────────────────────────────────────────────────
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void HookSceneLoad()
@@ -30,12 +23,10 @@ public class PlayerHUD : MonoBehaviour
         new GameObject("PlayerHUD").AddComponent<PlayerHUD>();
     }
 
-    // ── Layout config ─────────────────────────────────────────────────────────
 
     private const float PanelW  = 400f;
     private const float PanelH  = 280f;
     private const float MarginX = 30f;
-    // Anchored to the bottom-left corner.
     private const float MarginY = -66f;
 
     private const float BarW    = 350f;
@@ -58,7 +49,6 @@ public class PlayerHUD : MonoBehaviour
     private static readonly Color HeatHot     = new Color(1f,    0.0f,  0.0f,  1f);
     private static readonly Color BarBG       = new Color(0.15f, 0.15f, 0.15f, 0.8f);
 
-    // ── Runtime refs ──────────────────────────────────────────────────────────
 
     private Image        _healthFill,  _shieldFill,  _heatFill;
     private Image        _healthDimFill, _shieldDimFill, _heatDimFill;
@@ -67,13 +57,11 @@ public class PlayerHUD : MonoBehaviour
     private Image        _panelBg;
     private Image        _heatBarBg;
 
-    // Max pixel width of the fill area (bar width minus icon offset)
     private const float FillMaxWidth = BarW - (IconSize - 5f);
 
     private ShipHealth   _health;
     private ShipCombat   _combat;
 
-    // Damage / regen / low-ammo flash state
     private float _lastHealth = -1f;
     private float _lastShield = -1f;
     private float _damageFlashUntil;
@@ -83,7 +71,6 @@ public class PlayerHUD : MonoBehaviour
     private RectTransform _shieldRowRt;
     private RectTransform _heatRowRt;
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
@@ -117,7 +104,7 @@ public class PlayerHUD : MonoBehaviour
                 RectTransform fillRt = fillTrans != null ? fillTrans.GetComponent<RectTransform>() : null;
                 Transform dimFillTrans = child.Find("DimFill");
                 Image dimFill = dimFillTrans != null ? dimFillTrans.GetComponent<Image>() : null;
-                
+
                 RectTransform rt = child.GetComponent<RectTransform>();
 
                 if (barIndex == 0)
@@ -176,12 +163,10 @@ public class PlayerHUD : MonoBehaviour
             float hFrac = Mathf.Clamp01(_health.currentHealth / Mathf.Max(1f, _health.maxHealth));
             float sFrac = Mathf.Clamp01(_health.currentShield  / Mathf.Max(1f, _health.maxShield));
 
-            // Damage detection — set a brief flash window when health drops.
             if (_lastHealth >= 0f && _health.currentHealth < _lastHealth - 0.01f)
                 _damageFlashUntil = Time.unscaledTime + 0.3f;
             _lastHealth = _health.currentHealth;
 
-            // Shield-full flash — fires once on the frame shield refills to max.
             if (_lastShield >= 0f && _lastShield < _health.maxShield - 0.01f
                 && _health.currentShield >= _health.maxShield - 0.01f)
             {
@@ -191,11 +176,9 @@ public class PlayerHUD : MonoBehaviour
 
             bool damageFlash = Time.unscaledTime < _damageFlashUntil;
 
-            // Low HP pulse: bar flashes between red and darker red
             Color hCol;
             if (damageFlash)
             {
-                // Hard red flash — brighter than the regular pulse.
                 hCol = new Color(1f, 0.15f, 0.15f, 1f);
             }
             else if (hFrac < 0.30f)
@@ -208,12 +191,11 @@ public class PlayerHUD : MonoBehaviour
                 hCol = Color.Lerp(HealthEmpty, HealthFull, hFrac);
             }
 
-            // Shake the health row briefly on damage.
             if (_healthRowRt != null)
             {
                 if (damageFlash)
                 {
-                    float remaining = (_damageFlashUntil - Time.unscaledTime) / 0.3f; // 0..1
+                    float remaining = (_damageFlashUntil - Time.unscaledTime) / 0.3f;
                     Vector2 jitter = new Vector2(
                         (Random.value - 0.5f) * 6f * remaining,
                         (Random.value - 0.5f) * 6f * remaining);
@@ -229,7 +211,6 @@ public class PlayerHUD : MonoBehaviour
             if (_healthFillRt != null) _healthFillRt.offsetMax = new Vector2(-FillMaxWidth * (1f - hFrac), 0f);
             if (_healthDimFill != null) _healthDimFill.color = new Color(hCol.r, hCol.g, hCol.b, 0.3f);
 
-            // Regen indicator
             if (_healthRegenText != null)
             {
                 bool isRegen = _health.IsRegenerating;
@@ -241,7 +222,6 @@ public class PlayerHUD : MonoBehaviour
                 }
             }
 
-            // Shield bar — normal interpolation + brief white/blue flash when fully restored.
             Color shieldCol = Color.Lerp(ShieldEmpty, ShieldFull, sFrac);
             if (Time.unscaledTime < _shieldFullFlashUntil)
             {
@@ -252,7 +232,6 @@ public class PlayerHUD : MonoBehaviour
             if (_shieldFillRt != null) _shieldFillRt.offsetMax = new Vector2(-FillMaxWidth * (1f - sFrac), 0f);
             if (_shieldDimFill != null) _shieldDimFill.color = new Color(shieldCol.r, shieldCol.g, shieldCol.b, 0.3f);
 
-            // Pulse panel border red at low HP
             if (_panelBg != null)
             {
                 if (hFrac < 0.30f)
@@ -284,14 +263,11 @@ public class PlayerHUD : MonoBehaviour
 
             if (_heatBarBg != null)
             {
-                // It gets redder as the player heats up.
-                // We transition from the default grey BarBG to a solid red.
                 _heatBarBg.color = Color.Lerp(BarBG, new Color(1f, 0f, 0f, 0.8f), heatFrac);
             }
         }
     }
 
-    // ── HUD Construction ──────────────────────────────────────────────────────
 
     private void BuildHUD(Font font)
     {
@@ -309,7 +285,6 @@ public class PlayerHUD : MonoBehaviour
 
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        // Panel — bottom-left, sits at the very corner
         var panelGo = new GameObject("HUDPanel");
         panelGo.transform.SetParent(canvasGo.transform, false);
         var panelRt = panelGo.AddComponent<RectTransform>();
@@ -323,11 +298,9 @@ public class PlayerHUD : MonoBehaviour
 
         float currentY = PanelH - 40f;
 
-        // Row 0 — HEALTH
         (_healthFill, _healthDimFill, _healthFillRt, _healthRowRt) = AddBarRow(panelGo.transform, font, HealthIconResourcePath, 0f, currentY, BarH, HealthFull);
         _healthRowBaseAnchor = _healthRowRt.anchoredPosition;
 
-        // Add Regen Text specifically for health
         var regenGo = new GameObject("RegenText");
         regenGo.transform.SetParent(_healthRowRt, false);
         var regenRt = regenGo.AddComponent<RectTransform>();
@@ -345,11 +318,9 @@ public class PlayerHUD : MonoBehaviour
         _healthRegenText.alignment = TextAnchor.MiddleLeft;
         regenGo.SetActive(false);
 
-        // Row 1 — SHIELD
         currentY -= RowGap;
         (_shieldFill, _shieldDimFill, _shieldFillRt, _shieldRowRt) = AddBarRow(panelGo.transform, font, ShieldIconResourcePath, 0f, currentY, BarH, ShieldFull);
 
-        // Row 2 — HEAT
         currentY -= RowGap;
         (_heatFill, _heatDimFill, _heatFillRt, _heatRowRt) = AddBarRow(panelGo.transform, font, HeatIconResourcePath, 0f, currentY, BarH, HeatHot);
         _heatBarBg = _heatRowRt.GetComponent<Image>();
@@ -359,12 +330,10 @@ public class PlayerHUD : MonoBehaviour
     {
     }
 
-    // Returns (fillImage, dimFillImage, fillRt, barBgRectTransform, valText).
     private (Image, Image, RectTransform, RectTransform) AddBarRow(Transform parent, Font font, string iconResourcePath, float x, float y, float h, Color initialCol)
     {
         Sprite roundedSprite = RoundedRectSprite.Get();
 
-        // Background (Created first so it's behind the icon)
         var bgGo = new GameObject("BarBg");
         bgGo.transform.SetParent(parent, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
@@ -377,11 +346,9 @@ public class PlayerHUD : MonoBehaviour
         bgImg.sprite = roundedSprite;
         bgImg.type = Image.Type.Sliced;
 
-        // Add Mask for rounded clipping
         var mask = bgGo.AddComponent<Mask>();
         mask.showMaskGraphic = true;
 
-        // Dim fill — always full width, faded version of bar color showing the "empty" portion
         var dimFillGo = new GameObject("DimFill");
         dimFillGo.transform.SetParent(bgGo.transform, false);
         var dimFillRt = dimFillGo.AddComponent<RectTransform>();
@@ -393,18 +360,16 @@ public class PlayerHUD : MonoBehaviour
         dimFill.color = new Color(initialCol.r, initialCol.g, initialCol.b, 0.25f);
         dimFill.raycastTarget = false;
 
-        // Active fill — right edge pulled in by offsetMax to shrink the bar
         var fillGo = new GameObject("Fill");
         fillGo.transform.SetParent(bgGo.transform, false);
         var fillRt = fillGo.AddComponent<RectTransform>();
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = Vector2.one;
         fillRt.offsetMin = new Vector2(IconSize - 5f, 0);
-        fillRt.offsetMax = Vector2.zero; // offsetMax.x shrinks rightward in Update
+        fillRt.offsetMax = Vector2.zero;
         var fill = fillGo.AddComponent<Image>();
         fill.color = initialCol;
 
-        // Icon (Created second so it's in front)
         var iconGo = new GameObject("Icon");
         iconGo.transform.SetParent(parent, false);
         var iconRt = iconGo.AddComponent<RectTransform>();
@@ -420,7 +385,7 @@ public class PlayerHUD : MonoBehaviour
         {
             iconImg.enabled = false;
         }
-        
+
         return (fill, dimFill, fillRt, bgRt);
     }
 
@@ -429,7 +394,6 @@ public class PlayerHUD : MonoBehaviour
         var sprite = Resources.Load<Sprite>(resourcePath);
         if (sprite != null) return sprite;
 
-        // Fallback for textures that are not imported as Sprite (Sprite(2D and UI)).
         var tex = Resources.Load<Texture2D>(resourcePath);
         if (tex == null) return null;
 

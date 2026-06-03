@@ -3,14 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Manages enemy waves. Auto-creates itself in MainScene — no scene setup required.
-/// Disables EnemySpawner on game start and takes over all enemy spawning.
-/// Wave formula: enemies = (3 + 2 * (wave - 1)) * difficulty.enemyCountMult.
-/// </summary>
 public class WaveManager : MonoBehaviour
 {
-    // ── Static state polled by HUDManager ────────────────────────────────────
     public static int    CurrentWave    { get; private set; }
     public static string WaveStatusText { get; private set; } = "";
 
@@ -19,19 +13,14 @@ public class WaveManager : MonoBehaviour
     private const float BgmFadeDuration = 1.5f;
     private const string KeyVolMusic = "VolMusic";
     private const string BgmAssetPath = "Assets/Fight or Flight/Content/Background Music/bgm.mp3";
-    // ── Config ────────────────────────────────────────────────────────────────
     private const float InterWaveDelay   = 5f;
     private const float SpawnRadius      = 2500f;
     private const float MinPlayerDist    = 800f;
     private const int   BaseEnemyCount   = 10;
     private const int   EnemyIncrement   = 5;
     public  const int   MaxWave          = 5;
-    // Survival mode keeps adding +5 enemies/wave forever; clamp the per-wave
-    // count here so very high waves don't spawn 100+ ships and tank the framerate.
-    // Campaign tops out at wave 5 = 30 enemies, so this only ever bites in Survival.
     private const int   MaxEnemiesPerWave = 60;
 
-    // ── Runtime state ─────────────────────────────────────────────────────────
 private GameObject enemyPrefab;
     private int        activeEnemies;
     private bool       gameActive;
@@ -39,10 +28,8 @@ private GameObject enemyPrefab;
     private bool       _started;
     private static float _matchStartTime;
 
-    /// <summary>Real-time seconds since the current match began (used by the end screens).</summary>
     public static float MatchElapsedTime => Time.realtimeSinceStartup - _matchStartTime;
 
-    // Persistent top-center header ("WAVE 3") + transient announcement overlay.
     private Text   headerText;
     private Text   announcementText;
     private CanvasGroup announcementGroup;
@@ -50,19 +37,12 @@ private GameObject enemyPrefab;
     private AudioSource bgmSource;
     private Coroutine bgmFadeRoutine;
 
-    // ── Auto-creation ─────────────────────────────────────────────────────────
-    // RuntimeInitializeOnLoadMethod fires once at game startup, NOT on every
-    // scene load. We need to react every time MainScene becomes active (e.g.
-    // after the player hits Play in the menu, or Try Again on defeat), so we
-    // subscribe to SceneManager.sceneLoaded instead.
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void HookSceneLoad()
     {
         SceneManager.sceneLoaded -= OnSceneLoadedStatic;
         SceneManager.sceneLoaded += OnSceneLoadedStatic;
-        // Also try once now in case the active scene is already MainScene (e.g.
-        // when pressing Play in the editor while MainScene is open).
         TryCreate(SceneManager.GetActiveScene());
     }
 
@@ -74,11 +54,10 @@ private GameObject enemyPrefab;
     private static void TryCreate(Scene scene)
     {
         if (scene.name != "MainScene") return;
-        if (Object.FindAnyObjectByType<WaveManager>() != null) return; // idempotent
+        if (Object.FindAnyObjectByType<WaveManager>() != null) return;
         new GameObject("WaveManager").AddComponent<WaveManager>();
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void OnEnable()
     {
@@ -103,14 +82,9 @@ private GameObject enemyPrefab;
     private void Start()
     {
         BuildHudUI();
-        // Bootstrap the gameplay session. MainMenuController just loads MainScene
-        // without firing OnStartGame, so without this nothing else (ScoreManager,
-        // EnemySpawner, etc.) would reset/start. Safe to call here because
-        // subscriptions are already wired by everyone's OnEnable.
         GameEventManager.StartGame();
     }
 
-    // ── Event handlers ────────────────────────────────────────────────────────
 
     private void OnGameStart()
     {
@@ -119,13 +93,11 @@ private GameObject enemyPrefab;
 
         ScoreManager.ResetScore();
 
-        // Grab enemy prefab from the scene's EnemySpawner and shut it down so we
-        // don't have two systems spawning enemies at the same time.
         var spawner = Object.FindAnyObjectByType<EnemySpawner>();
         if (spawner != null)
         {
             enemyPrefab = spawner.EnemyPrefab;
-            spawner.CancelInvoke(); // kill any InvokeRepeating that just got queued
+            spawner.CancelInvoke();
             spawner.enabled = false;
         }
 
@@ -156,9 +128,6 @@ private GameObject enemyPrefab;
             StartCoroutine(CheckAllEnemiesDead());
     }
 
-    // Deferred by one frame so Unity can process the Destroy() call from ShipHealth.Die()
-    // before we check EnemyMovement.allEnemies. Without the yield, the dying enemy is still in
-    // the list when this runs, making Count = 1 when it should be 0.
     private IEnumerator CheckAllEnemiesDead()
     {
         yield return null;
@@ -168,7 +137,6 @@ private GameObject enemyPrefab;
             WaveCompleted();
         else
         {
-            // Enemies are still alive (counter drifted); resync to the real list.
             activeEnemies = EnemyMovement.allEnemies.Count;
         }
     }
@@ -177,9 +145,6 @@ private GameObject enemyPrefab;
     {
         waveInProgress = false;
 
-        // Only Campaign ends at MaxWave. Survival loops forever (it ends only when
-        // the player dies, via the DefeatScreen). Clearing Campaign's final wave is
-        // what unlocks Survival.
         bool campaignFinished =
             GameModeManager.Selected == GameModeManager.Mode.Campaign &&
             CurrentWave >= MaxWave;
@@ -197,11 +162,10 @@ private GameObject enemyPrefab;
         }
     }
 
-    // ── Wave flow ─────────────────────────────────────────────────────────────
 
     private IEnumerator BeginNextWave()
     {
-        yield return null; // one frame so the scene is settled
+        yield return null;
         yield return StartCoroutine(PreWaveCountdown());
         StartWave(CurrentWave + 1);
     }
@@ -217,7 +181,6 @@ private GameObject enemyPrefab;
                                         : string.Format("NEXT WAVE IN {0}s", t);
             if (headerText != null) headerText.text = WaveStatusText;
 
-            // Center number only flashes on 3, 2, 1
             if (t <= 3)
             {
                 if (announcementText != null) { announcementText.text = t.ToString(); announcementText.fontSize = 140; }
@@ -232,7 +195,6 @@ private GameObject enemyPrefab;
             }
         }
 
-        // Brief FIGHT! cue then go
         if (announcementText != null) { announcementText.text = "FIGHT!"; announcementText.fontSize = 170; }
         if (announcementGroup != null) announcementGroup.alpha = 1f;
         yield return new WaitForSeconds(0.6f);
@@ -242,8 +204,6 @@ private GameObject enemyPrefab;
         StartWave(CurrentWave + 1);
     }
 
-    // "3... 2... 1... FIGHT!" countdown plus a brief dark edge-vignette as
-    // the screen-wide cue that a wave is incoming.
     private IEnumerator PreWaveCountdown()
     {
         var vignette = SpawnDarkVignette();
@@ -265,8 +225,6 @@ private GameObject enemyPrefab;
         if (vignette != null) Destroy(vignette);
     }
 
-    // One-shot dark edge vignette: opaque-corner / transparent-center.
-    // The image's alpha decays over 1s thanks to FadeOutGameObject.
     private GameObject SpawnDarkVignette()
     {
         var canvasGo = new GameObject("WaveStartVignette");
@@ -321,7 +279,7 @@ private GameObject enemyPrefab;
             float dy = (y - r + 0.5f) / r;
             float d  = Mathf.Sqrt(dx * dx + dy * dy);
             float a  = Mathf.Clamp01((d - 0.35f) / 0.65f);
-            a = a * a; // softer inner falloff
+            a = a * a;
             tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
         }
         tex.Apply();
@@ -350,7 +308,7 @@ private GameObject enemyPrefab;
     private static int ComputeEnemyCount(int wave)
     {
         int baseCount = BaseEnemyCount + EnemyIncrement * (wave - 1);
-        baseCount = Mathf.Min(baseCount, MaxEnemiesPerWave); // cap so Survival doesn't flood the arena
+        baseCount = Mathf.Min(baseCount, MaxEnemiesPerWave);
         return Mathf.Max(1, Mathf.RoundToInt(baseCount * DifficultyManager.EnemyCountMultiplier));
     }
 
@@ -385,39 +343,35 @@ private GameObject enemyPrefab;
         ApplyWaveScaling(go, wave);
     }
 
-    // Scales a freshly spawned enemy's stats based on the current wave number.
-    // Wave 1 is unmodified baseline; each subsequent wave applies a cumulative bonus.
     private static void ApplyWaveScaling(GameObject go, int wave)
     {
         if (wave <= 1) return;
 
-        float waveIndex = wave - 1; // 0 on wave 1, grows each wave
+        float waveIndex = wave - 1;
 
         var health = go.GetComponent<ShipHealth>();
         if (health != null)
         {
-            health.maxHealth     *= 1f + waveIndex * 0.30f; // +30% hp per wave
+            health.maxHealth     *= 1f + waveIndex * 0.30f;
             health.currentHealth  = health.maxHealth;
         }
 
         var movement = go.GetComponent<EnemyMovement>();
         if (movement != null)
         {
-            movement._movementSpeed *= 1f + waveIndex * 0.12f; // +12% speed per wave
-            movement._turnSpeed     *= 1f + waveIndex * 0.06f; // +6% turn speed per wave
+            movement._movementSpeed *= 1f + waveIndex * 0.12f;
+            movement._turnSpeed     *= 1f + waveIndex * 0.06f;
         }
 
         var attack = go.GetComponent<EnemyAttack>();
         if (attack != null)
         {
-            // Shorter interval = faster fire; clamped so it never becomes absurd.
             attack.fireRate    = Mathf.Max(0.25f, attack.fireRate * (1f - waveIndex * 0.10f));
             attack.bulletSpeed *= 1f + waveIndex * 0.07f;
-            attack.laserDamage *= 1f + waveIndex * 0.20f; // +20% damage per wave
+            attack.laserDamage *= 1f + waveIndex * 0.20f;
         }
     }
 
-    // ── HUD UI (built at runtime — no scene wiring needed) ────────────────────
 
     private void BuildHudUI()
     {
@@ -437,7 +391,6 @@ private GameObject enemyPrefab;
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        // Persistent middle-bottom "WAVE X" header.
         var headerBgGo = new GameObject("WaveHeaderBG");
         headerBgGo.transform.SetParent(canvasGo.transform, false);
         var headerBgRt = headerBgGo.AddComponent<RectTransform>();
@@ -469,7 +422,6 @@ headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
         headerText.verticalOverflow = VerticalWrapMode.Overflow;
         headerText.text = "";
 
-        // Transient announcement (big "WAVE X" that fades) — wrapped in a container for BG.
         var annContainer = new GameObject("AnnouncementContainer");
         annContainer.transform.SetParent(canvasGo.transform, false);
         var annContainerRt = annContainer.AddComponent<RectTransform>();
@@ -481,7 +433,6 @@ headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
         announcementGroup.alpha = 0f;
         announcementGroup.blocksRaycasts = false;
 
-        // Dark background behind the big text
         var annBgGo = new GameObject("AnnouncementBG");
         annBgGo.transform.SetParent(annContainer.transform, false);
         var annBgRt = annBgGo.AddComponent<RectTransform>();
@@ -516,7 +467,6 @@ headerText.horizontalOverflow = HorizontalWrapMode.Overflow;
 
     private IEnumerator FadeAnnouncement()
     {
-        // Visible for ~2 seconds total, then gone. Fade in fast, fade out smooth.
         float t = 0f;
         while (t < 0.2f)
         {

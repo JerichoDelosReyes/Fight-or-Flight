@@ -14,17 +14,15 @@ public class ShipCollisionEffects : MonoBehaviour
     {
         if (visualsTransform == null)
         {
-            // Fallback to searching for body or just using first child
             visualsTransform = transform.Find("Ship_Body_Spaceship_1_0");
         }
-        
+
         if (visualsTransform != null)
             _originalLocalPos = visualsTransform.localPosition;
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Simple name check for asteroids or rocks
         string objName = collision.gameObject.name.ToLower();
         if ((objName.Contains("asteroid") || objName.Contains("rock")) && !_isBumping)
         {
@@ -38,15 +36,14 @@ public class ShipCollisionEffects : MonoBehaviour
 
         _isBumping = true;
         float elapsed = 0f;
-        
+
         while (elapsed < _bumpDuration)
         {
             elapsed += Time.deltaTime;
             float strength = 1f - (elapsed / _bumpDuration);
-            
-            // Random jiggle
+
             visualsTransform.localPosition = _originalLocalPos + Random.insideUnitSphere * _bumpIntensity * strength;
-            
+
             yield return null;
         }
 

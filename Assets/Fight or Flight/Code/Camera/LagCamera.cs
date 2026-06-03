@@ -1,17 +1,9 @@
-//
-// Copyright (c) Brian Hernandez. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
 
 using UnityEngine;
 
-/// <summary>
-/// Adds a slight lag to camera rotation to make the third person camera a little more interesting.
-/// Requires that it starts parented to something in order to follow it correctly.
-/// </summary>
 [RequireComponent(typeof(Camera))]
 public class LagCamera : MonoBehaviour
-{    
+{
     [Tooltip("Speed at which the camera rotates. Lower values make the camera more stable and less 'snappy'.")]
     public float rotateSpeed = 120.0f;
 
@@ -64,14 +56,12 @@ public class LagCamera : MonoBehaviour
 
     private void HandleZoom()
     {
-        // Respond to Arrow Keys + Shift for zoom as requested
         if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
         {
             if (Input.GetKey(KeyCode.UpArrow)) currentDistanceScale -= zoomSpeed * Time.deltaTime;
             if (Input.GetKey(KeyCode.DownArrow)) currentDistanceScale += zoomSpeed * Time.deltaTime;
         }
 
-        // Keep PageUp/PageDown as alternatives
         if (Input.GetKey(KeyCode.PageUp)) currentDistanceScale -= zoomSpeed * Time.deltaTime;
         if (Input.GetKey(KeyCode.PageDown)) currentDistanceScale += zoomSpeed * Time.deltaTime;
 
@@ -91,12 +81,9 @@ public class LagCamera : MonoBehaviour
     {
         if (target != null)
         {
-            // Bobbing
             bobTimer += Time.deltaTime * bobSpeed;
             float bobY = Mathf.Sin(bobTimer) * bobAmount;
 
-            // Drifting based on ship rotation/turning
-            // We can use the ship's angular velocity if it has a Rigidbody, or just simulate it.
             Rigidbody targetRb = target.GetComponent<Rigidbody>();
             if (targetRb != null)
             {
@@ -107,7 +94,7 @@ public class LagCamera : MonoBehaviour
 
             Vector3 offset = startOffset + Vector3.up * verticalOffset;
             Vector3 finalOffset = (offset * currentDistanceScale) + new Vector3(0, bobY, 0) + driftOffset;
-            
+
             transform.position = target.TransformPoint(finalOffset);
             transform.rotation = Quaternion.Slerp(transform.rotation, target.rotation * startRotationOffset, rotateSpeed * Time.deltaTime);
         }

@@ -1,12 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Pulses the brightness of a UI Text and adds a soft outline that fades in
-/// and out on the same beat. Used by the main-menu "FIGHT OR FLIGHT" title.
-///
-/// Pulsing uses unscaled time so it keeps animating even on pause / menus.
-/// </summary>
 [RequireComponent(typeof(Graphic))]
 public class TitlePulse : MonoBehaviour
 {
@@ -38,10 +32,8 @@ public class TitlePulse : MonoBehaviour
     {
         if (_graphic == null) return;
 
-        // Smooth 0..1 oscillation.
         float t = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * pulseRate * Mathf.PI * 2f);
 
-        // Brightness pulse on the graphic itself.
         float mul = 1f + (t - 0.5f) * brightnessAmplitude * 2f;
         Color c = _baseColor;
         c.r = Mathf.Clamp01(_baseColor.r * mul);
@@ -49,7 +41,6 @@ public class TitlePulse : MonoBehaviour
         c.b = Mathf.Clamp01(_baseColor.b * mul);
         _graphic.color = c;
 
-        // Outline alpha follows the same pulse.
         if (_outline != null)
         {
             var oc = _outline.effectColor;

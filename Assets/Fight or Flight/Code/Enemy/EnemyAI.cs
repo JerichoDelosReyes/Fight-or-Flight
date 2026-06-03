@@ -7,13 +7,11 @@ public class EnemyAI : MonoBehaviour
     private Rigidbody playerRb;
     private ShipPhysics physics;
 
-    // ── Combat ─────────────────────────────────────────────────────────────────
     [Header("Combat")]
     public GameObject laserPrefab;
     public float fireRate = 1.2f;
     public float laserSpawnForwardOffset = 100f;
 
-    // ── Behaviour ranges (game units; ArenaRadius = 120 user units = 12,000) ──
     private static float ChaseTriggerDist => ScriptsReference.ArenaRadius * 0.50f;
     private static float BackAwayDist     => ScriptsReference.ArenaRadius * 0.08f;
 
@@ -23,17 +21,14 @@ public class EnemyAI : MonoBehaviour
     public float strafeSpeed = 0.45f;
     private float circleDir = 1f;
 
-    // ── Obstacle Avoidance ──────────────────────────────────────────────────────
     [Header("Obstacle Avoidance")]
     public float avoidanceOffset = 400f;
     public float avoidanceRange = 4000f;
 
-    // ── Visuals ────────────────────────────────────────────────────────────────
     [Header("Visuals")]
     public TrailRenderer trail;
     public Light glow;
 
-    // ── State ──────────────────────────────────────────────────────────────────
     private enum AIState { Chase, Attack }
     private AIState state = AIState.Chase;
 
@@ -245,7 +240,7 @@ public class EnemyAI : MonoBehaviour
         if (toPlayer.sqrMagnitude < 0.001f) return true;
 
         float dot = Vector3.Dot(transform.forward, toPlayer.normalized);
-        return dot > 0.9659258f; // cos(15 degrees)
+        return dot > 0.9659258f;
     }
 
     private Vector3 ApplyBoundaryCorrection(Vector3 dir)

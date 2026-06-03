@@ -5,10 +5,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>
-/// Editor tool: "Fight or Flight → Setup Game Paused UI". Builds a live-editable preview of
-/// the pause panel in the active scene mirroring GamePausedUI.cs. Delete preview before shipping.
-/// </summary>
 public static class GamePausedUISetup
 {
     [MenuItem("Fight or Flight/Setup Game Paused UI")]
@@ -28,7 +24,6 @@ public static class GamePausedUISetup
         var root = new GameObject("GamePausedUI_Preview");
         Undo.RegisterCreatedObjectUndo(root, "Setup Game Paused UI");
 
-        // Canvas
         var canvasGo = new GameObject("PauseCanvas");
         canvasGo.transform.SetParent(root.transform, false);
         var canvas = canvasGo.AddComponent<Canvas>();
@@ -67,7 +62,6 @@ public static class GamePausedUISetup
             "OK");
     }
 
-    // ─── Pause button (top-left corner) ──────────────────────────────────────
 
     private static void BuildPauseButtonPreview(Transform canvasT, Font font)
     {
@@ -95,11 +89,9 @@ public static class GamePausedUISetup
         t.text = "II";
     }
 
-    // ─── Pause overlay panel ─────────────────────────────────────────────────
 
     private static void BuildPauseOverlayPreview(Transform canvasT, Font font)
     {
-        // Full-screen dimmer — starts INACTIVE so it doesn't block the scene
         var overlay = new GameObject("PauseOverlay");
         overlay.transform.SetParent(canvasT, false);
         var ort = overlay.AddComponent<RectTransform>();
@@ -108,7 +100,6 @@ public static class GamePausedUISetup
         overlay.AddComponent<Image>().color = new Color(0f, 0.02f, 0.06f, 0.78f);
         overlay.SetActive(false);
 
-        // Panel
         const float PW = 560f, PH = 580f;
         var panelRt = NewRtBlank("Panel", overlay.transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
@@ -121,7 +112,6 @@ public static class GamePausedUISetup
         if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
         else panelImg.color = Color.white;
 
-        // "GAME PAUSED" — plain text, extra top padding
         var headerRt = NewRt("Header", panelRt.transform, font);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
         headerRt.anchoredPosition = new Vector2(0f, -32f);
@@ -133,14 +123,12 @@ public static class GamePausedUISetup
         ht.text = "GAME PAUSED";
         ht.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-        // Divider
         var divRt = NewRtBlank("Divider", panelRt.transform);
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
         divRt.anchoredPosition = new Vector2(0f, -96f);
         divRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divRt.gameObject.AddComponent<Image>().color = new Color(0f, 1f, 0.831f, 0.38f);
 
-        // Buttons — vertically centered below divider
         const float BW = PW - 44f, BH = 70f;
         const float BY = -136f, STEP = -96f;
 
@@ -168,8 +156,6 @@ public static class GamePausedUISetup
         var btn = root.gameObject.AddComponent<Button>();
         btn.targetGraphic = img;
 
-        // Mirror runtime ColorBlock: non-highlighted buttons are transparent in normal state
-        // Preview at 40% so button bounds are visible in editor; runtime starts at 0%
         var colors = btn.colors;
         colors.normalColor      = new Color(1f, 1f, 1f, 0.4f);
         colors.highlightedColor = highlighted ? Color.white : new Color(1f, 1f, 1f, 0.55f);
@@ -177,7 +163,6 @@ public static class GamePausedUISetup
         colors.colorMultiplier  = 1f;
         btn.colors = colors;
 
-        // Text — centered
         float rightPad = iconSpriteName != null ? -80f : -10f;
         var txtRt = NewRt("Txt", root.transform, font);
         txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
@@ -192,7 +177,6 @@ public static class GamePausedUISetup
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Icon (skipped for RESTART WAVE which has no icon in the reference)
         if (iconSpriteName != null)
         {
             var iconRt = NewRtBlank("Icon", root.transform);
@@ -209,9 +193,7 @@ public static class GamePausedUISetup
         }
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    // Creates a RectTransform + Text component (Text is ready to configure after)
     private static RectTransform NewRt(string name, Transform parent, Font font)
     {
         var go = new GameObject(name);
@@ -222,7 +204,6 @@ public static class GamePausedUISetup
         return go.GetComponent<RectTransform>();
     }
 
-    // Creates a bare RectTransform
     private static RectTransform NewRtBlank(string name, Transform parent)
     {
         var go = new GameObject(name);

@@ -2,25 +2,17 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>
-/// Full-screen settings overlay built entirely in code — no prefab or scene setup required.
-/// Opened by MainMenuController.OpenSettings(). All values persist via PlayerPrefs and
-/// are committed only when the player clicks APPLY.
-/// </summary>
 public class SettingsMenu : MonoBehaviour
 {
-    // ── PlayerPrefs keys ──────────────────────────────────────────────────────
 
     private const string KeyControlScheme = "ControlScheme";
     private const string KeyVolMaster     = "VolMaster";
     private const string KeyVolMusic      = "VolMusic";
     private const string KeyVolSFX        = "VolSFX";
 
-    // ── Selection state ───────────────────────────────────────────────────────
 
-    private int selectedScheme;     // 0 = Keyboard Only, 1 = Mouse + Keyboard
+    private int selectedScheme;
 
-    // ── Widget refs ───────────────────────────────────────────────────────────
 
     [Header("UI References")]
     [SerializeField] private GameObject panel;
@@ -33,13 +25,12 @@ public class SettingsMenu : MonoBehaviour
 
     private Color[]  schemeColors = new[]
     {
-        new Color(0.13f, 0.50f, 0.80f),  // blue
-        new Color(0.13f, 0.72f, 0.72f),  // teal — matches panel accent
+        new Color(0.13f, 0.50f, 0.80f),
+        new Color(0.13f, 0.72f, 0.72f),
     };
 
     private Font uiFont;
 
-    // Sci-Fi UI Assets
     private Sprite panelSprite;
     private Sprite headerSprite;
     private Sprite btnLargeSprite;
@@ -52,7 +43,6 @@ public class SettingsMenu : MonoBehaviour
 
     private GameObject _confirmOverlay;
 
-    // ── Static entry point ────────────────────────────────────────────────────
 
     private static SettingsMenu instance;
 
@@ -66,12 +56,10 @@ public class SettingsMenu : MonoBehaviour
 
         GameObject prefab = null;
 
-        // Priority 1: MainMenu folder prefab
         #if UNITY_EDITOR
         prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fight or Flight/Content/Prefabs/UI/SettingsMenu.prefab");
         #endif
 
-        // Priority 2: Resources
         if (prefab == null)
         {
             prefab = Resources.Load<GameObject>("RootResources/UI/SettingsMenu");
@@ -84,36 +72,29 @@ public class SettingsMenu : MonoBehaviour
         }
         else
         {
-            // Fallback to procedural only if absolutely necessary
             var go = new GameObject("SettingsMenu");
             instance = go.AddComponent<SettingsMenu>();
         }
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()
     {
-        // If an instance already exists and it's not us, we might be a duplicate or 
-        // a new one created while the old one is being destroyed.
         if (instance != null && instance != this)
         {
-            // If the old one is valid, we don't need this one.
             if (instance.gameObject != null)
             {
                 Destroy(gameObject);
                 return;
             }
         }
-        
+
         instance = this;
         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         LoadAssets();
         LoadCurrent();
         EnsureEventSystem();
-        
-        // If we are instantiated from a prefab, UI components might already be assigned.
-        // If not, we build it procedurally as a fallback.
+
         if (panel == null)
         {
             BuildUI();
@@ -158,14 +139,12 @@ public class SettingsMenu : MonoBehaviour
         es.AddComponent<StandaloneInputModule>();
     }
 
-    // ── Load saved values ─────────────────────────────────────────────────────
 
     private void LoadCurrent()
     {
         selectedScheme = PlayerPrefs.GetInt(KeyControlScheme, 1);
     }
 
-    // ── UI construction ───────────────────────────────────────────────────────
 
     private void BuildUI()
     {
@@ -183,19 +162,16 @@ public class SettingsMenu : MonoBehaviour
         if (gameObject.GetComponent<GraphicRaycaster>() == null)
             gameObject.AddComponent<GraphicRaycaster>();
 
-        // Dark overlay (full screen).
         MakeStretchedImage(gameObject, new Color(0f, 0f, 0f, 0.85f));
 
         var panel = MakePanel(new Vector2(0, 0), new Vector2(1100, 850));
 
-        // ── Title ─────────────────────────────────────────────────────────────
         var titleGo = MakeLabel(panel, "SETTINGS", 56, new Color(0.3f, 1f, 1f), FontStyle.Bold,
                                 new Vector2(0, 347), new Vector2(840, 90));
         titleGo.transform.localScale = new Vector3(0.779049993f, 0.779049993f, 0.779049993f);
-        
+
         var topDivider = MakeDivider(panel, new Vector2(0, 315));
 
-        // ── Type Header (Formerly Control Scheme) ─────────────────────────────
         var typeHeader = MakeHeaderBar(panel, "CONTROLS", 26, new Vector2(0, 265), 40.9f);
         typeHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
         foreach (Transform child in typeHeader.transform)
@@ -203,7 +179,6 @@ public class SettingsMenu : MonoBehaviour
             if (child.name == "Lbl") child.localScale = new Vector3(1f, 0.249009997f, 1f);
         }
 
-        // Backing panel for buttons
         var btnBacking = new GameObject("ButtonPanel");
         btnBacking.transform.SetParent(panel.transform, false);
         var backingRt = btnBacking.AddComponent<RectTransform>();
@@ -232,7 +207,6 @@ backingImg.sprite = headerSprite;
             schemeButtons[i] = btn.GetComponent<Button>();
         }
 
-        // ── Audio Settings Header ─────────────────────────────────────────────
         var audioHeader = MakeHeaderBar(panel, "AUDIO SETTINGS", 26, new Vector2(0, 60), 30.7f);
         audioHeader.transform.localScale = new Vector3(1f, 4.56069994f, 1f);
         foreach (Transform child in audioHeader.transform)
@@ -240,7 +214,6 @@ backingImg.sprite = headerSprite;
             if (child.name == "Lbl") child.localScale = new Vector3(1f, 0.249009997f, 1f);
         }
 
-        // ── Volume sliders ────────────────────────────────────────────────────
 float labelX = -250f;
         float sliderX = 180f;
         float sliderWidth = 500f;
@@ -257,11 +230,9 @@ float labelX = -250f;
                   new Vector2(labelX, -120), new Vector2(380, 40));
         sfxSlider = MakeSlider(panel, new Vector2(sliderX, -120), sliderWidth, PlayerPrefs.GetFloat(KeyVolSFX, 1f));
 
-        // ── Delete Data / Apply / Close ───────────────────────────────────────
         var bottomDivider = MakeDivider(panel, new Vector2(0, -200));
         bottomDivider.transform.localScale = new Vector3(1f, 110.874985f, 1f);
-        
-        // DELETE DATA (left) and APPLY (right) — identical size/scale, side by side
+
         bool onMainMenu = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu";
 
         var deleteDataBtn = MakeButton(panel, "DELETE DATA", new Color(1f, 0.31f, 0.31f),
@@ -311,7 +282,6 @@ float labelX = -250f;
         var closeLbl = closeBtn.transform.Find("Lbl");
         if (closeLbl != null) closeLbl.localScale = new Vector3(1f, 0.815180004f, 1f);
 
-        // Highlight current selections.
         SelectScheme(selectedScheme);
     }
 
@@ -330,7 +300,6 @@ float labelX = -250f;
         return go;
     }
 
-    // ── Selection actions (visual highlight + state) ──────────────────────────
 
     private void SelectScheme(int idx)
     {
@@ -346,11 +315,9 @@ float labelX = -250f;
             bool active = i == selectedIdx;
             Color c = baseColors[i];
 
-            // No background — button is text + underline only.
             var img = buttons[i].GetComponent<Image>();
             if (img != null) img.color = Color.clear;
 
-            // Label — white when active, half-opacity when not (still legible).
             var lbl = buttons[i].GetComponentInChildren<Text>();
             if (lbl != null)
                 lbl.color = active ? Color.white : new Color(0.75f, 0.75f, 0.75f, 0.65f);
@@ -359,16 +326,11 @@ float labelX = -250f;
         }
     }
 
-    // ── Apply / Close ─────────────────────────────────────────────────────────
 
     private void ApplySettings()
     {
-        // Control scheme + invert toggles → routed through ControlSchemeManager so
-        // the static caches stay in sync with PlayerPrefs without a scene reload.
         ControlSchemeManager.SetScheme((ControlSchemeManager.Scheme)selectedScheme);
 
-        // Volume — master applies live via AudioListener; music/SFX are persisted
-        // for AudioSource components / future mixers to read.
         PlayerPrefs.SetFloat(KeyVolMaster, masterSlider.value);
         PlayerPrefs.SetFloat(KeyVolMusic,  musicSlider.value);
         PlayerPrefs.SetFloat(KeyVolSFX,    sfxSlider.value);
@@ -395,7 +357,6 @@ float labelX = -250f;
         cg.blocksRaycasts = visible;
     }
 
-    // ── UI helpers ────────────────────────────────────────────────────────────
 
     private void MakeStretchedImage(GameObject parent, Color color)
     {
@@ -487,7 +448,6 @@ float labelX = -250f;
         btn.targetGraphic = img;
         btn.onClick.AddListener(onClick);
 
-        // Add Hitbox
         var hitboxGo = new GameObject("Hitbox");
         hitboxGo.transform.SetParent(go.transform, false);
         var hitboxRt = hitboxGo.AddComponent<RectTransform>();
@@ -513,7 +473,6 @@ float labelX = -250f;
         rt.anchoredPosition = pos;
         rt.sizeDelta = new Vector2(width, 40);
 
-        // ── Track — rounded, dark ────────────────────────────────────────────
         var trackGo = new GameObject("Track");
         trackGo.transform.SetParent(go.transform, false);
         var trackRt = trackGo.AddComponent<RectTransform>();
@@ -526,7 +485,6 @@ float labelX = -250f;
         trackImg.type   = Image.Type.Sliced;
         trackImg.color  = new Color(0.08f, 0.18f, 0.26f, 1f);
 
-        // ── Fill area — rounded, teal ────────────────────────────────────────
         var fillAreaGo = new GameObject("FillArea");
         fillAreaGo.transform.SetParent(go.transform, false);
         var fillAreaRt = fillAreaGo.AddComponent<RectTransform>();
@@ -546,7 +504,6 @@ float labelX = -250f;
         fillImg.type   = Image.Type.Sliced;
         fillImg.color  = new Color(0.18f, 0.72f, 0.88f, 1f);
 
-        // ── Handle area ──────────────────────────────────────────────────────
         var handleAreaGo = new GameObject("HandleArea");
         handleAreaGo.transform.SetParent(go.transform, false);
         var handleAreaRt = handleAreaGo.AddComponent<RectTransform>();
@@ -575,14 +532,12 @@ float labelX = -250f;
         return slider;
     }
 
-    // ── Delete Data flow ──────────────────────────────────────────────────────
 
     private void ShowDeleteConfirm()
     {
         if (_confirmOverlay != null) return;
 
         _confirmOverlay = new GameObject("DeleteConfirmOverlay");
-        // Root-level so the settings CanvasGroup hide doesn't swallow it.
 
         var canvas = _confirmOverlay.AddComponent<Canvas>();
         canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
@@ -593,7 +548,6 @@ float labelX = -250f;
         scaler.matchWidthOrHeight   = 0.5f;
         _confirmOverlay.AddComponent<GraphicRaycaster>();
 
-        // Dim
         var dimGo = new GameObject("Dim");
         dimGo.transform.SetParent(_confirmOverlay.transform, false);
         var dimRt = dimGo.AddComponent<RectTransform>();
@@ -601,7 +555,6 @@ float labelX = -250f;
         dimRt.offsetMin = dimRt.offsetMax = Vector2.zero;
         dimGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.65f);
 
-        // Dialog panel
         var dialogGo = new GameObject("Dialog");
         dialogGo.transform.SetParent(_confirmOverlay.transform, false);
         var dialogRt = dialogGo.AddComponent<RectTransform>();
@@ -621,7 +574,6 @@ float labelX = -250f;
         MakeLabel(dialogGo, "This action cannot be undone.", 20, new Color(1f, 0.65f, 0.15f),
                 FontStyle.Bold, new Vector2(0f, -15f), new Vector2(760f, 34f));
 
-        // CONFIRM and CANCEL — same style as APPLY / DELETE DATA buttons
         var confirmBtn = MakeButton(dialogGo, "CONFIRM", new Color(1f, 0.31f, 0.31f),
                         new Vector2(2f, -64f), new Vector2(350f, 70f), DoDeleteData, false);
         confirmBtn.transform.localScale = new Vector3(1f, 1.89750004f, 1f);
@@ -662,7 +614,6 @@ float labelX = -250f;
         scaler.matchWidthOrHeight  = 0.5f;
         toastRoot.AddComponent<GraphicRaycaster>();
 
-        // Card — top center
         var card = new GameObject("Card");
         card.transform.SetParent(toastRoot.transform, false);
         var cardRt = card.AddComponent<RectTransform>();
@@ -673,7 +624,6 @@ float labelX = -250f;
             ? new Color(0.08f, 0.56f, 0.22f, 1f)
             : new Color(0.72f, 0.12f, 0.08f, 1f);
 
-        // Icon — left portion, centered vertically
         var iconGo = new GameObject("Icon");
         iconGo.transform.SetParent(card.transform, false);
         var iconRt = iconGo.AddComponent<RectTransform>();
@@ -692,7 +642,6 @@ float labelX = -250f;
         iconTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
         iconTxt.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Message — fills remaining width, centered
         var txtGo = new GameObject("Txt");
         txtGo.transform.SetParent(card.transform, false);
         var txtRt = txtGo.AddComponent<RectTransform>();

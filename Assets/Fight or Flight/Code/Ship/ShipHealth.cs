@@ -33,10 +33,6 @@ public AudioClip explosionSound;
     {
         currentHealth = maxHealth;
 
-        // Sync isPlayer from the Ship component if it's set there. The prefab
-        // sometimes has Ship.isPlayer=true but ShipHealth.isPlayer=false, which
-        // sends the player through the enemy-death branch and skips the
-        // defeat screen.
         var ship = GetComponent<Ship>();
         if (ship != null && ship.isPlayer) isPlayer = true;
     }
@@ -45,8 +41,6 @@ public AudioClip explosionSound;
     {
         if (!isPlayer) return;
 
-        // Safety net: if health hit 0 by any path that bypassed TakeDamage,
-        // make sure Die() still fires so the defeat screen appears.
         if (currentHealth <= 0f && !_hasDied)
         {
             currentHealth = 0f;
@@ -54,13 +48,11 @@ public AudioClip explosionSound;
             return;
         }
 
-        // Health regen
         if (currentHealth < maxHealth && Time.time >= lastDamageTime + regenDelay)
         {
             currentHealth = Mathf.Min(maxHealth, currentHealth + regenRate * Time.deltaTime);
         }
 
-        // Shield regen
         if (currentShield < maxShield)
         {
             if (_shieldRegenTimer > 0f)
@@ -72,7 +64,6 @@ public AudioClip explosionSound;
 
     public void TakeDamage(float amount)
     {
-        // Shield absorbs damage first
         if (isPlayer && currentShield > 0f)
         {
             float absorbed = Mathf.Min(currentShield, amount);
@@ -81,7 +72,7 @@ public AudioClip explosionSound;
             _shieldRegenTimer = shieldRegenDelay;
         }
 
-        if (amount <= 0f) return; // fully absorbed by shield
+        if (amount <= 0f) return;
 
         currentHealth -= amount;
         lastDamageTime = Time.time;
@@ -89,9 +80,9 @@ public AudioClip explosionSound;
 
         if (isPlayer)
         {
-            ScreenShake.Trigger(0.35f, 5f); // Increased from 0.2f, 2f
+            ScreenShake.Trigger(0.35f, 5f);
             ScreenFlash.Trigger(new Color(1f, 0.1f, 0.1f, 0.3f), 0.15f);
-            ScreenVignette.Trigger(0.6f, 0.7f); // New vignette effect
+            ScreenVignette.Trigger(0.6f, 0.7f);
         }
 
         if (currentHealth <= 0)
@@ -101,11 +92,11 @@ public AudioClip explosionSound;
         }
     }
 
-    public float collisionDamage = 5f; // Reduced from 15f
+    public float collisionDamage = 5f;
     public GameObject poofPrefab;
 
     private float _lastCollisionDamageTime;
-    private const float CollisionCooldown = 1.0f; // Seconds between collision damage
+    private const float CollisionCooldown = 1.0f;
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -116,12 +107,11 @@ public AudioClip explosionSound;
                            collision.gameObject.name.ToLower().Contains("asteroid") ||
                            collision.gameObject.name.StartsWith("BoundaryRock");
 
-        bool hitEnemy = collision.gameObject.CompareTag("Enemy") || 
+        bool hitEnemy = collision.gameObject.CompareTag("Enemy") ||
                         collision.gameObject.GetComponentInParent<EnemyMovement>() != null;
 
         if (!hitObstacle && !hitEnemy) return;
 
-        // Enemies don't die on rocks or other enemies anymore.
         if (!isPlayer) return;
 
         _lastCollisionDamageTime = Time.time;
@@ -143,30 +133,26 @@ public AudioClip explosionSound;
         if (_hasDied) return;
         _hasDied = true;
 
-        // Play explosion — scaled up for drama.
         if (explosionPrefab != null)
         {
             var ex = Instantiate(explosionPrefab, transform.position, transform.rotation);
             ex.transform.localScale *= isPlayer ? 2.4f : 1.8f;
         }
 
-        // Play poof on death (especially for enemies)
         if (poofPrefab != null)
         {
             var p = Instantiate(poofPrefab, transform.position, transform.rotation);
             p.transform.localScale *= 1.5f;
         }
 
-        // Sound - Use spatialized audio source if available, otherwise fallback
         if (explosionSound != null)
         {
-            // PlayClipAtPoint is used sparingly here; object is being destroyed so no persistent source is available.
             AudioSource.PlayClipAtPoint(explosionSound, transform.position, 1.0f);
         }
 
         if (isPlayer)
         {
-            ScreenFlash.Clear(); // remove any lingering flash before the defeat screen freezes time
+            ScreenFlash.Clear();
             Debug.Log("Player Ship Destroyed!");
             GameEventManager.PlayerDestroyed();
             DefeatScreen.Show(
@@ -177,9 +163,6 @@ public AudioClip explosionSound;
                 WaveManager.MaxWave,
                 GameModeManager.Selected == GameModeManager.Mode.Survival);
 
-            // Disable the ship so it can't keep firing / shaking the camera while
-            // the defeat screen is up, but leave the GameObject around in case other
-            // systems (HUD, etc.) still reference it.
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
             foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = false;
             var rb = GetComponent<Rigidbody>();
@@ -189,18 +172,13 @@ var combat = GetComponent<ShipCombat>(); if (combat != null) combat.enabled = fa
         }
         else
         {
-            // Enemy destroyed
             EnemySpawner spawner = UnityEngine.Object.FindAnyObjectByType<EnemySpawner>();
             if (spawner != null) spawner.OnEnemyDestroyed();
             GameEventManager.EnemyDestroyed();
 
-            // AddKillScore increments both Score and the Kills counter.
-            // Pickup.cs uses the legacy GameEventManager.IncrementScore path which calls
-            // ScoreManager.AddScore (no kill counter) — keeping them distinct.
             ScoreManager.AddKillScore(100);
             GameEventManager.IncrementScore(100);
 
-            // Brief white flash for game-feel impact.
             ScreenFlash.Trigger(Color.white, 0.08f);
             ScreenShake.Trigger(0.12f, 1.2f);
 

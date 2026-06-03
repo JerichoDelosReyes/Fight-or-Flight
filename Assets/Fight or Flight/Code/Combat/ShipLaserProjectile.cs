@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class ShipLaserProjectile : MonoBehaviour
 {
-    public float speed = 5000f; 
+    public float speed = 5000f;
 public float lifeTime = 5f;
     public float damage = 8f;
     public string targetTag = "Enemy";
@@ -11,12 +11,10 @@ public float lifeTime = 5f;
     private AudioSource audioSource;
     private Vector3 movementDirection = Vector3.zero;
 
-    // Initialize with explicit firing direction (world space). shipVelocity is ignored.
     public void Initialize(Vector3 initialDirection)
     {
         if (initialDirection != Vector3.zero)
             movementDirection = initialDirection.normalized;
-        // Align visual rotation to movement direction immediately
         if (movementDirection != Vector3.zero)
         {
             transform.rotation = Quaternion.LookRotation(movementDirection, Vector3.up);
@@ -25,7 +23,6 @@ public float lifeTime = 5f;
 
     private void Start()
     {
-        // Ensure it's not parented to the ship so it doesn't follow its movement
         transform.SetParent(null, true);
 
         Destroy(gameObject, lifeTime);
@@ -41,7 +38,6 @@ public float lifeTime = 5f;
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
-            // Only set velocity if not already kinematic to avoid console warnings.
             if (!rb.isKinematic)
             {
                 rb.linearVelocity = Vector3.zero;
@@ -54,21 +50,19 @@ public float lifeTime = 5f;
 
     private void Update()
     {
-        // Straight movement in world space using cached direction
         if (movementDirection != Vector3.zero)
         {
             transform.position += (movementDirection * speed) * Time.deltaTime;
         }
         else
         {
-            // Fallback if forward was somehow zero
             transform.position += (transform.forward * speed) * Time.deltaTime;
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.isTrigger) return; 
+        if (other.isTrigger) return;
 
         ShipHealth health = other.GetComponentInParent<ShipHealth>();
         if (health != null)

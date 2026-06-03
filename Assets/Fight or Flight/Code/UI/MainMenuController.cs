@@ -58,7 +58,6 @@ public class MainMenuController : MonoBehaviour
 
     private void InitializeAssets()
     {
-        // Fallback for sprite if not assigned
         if (buttonFrameSprite == null)
         {
             #if UNITY_EDITOR
@@ -66,7 +65,6 @@ public class MainMenuController : MonoBehaviour
             #endif
         }
 
-        // Fallback for font if not assigned
         if (menuFont == null)
         {
             #if UNITY_EDITOR
@@ -74,14 +72,12 @@ public class MainMenuController : MonoBehaviour
             #endif
         }
 
-        // Load new Sci-Fi assets from Resources
         if (panelFrameSprite == null)  panelFrameSprite  = Resources.Load<Sprite>("RootResources/SciFiUI/panel_frame");
         if (headerBarSprite == null)   headerBarSprite   = Resources.Load<Sprite>("RootResources/SciFiUI/header_bar");
         if (buttonLargeSprite == null) buttonLargeSprite = Resources.Load<Sprite>("RootResources/SciFiUI/button_large");
         if (dividerSprite == null)     dividerSprite     = Resources.Load<Sprite>("RootResources/SciFiUI/divider");
     }
 
-    // ── Polish pass ───────────────────────────────────────────────────────────
     private const string Version = "v1.0";
 
     private void ApplyMenuPolish()
@@ -89,9 +85,9 @@ public class MainMenuController : MonoBehaviour
         Vector2 unifiedSize = new Vector2(560f, 96f);
         int unifiedFontSize = 38;
 
-        Color startColor = new Color(0.0f, 1.0f, 1.0f, 1.0f); // Cyan
-        Color otherColor = new Color(0.63f, 0.63f, 1.0f, 1.0f); // Blue/Purple
-        Color quitColor = new Color(1.0f, 0.31f, 0.31f, 1.0f); // Pink/Red
+        Color startColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+        Color otherColor = new Color(0.63f, 0.63f, 1.0f, 1.0f);
+        Color quitColor = new Color(1.0f, 0.31f, 0.31f, 1.0f);
 
         StyleButton("StartButton",        unifiedSize, unifiedFontSize, startColor, startColor * 1.2f);
         StyleButton("InstructionsButton", unifiedSize, unifiedFontSize, otherColor, otherColor * 1.2f);
@@ -146,7 +142,6 @@ public class MainMenuController : MonoBehaviour
             img.raycastTarget = false;
         }
 
-        // Hitbox implementation
         GameObject hitboxGo = null;
         Transform hitboxTransform = go.transform.Find("Hitbox");
         if (hitboxTransform != null) hitboxGo = hitboxTransform.gameObject;
@@ -229,8 +224,6 @@ public class MainMenuController : MonoBehaviour
         t.raycastTarget = false;
     }
 
-    // Start Game now opens the mode picker instead of loading the scene directly.
-    // The chosen mode's button is what actually loads MainScene.
     public void StartGame() { OpenModeSelect(); }
 
     public void OpenModeSelect()
@@ -281,14 +274,12 @@ public class MainMenuController : MonoBehaviour
         AddLabel(panelGo.transform, font, "SELECT MODE", 50, new Color(0.3f, 1f, 1f), FontStyle.Bold,
                  new Vector2(0f, 323f), new Vector2(750f, 65f));
 
-        // CAMPAIGN — always available.
         var campaign = AddModeCard(panelGo.transform, font,
             "CAMPAIGN", "Be the last ship standing.",
             "Fight through 5 increasingly difficult waves of enemy ships.\nClear all waves to complete the run and unlock Survival Mode.",
             new Vector2(0f, 138f), new Color(0f, 0.88f, 1f, 1f), true);
         campaign.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Campaign));
 
-        // SURVIVAL — locked until Campaign is cleared.
         bool unlocked = GameModeManager.SurvivalUnlocked;
         string survTag  = unlocked ? "Survive the Onslaught"  : "LOCKED - COMPLETE CAMPAIGN FIRST";
         string survDesc = unlocked
@@ -301,7 +292,6 @@ public class MainMenuController : MonoBehaviour
         if (unlocked)
             survival.onClick.AddListener(() => LaunchMode(GameModeManager.Mode.Survival));
 
-        // CLOSE — matches SettingsMenu close button style exactly
         var closeGo = new GameObject("CloseBtn");
         closeGo.transform.SetParent(panelGo.transform, false);
         var closeRt = closeGo.AddComponent<RectTransform>();
@@ -336,14 +326,9 @@ public class MainMenuController : MonoBehaviour
         return root;
     }
 
-    // Builds a large overlay button with an optional sub-label and a transparent
-    // hitbox child (matching the menu's other buttons). Returns the Button.
     private UnityEngine.UI.Button AddModeButton(Transform parent, Font font, string label, string subLabel,
                                                 Vector2 pos, Color colour, bool interactable)
     {
-        // Bar sprite renders at a fixed visual height (~62px). When a subLabel is present,
-        // wrap the bar + subtext in an invisible container so both sit inside a clear layout
-        // rather than cramming both into the bar's height.
         const float BarH  = 92f;
         const float SubH  = 32f;
         const float Gap   = 10f;
@@ -360,7 +345,6 @@ public class MainMenuController : MonoBehaviour
             wrapRt.anchoredPosition = pos;
             wrapRt.sizeDelta = new Vector2(700f, BarH + Gap + SubH);
 
-            // Bar sits in the top portion; subtext in the bottom portion.
             btnParent   = wrapGo.transform;
             btnLocalPos = new Vector2(0f, (SubH + Gap) * 0.5f);
 
@@ -384,7 +368,7 @@ public class MainMenuController : MonoBehaviour
 
         var img = btnGo.AddComponent<UnityEngine.UI.Image>();
         img.sprite = buttonLargeSprite;
-        img.type = UnityEngine.UI.Image.Type.Simple;   // Simple stretches to full BarH; Sliced clips to sprite borders
+        img.type = UnityEngine.UI.Image.Type.Simple;
         img.preserveAspect = false;
         img.color = colour;
         img.raycastTarget = false;
@@ -399,7 +383,6 @@ public class MainMenuController : MonoBehaviour
         c.disabledColor = new Color(1f, 1f, 1f, 1f);
         btn.colors = c;
 
-        // Hitbox child carries the raycast so clicks register reliably.
         var hitGo = new GameObject("Hitbox");
         hitGo.transform.SetParent(btnGo.transform, false);
         var hitRt = hitGo.AddComponent<RectTransform>();
@@ -409,7 +392,6 @@ public class MainMenuController : MonoBehaviour
         hitImg.color = new Color(0, 0, 0, 0);
         hitImg.raycastTarget = true;
 
-        // Main label: centered inside the bar sprite.
         int mainSize = subLabel != null ? 34 : 30;
         AddLabel(btnGo.transform, font, label, mainSize, Color.white, FontStyle.Bold,
                  Vector2.zero, new Vector2(660f, BarH - 10f));
@@ -417,7 +399,6 @@ public class MainMenuController : MonoBehaviour
         return btn;
     }
 
-    // Rich mode-selection card: dark background, accent bar, title, tagline, description.
     private UnityEngine.UI.Button AddModeCard(Transform parent, Font font,
         string title, string tagline, string description,
         Vector2 pos, Color accent, bool interactable)
@@ -429,7 +410,6 @@ public class MainMenuController : MonoBehaviour
         rt.anchoredPosition = pos;
         rt.sizeDelta = new Vector2(760f, 235f);
 
-        // RectMask2D container — clips the tall sprite to the card's visible bounds
         var maskGo = new GameObject("Mask");
         maskGo.transform.SetParent(cardGo.transform, false);
         var maskRt = maskGo.AddComponent<RectTransform>();
@@ -437,7 +417,6 @@ public class MainMenuController : MonoBehaviour
         maskRt.offsetMin = maskRt.offsetMax = Vector2.zero;
         maskGo.AddComponent<RectMask2D>();
 
-        // Sprite stretched tall (920px) so its bar portion (~21% = 193px) fills the 205px card
         var bgGo = new GameObject("Bg");
         bgGo.transform.SetParent(maskGo.transform, false);
         var bgRt = bgGo.AddComponent<RectTransform>();
@@ -451,15 +430,12 @@ public class MainMenuController : MonoBehaviour
         bgImg.color = accent;
         bgImg.raycastTarget = false;
 
-        // Title — horizontally + vertically centered
         AddLabel(cardGo.transform, font, title, 38, Color.white, FontStyle.Bold,
                  new Vector2(0f, 57f), new Vector2(720f, 48f));
 
-        // Tagline — centered, accent color for visual importance
         AddLabel(cardGo.transform, font, tagline, 22, accent, FontStyle.Bold,
                  new Vector2(0f, 24f), new Vector2(720f, 30f));
 
-        // Description — centered, white, wrapping
         var descGo = new GameObject("Desc");
         descGo.transform.SetParent(cardGo.transform, false);
         var descRt = descGo.AddComponent<RectTransform>();
@@ -476,7 +452,6 @@ public class MainMenuController : MonoBehaviour
         descTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
         descTxt.verticalOverflow = VerticalWrapMode.Overflow;
 
-        // Button + colours
         var btn = cardGo.AddComponent<UnityEngine.UI.Button>();
         btn.targetGraphic = bgImg;
         btn.interactable = interactable;
@@ -487,7 +462,6 @@ public class MainMenuController : MonoBehaviour
         c.disabledColor  = new Color(0.55f, 0.55f, 0.55f, 1f);
         btn.colors = c;
 
-        // Hitbox
         var hitGo = new GameObject("Hitbox");
         hitGo.transform.SetParent(cardGo.transform, false);
         var hitRt = hitGo.AddComponent<RectTransform>();
@@ -500,14 +474,14 @@ public class MainMenuController : MonoBehaviour
         return btn;
     }
 
-    public void OpenInstructions() 
-    { 
+    public void OpenInstructions()
+    {
         if (instrOverlay != null) return;
 
         if (instructionsPrefab != null)
         {
             instrOverlay = Instantiate(instructionsPrefab);
-            
+
             var closeBtn = instrOverlay.GetComponentInChildren<UnityEngine.UI.Button>(true);
             var buttons = instrOverlay.GetComponentsInChildren<UnityEngine.UI.Button>(true);
             foreach (var b in buttons)
@@ -615,7 +589,6 @@ public class MainMenuController : MonoBehaviour
 
         AddLabel(dialogGo.transform, font, "QUIT GAME?", 42, Color.white,
                  FontStyle.Bold, new Vector2(0f, 150f), new Vector2(780f, 55f));
-        // Match dialog copy placement to the approved screenshot layout.
         AddLabel(dialogGo.transform, font, "Any unsaved progress will be lost.", 22,
              new Color(0.85f, 0.85f, 0.85f), FontStyle.Normal,
              new Vector2(10f, 68f), new Vector2(720f, 34f));
@@ -734,11 +707,10 @@ public class MainMenuController : MonoBehaviour
 
         float y = 210f;
         float spacing = 45f;
-        
-        // Headers with background bars
+
         AddHeaderBar(panelGo.transform, font, "MOUSE + KEYBOARD MODE", 26, Color.white, new Vector2(0, y));
         y -= spacing * 1.5f;
-        
+
         AddLabel(panelGo.transform, font, "W / S - THRUST & BRAKE", 20, Color.white, FontStyle.Normal, new Vector2(0, y), new Vector2(860, 30));
         AddDivider(panelGo.transform, new Vector2(0, y - spacing * 0.5f));
         y -= spacing;
@@ -771,17 +743,16 @@ public class MainMenuController : MonoBehaviour
         var closeBtnImg = closeBtnGo.AddComponent<UnityEngine.UI.Image>();
         closeBtnImg.sprite = buttonLargeSprite;
         closeBtnImg.type = UnityEngine.UI.Image.Type.Sliced;
-        closeBtnImg.color = new Color(1.0f, 0.31f, 0.31f, 1.0f); // Match QuitButton color
+        closeBtnImg.color = new Color(1.0f, 0.31f, 0.31f, 1.0f);
         var closeBtn = closeBtnGo.AddComponent<UnityEngine.UI.Button>();
         closeBtn.targetGraphic = closeBtnImg;
-        var cc = closeBtn.colors; 
+        var cc = closeBtn.colors;
         cc.normalColor = Color.white;
-        cc.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f); 
+        cc.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
         cc.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
         closeBtn.colors = cc;
         closeBtn.onClick.AddListener(() => { DestroyImmediate(root); instrOverlay = null; });
-        
-        // Add Hitbox for consistency
+
         var hitboxGo = new GameObject("Hitbox");
         hitboxGo.transform.SetParent(closeBtnGo.transform, false);
         var hitboxRt = hitboxGo.AddComponent<RectTransform>();
@@ -809,7 +780,7 @@ public class MainMenuController : MonoBehaviour
         var img = go.AddComponent<UnityEngine.UI.Image>();
         img.sprite = headerBarSprite;
         img.type = UnityEngine.UI.Image.Type.Sliced;
-        
+
         AddLabel(go.transform, font, text, size, colour, FontStyle.Bold, Vector2.zero, new Vector2(700, 60));
     }
 

@@ -18,7 +18,6 @@ public class EnemyAttack : MonoBehaviour
     {
         if (!TargetPlayer()) return;
 
-        // Wider firing arc (40 degrees) to compensate for movement
         if (Time.time >= _nextFireTime && TargetInfront() && HaveLineOfSight())
         {
             FireLaser();
@@ -29,7 +28,7 @@ public class EnemyAttack : MonoBehaviour
     private bool TargetInfront()
     {
         if (_target == null) return false;
-        
+
         Vector3 toTarget = _target.position - transform.position;
         if (toTarget.sqrMagnitude < 0.001f) return true;
 
@@ -42,17 +41,15 @@ public class EnemyAttack : MonoBehaviour
     private bool HaveLineOfSight()
     {
         if (_target == null) return false;
-        
+
         Vector3 directionToTarget = (_target.position - transform.position).normalized;
-        Vector3 rayStart = transform.position + transform.forward * 15f; 
-        
-        // Use a layer mask or just be more lenient. For now, let's keep it but ensure it's working.
+        Vector3 rayStart = transform.position + transform.forward * 15f;
+
         if (Physics.Raycast(rayStart, directionToTarget, out RaycastHit hit, 15000f))
         {
-            // If we hit something, check if it's NOT an obstacle (Asteroid/Rock/Boundary)
-            bool hitObstacle = hit.transform.CompareTag("Untagged") && 
+            bool hitObstacle = hit.transform.CompareTag("Untagged") &&
                 (hit.transform.name.Contains("Asteroid") || hit.transform.name.Contains("Rock") || hit.transform.name.Contains("Boundary"));
-            
+
             if (!hitObstacle)
             {
                 return true;
@@ -60,7 +57,6 @@ public class EnemyAttack : MonoBehaviour
         }
         else
         {
-            // Clear space, safe to fire
             return true;
         }
         return false;
@@ -70,7 +66,6 @@ public class EnemyAttack : MonoBehaviour
     {
         if (laserPrefab == null) return;
 
-        // Lead Targeting Logic
         Vector3 targetPos = _target.position;
         if (_targetRb != null && _targetRb.linearVelocity.magnitude > 0.5f)
         {
@@ -82,11 +77,10 @@ public class EnemyAttack : MonoBehaviour
         foreach (var point in firePoints)
         {
             if (point == null) continue;
-            
-            // Calculate direction from the specific fire point to the target
+
             Vector3 direction = (targetPos - point.position).normalized;
             Quaternion rotation = Quaternion.LookRotation(direction);
-            
+
             GameObject laser = Instantiate(laserPrefab, point.position, rotation);
             ShipLaserProjectile script = laser.GetComponent<ShipLaserProjectile>();
             if (script != null)

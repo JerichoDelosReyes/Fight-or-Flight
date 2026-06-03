@@ -14,16 +14,16 @@ public class HUDManager : MonoBehaviour
     public Text scoreText;
     public Text killText;
     public Text speedText;
-    public Text throttleText; // Added throttle text
+    public Text throttleText;
 
     private ShipHealth playerHealth;
     private ShipCombat playerCombat;
-    private ShipInput playerInput; // Added input reference
+    private ShipInput playerInput;
     private Rigidbody playerRb;
 
     private void Update()
     {
-        if (Ship.PlayerShip == null) 
+        if (Ship.PlayerShip == null)
         {
             return;
         }
@@ -33,14 +33,12 @@ public class HUDManager : MonoBehaviour
         if (playerInput == null) playerInput = Ship.PlayerShip.GetComponent<ShipInput>();
         if (playerRb == null) playerRb = Ship.PlayerShip.GetComponent<Rigidbody>();
 
-        // Update Health
         if (healthBar != null && playerHealth != null)
         {
             healthBar.maxValue = playerHealth.maxHealth;
             healthBar.value = playerHealth.currentHealth;
         }
 
-        // Update Heat
         if (heatBar != null && playerCombat != null)
         {
             heatBar.maxValue = playerCombat.overheatThreshold;
@@ -52,25 +50,21 @@ public class HUDManager : MonoBehaviour
             }
         }
 
-        // Update Score
         if (scoreText != null)
         {
             scoreText.text = string.Format("SCORE:\n{0:D6}", ScoreManager.Score);
         }
 
-        // Update Kill counter (separate from score — pickups don't increment this)
         if (killText != null)
         {
             killText.text = string.Format("KILLS: {0}", ScoreManager.Kills);
         }
 
-        // Update Speed
         if (speedText != null && playerRb != null)
         {
             speedText.text = string.Format("SPD: {0:000}", (int)playerRb.linearVelocity.magnitude);
         }
 
-        // Update Throttle
         if (throttleText != null && playerInput != null)
         {
             throttleText.text = string.Format("THR: {0:000}", (int)(playerInput.throttle * 100f));

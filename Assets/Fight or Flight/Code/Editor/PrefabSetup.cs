@@ -1,10 +1,6 @@
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// Auto-wires the ExplosionEffect prefab into any ShipHealth component that still has a null
-/// explosionPrefab reference. Runs once per domain reload so no manual setup step is needed.
-/// </summary>
 [InitializeOnLoad]
 public static class PrefabSetup
 {
@@ -18,7 +14,6 @@ public static class PrefabSetup
 
     static PrefabSetup()
     {
-        // Defer until asset database is ready.
         EditorApplication.delayCall += WireExplosionPrefabs;
     }
 
@@ -42,13 +37,11 @@ public static class PrefabSetup
                 continue;
             }
 
-            // Open the prefab for editing so changes can be written back.
             using (var scope = new PrefabUtility.EditPrefabContentsScope(path))
             {
                 var health = scope.prefabContentsRoot.GetComponent<ShipHealth>();
                 if (health == null)
                 {
-                    // Also check the first child that might have ShipHealth.
                     health = scope.prefabContentsRoot.GetComponentInChildren<ShipHealth>(true);
                 }
 
@@ -59,10 +52,10 @@ public static class PrefabSetup
                 }
 
                 if (health.explosionPrefab != null)
-                    continue; // already set, nothing to do
+                    continue;
 
                 health.explosionPrefab = explosion;
-                scope.prefabContentsRoot.name = scope.prefabContentsRoot.name; // mark dirty
+                scope.prefabContentsRoot.name = scope.prefabContentsRoot.name;
                 anyChanged = true;
                 Debug.Log("[PrefabSetup] Wired ExplosionEffect → " + path);
             }

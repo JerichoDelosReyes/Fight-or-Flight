@@ -57,8 +57,6 @@ public class EnemyMovement : MonoBehaviour
         switch (_state)
         {
             case State.Chase:
-                // Only enter FlyPast if the player is moving or we are extremely close and fast.
-                // This prevents "jousting" loops around a stationary player.
                 if (distToTarget < _flyPastDist && playerVel > 1.0f)
                 {
                     _state = State.FlyPast;
@@ -74,7 +72,6 @@ public class EnemyMovement : MonoBehaviour
                 break;
 
             case State.Reposition:
-                // If we are facing the player or far enough, go back to chase
                 Vector3 toTarget = (_target.position - transform.position).normalized;
                 float angle = Vector3.Angle(transform.forward, toTarget);
                 if (angle < 20f || distToTarget > _repositionDist)
@@ -93,38 +90,33 @@ public class EnemyMovement : MonoBehaviour
 
         if (_state == State.FlyPast)
         {
-            // Just keep going or steer slightly away
-            targetDir = transform.forward; 
+            targetDir = transform.forward;
         }
         else
         {
             targetDir = _target.position - transform.position;
         }
 
-        // Fix: Removed targetDir.y = 0. This was causing enemies to circle the 
-        // player's shadow on the XZ plane instead of pointing at the player in 3D.
-        
+
         if (targetDir.sqrMagnitude < 0.001f) return;
-        
+
         Quaternion rotation = Quaternion.LookRotation(targetDir);
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, _turnSpeed * Time.deltaTime);
 
-        // Visual banking: Roll the ship slightly based on its turning direction
         Vector3 localTargetDir = transform.InverseTransformDirection(targetDir);
-        float rollAngle = -localTargetDir.x * 0.1f; // Subtle bank
+        float rollAngle = -localTargetDir.x * 0.1f;
         transform.Rotate(0, 0, rollAngle * _turnSpeed * 10f * Time.deltaTime, Space.Self);
     }
 
     private void Move()
     {
         float speed = _movementSpeed;
-        
-        // Slow down as we approach a stationary player to stay on target and avoid overshooting.
+
         if (_target != null)
         {
             float playerVel = (_targetRb != null) ? _targetRb.linearVelocity.magnitude : 0f;
             float dist = Vector3.Distance(transform.position, _target.position);
-            
+
             if (playerVel < 0.5f && dist < _flyPastDist)
             {
                 speed = Mathf.Lerp(_movementSpeed * 0.25f, _movementSpeed, dist / _flyPastDist);
@@ -144,9 +136,6 @@ public class EnemyMovement : MonoBehaviour
         Vector3 up = transform.position + transform.up * _rayCastOffset;
         Vector3 down = transform.position - transform.up * _rayCastOffset;
 
-        // Corrected obstacle avoidance axes: 
-        // If hit left, rotate positive Y (turn right).
-        // If hit up, rotate positive X (pitch down).
         if (Physics.Raycast(left, transform.forward, out hit, _rayCastRange))
         {
             rayCastRotation.y += 1f;

@@ -39,9 +39,6 @@ public class ScreenShake : MonoBehaviour
     }
 }
 
-/// <summary>
-/// Full-screen colour flash overlay. Self-creates on first Trigger call.
-/// </summary>
 public class ScreenFlash : MonoBehaviour
 {
     private static ScreenFlash _instance;
@@ -101,7 +98,7 @@ public class ScreenFlash : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.unscaledDeltaTime; // works even when time is paused
+            elapsed += Time.unscaledDeltaTime;
             Color c = _overlay.color;
             c.a = Mathf.Lerp(0.45f, 0f, elapsed / duration);
             _overlay.color = c;
@@ -111,9 +108,6 @@ public class ScreenFlash : MonoBehaviour
     }
 }
 
-/// <summary>
-/// Red vignette effect on damage.
-/// </summary>
 public class ScreenVignette : MonoBehaviour
 {
     private static ScreenVignette _instance;
@@ -138,7 +132,7 @@ public class ScreenVignette : MonoBehaviour
     {
         var canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 998; // Just below ScreenFlash
+        canvas.sortingOrder = 998;
 
         var imgGo = new GameObject("VignetteImage");
         imgGo.transform.SetParent(transform, false);
@@ -148,7 +142,6 @@ public class ScreenVignette : MonoBehaviour
         rt.anchorMax = Vector2.one;
         rt.offsetMin = rt.offsetMax = Vector2.zero;
 
-        // Create a procedural vignette texture
         Texture2D tex = new Texture2D(128, 128);
         for (int y = 0; y < 128; y++)
         {
@@ -199,13 +192,11 @@ public class ScoreManager : MonoBehaviour
         GameEventManager.OnStartGame -= ResetScore;
     }
 
-    /// <summary>Add points only — does NOT increment the kill counter. Use for pickups.</summary>
     public static void AddScore(int amount)
     {
         Score += amount;
     }
 
-    /// <summary>Add points AND increment the kill counter. Use when an enemy is destroyed.</summary>
     public static void AddKillScore(int amount)
     {
         Score += amount;

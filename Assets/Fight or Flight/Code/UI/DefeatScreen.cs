@@ -4,10 +4,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Builds and shows the defeat overlay entirely in code — no prefab required.
-/// Called statically by ShipHealth when the player dies.
-/// </summary>
 public class DefeatScreen : MonoBehaviour
 {
     private static DefeatScreen instance;
@@ -20,11 +16,9 @@ public class DefeatScreen : MonoBehaviour
         instance.Init(score, kills, time, waves, totalWaves, survival);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
 
     private Font uiFont;
 
-    // Red / orange palette matching the reference
     private static readonly Color Red    = new Color(0.90f, 0.22f, 0.04f, 1f);
     private static readonly Color RedDim = new Color(0.90f, 0.22f, 0.04f, 0.38f);
 
@@ -53,7 +47,6 @@ public class DefeatScreen : MonoBehaviour
 
     private void OnDestroy() { instance = null; }
 
-    // ─── UI construction ──────────────────────────────────────────────────────
 
     private void BuildUI()
     {
@@ -68,7 +61,6 @@ public class DefeatScreen : MonoBehaviour
 
         gameObject.AddComponent<GraphicRaycaster>();
 
-        // Full-screen dark dimmer
         var dimmerGo = new GameObject("Dimmer");
         dimmerGo.transform.SetParent(transform, false);
         var drt = dimmerGo.AddComponent<RectTransform>();
@@ -76,7 +68,6 @@ public class DefeatScreen : MonoBehaviour
         drt.offsetMin = drt.offsetMax = Vector2.zero;
         dimmerGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.72f);
 
-        // Panel — sized to fit the stats block + buttons with a small bottom margin.
         const float PW = 520f, PH = 660f;
         var panelRt = NewRt("Panel", transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
@@ -86,11 +77,9 @@ public class DefeatScreen : MonoBehaviour
         var panelImg = panelRt.gameObject.AddComponent<Image>();
         panelImg.sprite = Resources.Load<Sprite>("UI/Sprites/panel_background");
         panelImg.type   = Image.Type.Sliced;
-        // Red tint over the panel sprite
         if (panelImg.sprite == null) panelImg.color = new Color(0.12f, 0.03f, 0.02f, 0.97f);
         else                         panelImg.color = new Color(1f, 0.35f, 0.2f, 1f);
 
-        // "MISSION FAILED" header — no border box, just bold text
         var headerRt = NewRt("Header", panelRt.transform);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
         headerRt.anchoredPosition = new Vector2(0f, -34f);
@@ -101,15 +90,12 @@ public class DefeatScreen : MonoBehaviour
         ht.text = "MISSION FAILED";
         ht.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-        // Divider below header
         var divTopRt = NewRt("DivTop", panelRt.transform);
         divTopRt.anchorMin = divTopRt.anchorMax = divTopRt.pivot = new Vector2(0.5f, 1f);
         divTopRt.anchoredPosition = new Vector2(0f, -100f);
         divTopRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divTopRt.gameObject.AddComponent<Image>().color = RedDim;
 
-        // Helmet icon — centered, slightly smaller to leave room for the stats.
-        // Pushed down a touch to add breathing room between it and the divider.
         var helmetRt = NewRt("Helmet", panelRt.transform);
         helmetRt.anchorMin = helmetRt.anchorMax = helmetRt.pivot = new Vector2(0.5f, 1f);
         helmetRt.anchoredPosition = new Vector2(0f, -128f);
@@ -118,14 +104,10 @@ public class DefeatScreen : MonoBehaviour
         helmetImg.sprite = Resources.Load<Sprite>("UI/Sprites/defeat_helmet_new");
         helmetImg.preserveAspect = true;
         helmetImg.raycastTarget  = false;
-        helmetImg.color          = Color.white; // The sprite itself is red/glowy now
+        helmetImg.color          = Color.white;
 
-        // Stats block (SCORE / TIME / KILLS / WAVES) — same data the
-        // Mission Complete overlay shows, so a Survival run still reports a result.
         BuildStats(panelRt.transform, PW);
 
-        // Buttons — nudged up so they sit in the gap below the stats rather than
-        // hugging the very bottom of the panel.
         const float BW = PW - 44f, BH = 60f;
         const float BY = -476f, STEP = -74f;
 
@@ -136,7 +118,6 @@ public class DefeatScreen : MonoBehaviour
         quitBtn.onClick.AddListener(OnQuit);
     }
 
-    // ─── Stats block ──────────────────────────────────────────────────────────
 
     private void BuildStats(Transform panelT, float PW)
     {
@@ -157,7 +138,6 @@ public class DefeatScreen : MonoBehaviour
 
         foreach (var (label, value) in rows)
         {
-            // Label (left)
             var lblRt = NewRt(label + "_Lbl", panelT);
             lblRt.anchorMin = lblRt.anchorMax = lblRt.pivot = new Vector2(0f, 1f);
             lblRt.anchoredPosition = new Vector2(sideMargin, rowY);
@@ -168,14 +148,13 @@ public class DefeatScreen : MonoBehaviour
             lt.alignment = TextAnchor.MiddleLeft;
             lt.text = label;
 
-            // Value (right)
             var valRt = NewRt(label + "_Val", panelT);
             valRt.anchorMin = valRt.anchorMax = valRt.pivot = new Vector2(1f, 1f);
             valRt.anchoredPosition = new Vector2(-sideMargin, rowY);
             valRt.sizeDelta = new Vector2(PW * 0.5f, ROW_H);
             var vt = valRt.gameObject.AddComponent<Text>();
             vt.font = uiFont; vt.fontSize = 26; vt.fontStyle = FontStyle.Bold;
-            vt.color = new Color(1f, 0.78f, 0.2f, 1f); // amber, readable over the red panel
+            vt.color = new Color(1f, 0.78f, 0.2f, 1f);
             vt.alignment = TextAnchor.MiddleRight;
             vt.text = value;
 
@@ -190,7 +169,6 @@ public class DefeatScreen : MonoBehaviour
         return $"{m}:{s:D2}";
     }
 
-    // ─── Button actions ───────────────────────────────────────────────────────
 
     private void OnRetry() => StartCoroutine(LoadScene("MainScene"));
     private void OnQuit()  => StartCoroutine(LoadScene("MainMenu"));
@@ -202,7 +180,6 @@ public class DefeatScreen : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
-    // ─── Button builder ───────────────────────────────────────────────────────
 
     private Button AddButton(Transform parent, string label, float anchoredY, bool highlighted,
                              float bw, float bh, string iconSpriteName)
@@ -216,7 +193,6 @@ public class DefeatScreen : MonoBehaviour
         img.sprite = Resources.Load<Sprite>(highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base");
         img.type   = Image.Type.Sliced;
         img.pixelsPerUnitMultiplier = 3f;
-        // Red tint over the button sprites
         img.color = highlighted ? new Color(1f, 0.28f, 0.08f, 1f) : new Color(1f, 0.28f, 0.08f, 1f);
 
         var btn = root.gameObject.AddComponent<Button>();
@@ -230,7 +206,6 @@ public class DefeatScreen : MonoBehaviour
         colors.colorMultiplier  = 1f;
         btn.colors = colors;
 
-        // Text
         float rightPad = iconSpriteName != null ? -80f : -10f;
         var txtRt = NewRt("Txt", root.transform);
         txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
@@ -243,7 +218,6 @@ public class DefeatScreen : MonoBehaviour
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Icon
         if (iconSpriteName != null)
         {
             var iconRt = NewRt("Icon", root.transform);
@@ -262,7 +236,6 @@ public class DefeatScreen : MonoBehaviour
         return btn;
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private static RectTransform NewRt(string name, Transform parent)
     {

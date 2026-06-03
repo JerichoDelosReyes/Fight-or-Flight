@@ -5,13 +5,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Editor menu command that deletes legacy HUD GameObjects from the active scene and marks it dirty.
-/// Use "Fight or Flight → Clean Legacy HUD (Active Scene)" then Ctrl+S to save.
-/// </summary>
 public static class LegacyHudCleanupTool
 {
-    // ── Public menu commands ──────────────────────────────────────────────────
 
     [MenuItem("Fight or Flight/Clean Legacy HUD (Active Scene)")]
     private static void CleanActive()
@@ -65,11 +60,9 @@ public static class LegacyHudCleanupTool
             "OK");
     }
 
-    // ── Cleanup core ──────────────────────────────────────────────────────────
 
     private static readonly HashSet<string> SafeCanvasNames = new HashSet<string>
     {
-        // Runtime-created canvases — kept even if found staged in a scene.
         "RadarCanvas", "HeadingStripCanvas",
         "PlayerHUDCanvas", "ScoreHUDCanvas",
         "WaveHUD",
@@ -90,10 +83,6 @@ public static class LegacyHudCleanupTool
         "PauseManager", "HudScanlines",
     };
 
-    /// <summary>
-    /// Deletes legacy HUD GameObjects from the given scene. Returns the
-    /// count of GameObjects removed.
-    /// </summary>
     private static int CleanScene(Scene scene)
     {
         if (!scene.IsValid() || !scene.isLoaded) return 0;
@@ -101,7 +90,6 @@ public static class LegacyHudCleanupTool
         var toDelete = new HashSet<GameObject>();
         var roots = scene.GetRootGameObjects();
 
-        // ── 1. Every Canvas that isn't part of the new HUD system ───────────
         foreach (var root in roots)
         {
             var canvases = root.GetComponentsInChildren<Canvas>(true);
@@ -113,14 +101,11 @@ public static class LegacyHudCleanupTool
             }
         }
 
-        // ── 2. Legacy HUD scripts and their parent objects ──────────────────
         AddOwnersAndChildren<HUDManager>(roots, toDelete);
         AddOwnersAndChildren<HUDController>(roots, toDelete);
         AddOwnersAndChildren<HealthUI>(roots, toDelete);
         AddOwnersAndChildren<MouseCrosshairUI>(roots, toDelete);
 
-        // ── 3. HUDManager-referenced UI elements (old health bar at bottom-left,
-        //    old score/kill/heat/speed/throttle texts, etc.) ─────────────────
         foreach (var root in roots)
         {
             foreach (var hm in root.GetComponentsInChildren<HUDManager>(true))
@@ -135,7 +120,6 @@ public static class LegacyHudCleanupTool
             }
         }
 
-        // ── 4. Image / RawImage with green-ish color outside the new HUD ────
         foreach (var root in roots)
         {
             foreach (var img in root.GetComponentsInChildren<Image>(true))
@@ -152,7 +136,6 @@ public static class LegacyHudCleanupTool
             }
         }
 
-        // ── 5. GameObjects with legacy-sounding names ───────────────────────
         string[] suspectNames = {
             "RadarPanel", "RadarBG", "RadarBackground", "RadarFrame", "RadarBox",
             "Minimap", "MiniMap", "MiniMapPanel", "MinimapPanel", "MiniMapBG",
@@ -178,8 +161,6 @@ public static class LegacyHudCleanupTool
             }
         }
 
-        // ── Resolve: remove children of objects we'll already delete so we
-        //    don't try to delete a child after its parent is gone ──────────
         var final = new List<GameObject>();
         foreach (var go in toDelete)
         {
@@ -204,7 +185,6 @@ public static class LegacyHudCleanupTool
             foreach (var comp in root.GetComponentsInChildren<T>(true))
             {
                 if (comp == null) continue;
-                // Walk up to the topmost Canvas-bearing ancestor (the legacy HUD root).
                 Transform t = comp.transform;
                 Transform canvasAncestor = null;
                 while (t != null)

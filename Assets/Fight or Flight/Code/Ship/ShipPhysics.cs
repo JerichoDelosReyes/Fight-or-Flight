@@ -1,14 +1,6 @@
-//
-// Copyright (c) Brian Hernandez. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
 
 using UnityEngine;
 
-/// <summary>
-/// Applies linear and angular forces to a ship.
-/// This is based on the ship physics from https://github.com/brihernandez/UnityCommon/blob/master/Assets/ShipPhysics/ShipPhysics.cs
-/// </summary>
 public class ShipPhysics : MonoBehaviour
 {
     [Tooltip("X: Lateral thrust\nY: Vertical thrust\nZ: Longitudinal Thrust")]
@@ -42,7 +34,6 @@ private Vector3 appliedAngularForce = Vector3.zero;
 
     private Rigidbody rbody;
 
-    // Keep a reference to the ship this is attached to just in case.
     private Ship ship;
 
     void Awake()
@@ -64,7 +55,6 @@ private Vector3 appliedAngularForce = Vector3.zero;
                 rbody.constraints &= ~RigidbodyConstraints.FreezeRotation;
         }
 
-        // Initialize values from ScriptsReference if this is the player ship
         if (ship != null && ship.isPlayer)
         {
             linearForce = ScriptsReference.DefaultLinearForce;
@@ -82,7 +72,6 @@ private Vector3 appliedAngularForce = Vector3.zero;
 
             rbody.AddRelativeForce(appliedLinearForce * forceMultiplier, ForceMode.Force);
 
-            // Limit speed - use sqrMagnitude first for performance
             float maxSpeed = ScriptsReference.MaxSpeed;
             if (!rbody.isKinematic && rbody.linearVelocity.sqrMagnitude > maxSpeed * maxSpeed)
             {
@@ -98,20 +87,16 @@ private Vector3 appliedAngularForce = Vector3.zero;
 
     private void EnforceBoundaries()
     {
-        // Simple spherical boundary based on the background size
         float boundary = ScriptsReference.BoundaryLimit;
         if (transform.position.sqrMagnitude > boundary * boundary)
         {
             Vector3 pos = transform.position;
             Vector3 normalizedPos = pos.normalized;
 
-            // Gently push back and clamp position
             transform.position = normalizedPos * boundary;
 
-            // Reduce velocity component moving away from center
             if (!rbody.isKinematic && Vector3.Dot(rbody.linearVelocity, normalizedPos) > 0)
             {
-                // Reflect or dampen velocity
                 rbody.linearVelocity = Vector3.ProjectOnPlane(rbody.linearVelocity, normalizedPos) * 0.5f;
             }
         }
@@ -122,7 +107,6 @@ private Vector3 appliedAngularForce = Vector3.zero;
         CurrentLinearInput = linearInput;
         appliedLinearForce = Vector3.Scale(linearInput, linearForce);
 
-        // Apply reverse multiplier to longitudinal thrust if moving backwards
         if (linearInput.z < 0)
         {
             appliedLinearForce.z *= reverseMultiplier;
@@ -135,19 +119,12 @@ private Vector3 appliedAngularForce = Vector3.zero;
         rawAngularInput = angularInput;
     }
 
-    /// <summary>
-    /// Sets the input for how much of linearForce and angularForce are applied
-    /// to the ship.
-    /// </summary>
     public void SetPhysicsInput(Vector3 linearInput, Vector3 angularInput)
     {
         SetLinearInput(linearInput);
         SetAngularInput(angularInput);
     }
 
-    /// <summary>
-    /// Returns a Vector3 where each component of Vector A is multiplied by the equivalent component of Vector B.
-    /// </summary>
     private Vector3 MultiplyByComponent(Vector3 a, Vector3 b)
     {
         Vector3 ret;

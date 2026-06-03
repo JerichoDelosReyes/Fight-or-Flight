@@ -4,17 +4,10 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Builds and shows the Victory overlay entirely in code — no prefab or scene setup required.
-/// Called statically by WaveManager when all waves are completed.
-/// </summary>
 public class VictoryScreen : MonoBehaviour
 {
     private static VictoryScreen instance;
 
-    /// <summary>
-    /// Instantiate and show the victory screen with the player's final score and kill count.
-    /// </summary>
     public static void Show(int score, int kills)
     {
         if (instance != null) return;
@@ -35,7 +28,6 @@ public class VictoryScreen : MonoBehaviour
         WaveManager.FadeOutBackgroundMusic();
         Time.timeScale = 0f;
 
-        // Unlock cursor so buttons are clickable
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }

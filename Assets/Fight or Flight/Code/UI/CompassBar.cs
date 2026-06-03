@@ -3,20 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// PUBG / Warzone style compass bar.
-/// Thin horizontal strip across the top-centre of the screen.
-/// Shows tick marks every 5°, degree numbers every 30°, cardinals (N/E/S/W)
-/// and intercardinals (NE/NW/SE/SW) with larger text. The labels slide left
-/// and right as the player rotates so the player's current heading is always
-/// at the centre. The current heading (e.g. "127°") is displayed under the
-/// centre tick.
-///
-/// Auto-creates itself in MainScene — no scene wiring required.
-/// </summary>
 public class CompassBar : MonoBehaviour
 {
-    // ── Auto-creation ─────────────────────────────────────────────────────────
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void HookSceneLoad()
@@ -35,30 +23,25 @@ public class CompassBar : MonoBehaviour
         new GameObject("CompassBar").AddComponent<CompassBar>();
     }
 
-    // ── Layout ────────────────────────────────────────────────────────────────
 
     private const float BarWidth  = 920f;
     private const float BarHeight = 52f;
-    private const float VisibleSpanDeg = 110f;   // total degrees visible across the bar
-    private const int   TickStepDeg    = 5;      // tick mark every N degrees
-    private const int   DegLabelStepDeg = 30;    // numeric label every N degrees
+    private const float VisibleSpanDeg = 110f;
+    private const int   TickStepDeg    = 5;
+    private const int   DegLabelStepDeg = 30;
 
-    // ── Runtime ───────────────────────────────────────────────────────────────
 
     private RectTransform _labelContainer;
     private Text          _headingNum;
 
-    // Cached label entries — one per angle, kept reusable for cheap per-frame
-    // repositioning rather than rebuilding text every frame.
     private struct Tick
     {
         public RectTransform rt;
-        public float angle;       // degrees, 0..360
-        public bool   isCardinal; // larger fade-out region
+        public float angle;
+        public bool   isCardinal;
     }
     private readonly List<Tick> _ticks = new List<Tick>();
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
@@ -70,7 +53,6 @@ public class CompassBar : MonoBehaviour
         if (Ship.PlayerShip == null || _labelContainer == null) return;
 
         Vector3 fwd = Ship.PlayerShip.transform.forward;
-        // Heading: 0° = +Z (north), increases clockwise to 360°.
         float yaw = Mathf.Repeat(Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg, 360f);
 
         float pxPerDeg = BarWidth / VisibleSpanDeg;
@@ -79,7 +61,7 @@ public class CompassBar : MonoBehaviour
         for (int i = 0; i < _ticks.Count; i++)
         {
             var t = _ticks[i];
-            float delta = Mathf.DeltaAngle(yaw, t.angle); // (-180, 180]
+            float delta = Mathf.DeltaAngle(yaw, t.angle);
             if (Mathf.Abs(delta) > halfSpan + 6f)
             {
                 t.rt.gameObject.SetActive(false);
@@ -88,7 +70,6 @@ public class CompassBar : MonoBehaviour
             t.rt.gameObject.SetActive(true);
             t.rt.anchoredPosition = new Vector2(delta * pxPerDeg, 0f);
 
-            // Fade near the edges
             var txt = t.rt.GetComponent<Text>();
             if (txt != null)
             {
@@ -101,7 +82,6 @@ public class CompassBar : MonoBehaviour
             _headingNum.text = Mathf.RoundToInt(yaw).ToString("000") + "°";
     }
 
-    // ── UI Construction ───────────────────────────────────────────────────────
 
     private void Build()
     {
@@ -121,7 +101,6 @@ public class CompassBar : MonoBehaviour
 
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        // Bar background — top-centre
         var barGo = new GameObject("CompassBarBG");
         barGo.transform.SetParent(canvasGo.transform, false);
         var barRt = barGo.AddComponent<RectTransform>();
@@ -134,7 +113,6 @@ public class CompassBar : MonoBehaviour
         barImg.color = new Color(0f, 0f, 0f, 0f);
         barGo.AddComponent<RectMask2D>();
 
-        // Sliding label container
 var lc = new GameObject("LabelContainer");
         lc.transform.SetParent(barGo.transform, false);
         _labelContainer = lc.AddComponent<RectTransform>();
@@ -142,7 +120,6 @@ var lc = new GameObject("LabelContainer");
         _labelContainer.anchoredPosition = Vector2.zero;
         _labelContainer.sizeDelta        = new Vector2(BarWidth, BarHeight);
 
-        // Generate ticks every TickStepDeg degrees, full 360°
         for (int deg = 0; deg < 360; deg += TickStepDeg)
         {
             bool isCardinal      = (deg % 90 == 0);
@@ -159,7 +136,7 @@ var lc = new GameObject("LabelContainer");
                 text     = CardinalLetter(deg);
                 fontSize = 30;
                 col      = (deg == 0)
-                    ? new Color(1f, 0.45f, 0.45f, 1f)   // red North
+                    ? new Color(1f, 0.45f, 0.45f, 1f)
                     : new Color(1f, 1f, 1f, 1f);
             }
             else if (isInterCardinal)
@@ -174,7 +151,7 @@ var lc = new GameObject("LabelContainer");
                 fontSize = 16;
                 col      = new Color(0.75f, 0.75f, 0.75f, 1f);
             }
-            else // minor tick — vertical line, no text
+            else
             {
                 AddMinorTick(deg);
                 continue;
@@ -183,7 +160,6 @@ var lc = new GameObject("LabelContainer");
             AddTextTick(deg, text, fontSize, col, isCardinal);
         }
 
-        // Centre tick mark — vertical white line at exact centre
         var ctickGo = new GameObject("CentreTick");
         ctickGo.transform.SetParent(barGo.transform, false);
         var ctickRt = ctickGo.AddComponent<RectTransform>();
@@ -193,7 +169,6 @@ var lc = new GameObject("LabelContainer");
         ctickRt.sizeDelta        = new Vector2(2f, BarHeight);
         ctickGo.AddComponent<Image>().color = new Color(0.6f, 0.85f, 1f, 0.9f);
 
-        // Heading number under the centre tick
         var hnGo = new GameObject("HeadingNum");
         hnGo.transform.SetParent(canvasGo.transform, false);
         var hnRt = hnGo.AddComponent<RectTransform>();
@@ -212,7 +187,6 @@ var lc = new GameObject("LabelContainer");
 _headingNum.horizontalOverflow = HorizontalWrapMode.Overflow;
         _headingNum.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Build text ticks
         void AddTextTick(int deg, string text, int size, Color col, bool cardinal)
         {
             var go = new GameObject("T_" + deg);

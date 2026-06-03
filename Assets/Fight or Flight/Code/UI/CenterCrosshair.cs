@@ -2,14 +2,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Tiny screen-centre crosshair. Replaces the legacy crosshair hosted on the
-/// old HUD canvas (which is nuked by LegacyHUDCleanup).
-///
-/// Only visible in Mouse + Keyboard mode (cursor is locked at screen centre,
-/// so the crosshair sits exactly where shots land).
-/// Auto-creates itself in MainScene.
-/// </summary>
 public class CenterCrosshair : MonoBehaviour
 {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -42,11 +34,8 @@ public class CenterCrosshair : MonoBehaviour
     private void Update()
     {
         if (_canvas == null) return;
-        // Always enabled now to ensure the player always has a middle cursor.
         _canvas.enabled = true;
 
-        // Raycast from the camera through the screen centre — if the hit is on
-// an Enemy, switch the crosshair colour to red.
         bool aimingAtEnemy = false;
         var cam = Camera.main;
         if (cam != null)
@@ -55,12 +44,11 @@ public class CenterCrosshair : MonoBehaviour
                                                        Screen.height * 0.5f, 0f));
             if (Physics.Raycast(ray, out var hit, 15000f))
             {
-                // Walk up the hit hierarchy to find an Enemy tag, EnemyAI, EnemyMovement or Asteroid.
                 Transform t = hit.transform;
                 while (t != null && !aimingAtEnemy)
                 {
-                    if (t.CompareTag("Enemy") || 
-                        t.GetComponent<EnemyAI>() != null || 
+                    if (t.CompareTag("Enemy") ||
+                        t.GetComponent<EnemyAI>() != null ||
                         t.GetComponent<EnemyMovement>() != null ||
                         t.GetComponentInParent<Asteroid>() != null)
                     {
@@ -94,9 +82,9 @@ public class CenterCrosshair : MonoBehaviour
         canvasGo.AddComponent<GraphicRaycaster>();
 
         _bars = new Image[3];
-        _bars[0] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(22, 2), IdleColor); // horiz
-        _bars[1] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(2, 22), IdleColor); // vert
-        _bars[2] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(3,  3), IdleColor); // centre dot
+        _bars[0] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(22, 2), IdleColor);
+        _bars[1] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(2, 22), IdleColor);
+        _bars[2] = AddBar(canvasGo.transform, new Vector2(0, 0), new Vector2(3,  3), IdleColor);
     }
 
     private static Image AddBar(Transform parent, Vector2 pos, Vector2 size, Color col)

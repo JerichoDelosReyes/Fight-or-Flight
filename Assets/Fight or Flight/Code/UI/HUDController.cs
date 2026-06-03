@@ -5,7 +5,7 @@ public class HUDController : MonoBehaviour
 {
     public RectTransform fixedCrosshair;
     public RectTransform mouseCrosshair;
-    public float projectionDistance = 1000f; // Increased from 100 for better aiming
+    public float projectionDistance = 1000f;
 
     private Camera mainCamera;
 
@@ -19,7 +19,6 @@ public class HUDController : MonoBehaviour
         if (Ship.PlayerShip == null || mainCamera == null)
             return;
 
-        // Project the ship's forward vector onto the screen
         Vector3 forwardPoint = Ship.PlayerShip.transform.position + Ship.PlayerShip.transform.forward * projectionDistance;
         Vector3 screenPoint = mainCamera.WorldToScreenPoint(forwardPoint);
 
@@ -37,7 +36,6 @@ public class HUDController : MonoBehaviour
                 fixedCrosshair.gameObject.SetActive(false);
         }
 
-        // Hide mouse crosshair since player prefers a cleaner look
         if (mouseCrosshair != null)
         {
             mouseCrosshair.gameObject.SetActive(false);

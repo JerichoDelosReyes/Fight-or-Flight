@@ -5,10 +5,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Builds and shows the mission-complete overlay entirely in code — no prefab required.
-/// Called statically by WaveManager (or similar) when the player clears the final wave.
-/// </summary>
 public class MissionCompleteScreen : MonoBehaviour
 {
     private static MissionCompleteScreen instance;
@@ -21,7 +17,6 @@ public class MissionCompleteScreen : MonoBehaviour
         instance.Init(score, timeSeconds, kills, wavesCompleted, totalWaves);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
 
     private Font uiFont;
 
@@ -53,7 +48,6 @@ public class MissionCompleteScreen : MonoBehaviour
 
     private void OnDestroy() { instance = null; }
 
-    // ─── UI construction ──────────────────────────────────────────────────────
 
     private void BuildUI()
     {
@@ -68,7 +62,6 @@ public class MissionCompleteScreen : MonoBehaviour
 
         gameObject.AddComponent<GraphicRaycaster>();
 
-        // Full-screen dimmer
         var dimmerGo = new GameObject("Dimmer");
         dimmerGo.transform.SetParent(transform, false);
         var drt = dimmerGo.AddComponent<RectTransform>();
@@ -76,7 +69,6 @@ public class MissionCompleteScreen : MonoBehaviour
         drt.offsetMin = drt.offsetMax = Vector2.zero;
         dimmerGo.AddComponent<Image>().color = new Color(0f, 0.02f, 0.06f, 0.82f);
 
-        // Panel
         const float PW = 640f, PH = 760f;
         var panelRt = NewRt("Panel", transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
@@ -89,12 +81,11 @@ public class MissionCompleteScreen : MonoBehaviour
         if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
         else                         panelImg.color = Color.white;
 
-        // --- Scrollable setup ---
         var scrollGo = new GameObject("ScrollArea");
         scrollGo.transform.SetParent(panelRt, false);
         var scrollRt = scrollGo.AddComponent<RectTransform>();
         scrollRt.anchorMin = Vector2.zero; scrollRt.anchorMax = Vector2.one;
-        scrollRt.offsetMin = new Vector2(10, 20); 
+        scrollRt.offsetMin = new Vector2(10, 20);
         scrollRt.offsetMax = new Vector2(-10, -10);
 
         var scrollRect = scrollGo.AddComponent<ScrollRect>();
@@ -102,15 +93,13 @@ public class MissionCompleteScreen : MonoBehaviour
         scrollRect.vertical = true;
         scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
 
-        // Viewport (masking)
         var viewGo = new GameObject("Viewport");
         viewGo.transform.SetParent(scrollRt, false);
         var viewRt = viewGo.AddComponent<RectTransform>();
         viewRt.anchorMin = Vector2.zero; viewRt.anchorMax = Vector2.one;
         viewRt.offsetMin = viewRt.offsetMax = Vector2.zero;
-        viewGo.AddComponent<RectMask2D>(); 
+        viewGo.AddComponent<RectMask2D>();
 
-        // Content
         var contentGo = new GameObject("Content");
         contentGo.transform.SetParent(viewRt, false);
         var contentRt = contentGo.AddComponent<RectTransform>();
@@ -120,7 +109,6 @@ public class MissionCompleteScreen : MonoBehaviour
         contentRt.sizeDelta = new Vector2(0, 730f);
         scrollRect.content = contentRt;
 
-        // "MISSION COMPLETE" header
         var headerRt = NewRt("Header", contentRt);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
         headerRt.anchoredPosition = new Vector2(0f, -32f);
@@ -131,14 +119,12 @@ public class MissionCompleteScreen : MonoBehaviour
         ht.text = "MISSION COMPLETE";
         ht.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-        // Divider below header
         var divTopRt = NewRt("DivTop", contentRt);
         divTopRt.anchorMin = divTopRt.anchorMax = divTopRt.pivot = new Vector2(0.5f, 1f);
         divTopRt.anchoredPosition = new Vector2(0f, -96f);
         divTopRt.sizeDelta = new Vector2(PW - 100f, 2f);
         divTopRt.gameObject.AddComponent<Image>().color = TealDim;
 
-        // Icon — centered
         var iconRt = NewRt("Icon", contentRt);
         iconRt.anchorMin = iconRt.anchorMax = iconRt.pivot = new Vector2(0.5f, 1f);
         iconRt.anchoredPosition = new Vector2(0f, -126f);
@@ -149,10 +135,8 @@ public class MissionCompleteScreen : MonoBehaviour
         iconImg.raycastTarget  = false;
         iconImg.color          = Color.white;
 
-        // Stats block
         BuildStats(contentRt, PW);
 
-        // Buttons
         const float BW = PW - 100f, BH = 70f;
         const float BY = -554f, STEP = -82f;
 
@@ -165,7 +149,6 @@ public class MissionCompleteScreen : MonoBehaviour
 
     private void BuildStats(Transform contentT, float PW)
     {
-        // "MISSION SUCCESSFUL!" subtitle label
         var subtitleRt = NewRt("Subtitle", contentT);
         subtitleRt.anchorMin = subtitleRt.anchorMax = subtitleRt.pivot = new Vector2(0.5f, 1f);
         subtitleRt.anchoredPosition = new Vector2(0f, -302f);
@@ -176,7 +159,6 @@ public class MissionCompleteScreen : MonoBehaviour
         st.alignment = TextAnchor.MiddleCenter;
         st.text = "MISSION SUCCESSFUL!";
 
-        // Stat rows
         var rows = new (string label, string value)[]
         {
             ("SCORE:",            _score.ToString("N0")),
@@ -191,9 +173,8 @@ public class MissionCompleteScreen : MonoBehaviour
 
         foreach (var (label, value) in rows)
         {
-            // Label (left)
             var lblRt = NewRt(label + "_Lbl", contentT);
-            lblRt.anchorMin = lblRt.anchorMax = lblRt.pivot = new Vector2(0f, 1f); // Anchor to left
+            lblRt.anchorMin = lblRt.anchorMax = lblRt.pivot = new Vector2(0f, 1f);
             lblRt.anchoredPosition = new Vector2(sideMargin, rowY);
             lblRt.sizeDelta = new Vector2(PW * 0.5f, ROW_H);
             var lt = lblRt.gameObject.AddComponent<Text>();
@@ -202,7 +183,6 @@ public class MissionCompleteScreen : MonoBehaviour
             lt.alignment = TextAnchor.MiddleLeft;
             lt.text = label;
 
-            // Value (right)
             var valRt = NewRt(label + "_Val", contentT);
             valRt.anchorMin = valRt.anchorMax = valRt.pivot = new Vector2(1f, 1f);
             valRt.anchoredPosition = new Vector2(-sideMargin, rowY);
@@ -217,7 +197,6 @@ public class MissionCompleteScreen : MonoBehaviour
         }
     }
 
-    // ─── Button actions ───────────────────────────────────────────────────────
 
     private void OnNextLevel() => StartCoroutine(LoadScene("MainScene"));
     private void OnReplay()    => StartCoroutine(LoadScene("MainScene"));
@@ -230,7 +209,6 @@ public class MissionCompleteScreen : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
-    // ─── Button builder ───────────────────────────────────────────────────────
 
     private Button AddButton(Transform parent, string label, float anchoredY, bool highlighted, float bw, float bh)
     {
@@ -271,7 +249,6 @@ public class MissionCompleteScreen : MonoBehaviour
         return btn;
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private static RectTransform NewRt(string name, Transform parent)
     {

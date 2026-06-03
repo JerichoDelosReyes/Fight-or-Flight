@@ -1,10 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Floats a score "+N" text upward and fades it out, then self-destructs.
-/// Attached by ScoreHUD when the player's score increases.
-/// </summary>
 public class ScorePopupFloat : MonoBehaviour
 {
     [Tooltip("Lifetime in seconds (uses unscaled time so it works under pause).")]
@@ -31,7 +27,6 @@ public class ScorePopupFloat : MonoBehaviour
         _t += Time.unscaledDeltaTime;
         float k = Mathf.Clamp01(_t / lifetime);
 
-        // Top-right anchor + top-right pivot → positive Y is upward on screen.
         _rt.anchoredPosition = _basePos + new Vector2(0f, riseDistance * k);
 
         Color c = _txt.color;

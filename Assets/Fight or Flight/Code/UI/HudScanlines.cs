@@ -2,10 +2,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Faint horizontal-scanline overlay across the entire screen for a sci-fi
-/// CRT vibe. Auto-creates itself in MainScene.
-/// </summary>
 public class HudScanlines : MonoBehaviour
 {
     private static void HookSceneLoad()
@@ -32,7 +28,6 @@ public class HudScanlines : MonoBehaviour
     private void Update()
     {
         if (_overlay == null) return;
-        // Tile the texture so each scanline stays 2 px tall regardless of resolution.
         const float tilePx = 4f;
         float w = Screen.width  / tilePx;
         float h = Screen.height / tilePx;
@@ -51,7 +46,7 @@ public class HudScanlines : MonoBehaviour
 
         var canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 90; // behind every HUD element but on top of gameplay
+        canvas.sortingOrder = 90;
 
         canvasGo.AddComponent<CanvasScaler>();
         canvasGo.AddComponent<GraphicRaycaster>();
@@ -66,11 +61,10 @@ public class HudScanlines : MonoBehaviour
         _tex = MakeScanlineTex();
         _overlay = imgGo.AddComponent<RawImage>();
         _overlay.texture = _tex;
-        _overlay.color   = new Color(0.6f, 0.9f, 1f, 0.05f); // very subtle cool tint
+        _overlay.color   = new Color(0.6f, 0.9f, 1f, 0.05f);
         _overlay.raycastTarget = false;
     }
 
-    // 4 px tile: rows 0-1 transparent, row 2 white, row 3 transparent.
     private static Texture2D MakeScanlineTex()
     {
         var tex = new Texture2D(4, 4, TextureFormat.ARGB32, false);

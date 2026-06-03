@@ -44,7 +44,6 @@ public class ShipCombat : MonoBehaviour
             if (laserShotSound != null)
                 AudioSource.PlayClipAtPoint(laserShotSound, transform.position, laserShotVolume);
 
-            // Tiny camera shake — adds weight to firing without being distracting.
             ScreenShake.Trigger(0.05f, 0.4f);
 
             heat += heatPerShot;
@@ -66,7 +65,6 @@ public class ShipCombat : MonoBehaviour
 
         if (firePoints == null || firePoints.Length == 0)
         {
-            // Try to find any child transforms whose name contains "FirePoint" (case-insensitive)
             var children = GetComponentsInChildren<Transform>(true);
             var found = new System.Collections.Generic.List<Transform>();
             foreach (var t in children)
@@ -87,21 +85,18 @@ public class ShipCombat : MonoBehaviour
             }
         }
 
-        // Use the camera's forward direction for ALL lasers.
-        // This ensures they all fly in a perfectly straight, parallel stream.
         Vector3 shotDirection = transform.forward;
         if (Camera.main != null)
         {
             shotDirection = Camera.main.transform.forward;
         }
-        
+
         Quaternion shotRotation = Quaternion.LookRotation(shotDirection);
 
         foreach (Transform point in firePoints)
         {
             if (point == null) continue;
 
-            // Instantiate at the wing, but fire in the universal forward direction.
             GameObject laser = Instantiate(laserPrefab, point.position, shotRotation);
             laser.transform.SetParent(null, true);
 

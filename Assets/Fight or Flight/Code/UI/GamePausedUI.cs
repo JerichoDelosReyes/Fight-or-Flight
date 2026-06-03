@@ -3,10 +3,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Sci-fi "GAME PAUSED" panel. Auto-creates in MainScene via RuntimeInitializeOnLoadMethod.
-/// Escape or TogglePause() shows/hides the panel.
-/// </summary>
 public class GamePausedUI : MonoBehaviour
 {
     public static bool IsPaused { get; private set; }
@@ -15,7 +11,6 @@ public class GamePausedUI : MonoBehaviour
     private GameObject pauseOverlay;
     private Font       uiFont;
 
-    // Teal and green color constants matching the reference
     private static readonly Color Teal      = new Color(0f,    1f,    0.831f, 1f);
     private static readonly Color TealDim   = new Color(0f,    1f,    0.831f, 0.38f);
     private static readonly Color GreenText = new Color(0.72f, 1f,    0.55f,  1f);
@@ -108,9 +103,6 @@ public class GamePausedUI : MonoBehaviour
         SceneManager.LoadScene("MainMenu");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // UI construction
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void BuildUI()
     {
@@ -164,7 +156,6 @@ public class GamePausedUI : MonoBehaviour
 
     private void BuildPauseOverlay(Transform canvasT)
     {
-        // Full-screen dimmer
         pauseOverlay = new GameObject("PauseOverlay");
         pauseOverlay.transform.SetParent(canvasT, false);
         var overlayRt = pauseOverlay.AddComponent<RectTransform>();
@@ -173,7 +164,6 @@ public class GamePausedUI : MonoBehaviour
         overlayRt.offsetMin = overlayRt.offsetMax = Vector2.zero;
         pauseOverlay.AddComponent<Image>().color = new Color(0f, 0.02f, 0.06f, 0.78f);
 
-        // Panel
         const float PW = 560f, PH = 580f;
         var panelRt = NewRt("Panel", pauseOverlay.transform);
         panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 0.5f);
@@ -186,7 +176,6 @@ public class GamePausedUI : MonoBehaviour
         if (panelImg.sprite == null) panelImg.color = new Color(0.04f, 0.12f, 0.14f, 0.97f);
         else panelImg.color = Color.white;
 
-        // "GAME PAUSED" — plain text, extra top padding
         var headerRt = NewRt("Header", panelRt.transform);
         headerRt.anchorMin = headerRt.anchorMax = headerRt.pivot = new Vector2(0.5f, 1f);
         headerRt.anchoredPosition = new Vector2(0f, -32f);
@@ -198,15 +187,12 @@ public class GamePausedUI : MonoBehaviour
         ht.text = "GAME PAUSED";
         ht.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-        // Divider line below header
         var divRt = NewRt("Divider", panelRt.transform);
         divRt.anchorMin = divRt.anchorMax = divRt.pivot = new Vector2(0.5f, 1f);
         divRt.anchoredPosition = new Vector2(0f, -96f);
         divRt.sizeDelta = new Vector2(PW - 40f, 2f);
         divRt.gameObject.AddComponent<Image>().color = TealDim;
 
-        // Buttons — vertically centered in the space below the divider.
-        // Group height = 3×STEP_MAG + BH = 288+70 = 358.
         const float BW = PW - 44f, BH = 70f;
         const float BY = -136f, STEP = -96f;
 
@@ -223,9 +209,6 @@ public class GamePausedUI : MonoBehaviour
         pauseOverlay.SetActive(false);
     }
 
-    // highlighted = true  → always-visible green glow (RESUME)
-    // highlighted = false → transparent normally, subtle teal border on hover
-    // iconSpriteName = null → no icon
     private Button AddButton(Transform parent, string label, float anchoredY, bool highlighted,
                              float bw, float bh, string iconSpriteName)
     {
@@ -237,15 +220,12 @@ public class GamePausedUI : MonoBehaviour
         var img = root.gameObject.AddComponent<Image>();
         img.sprite = Resources.Load<Sprite>(highlighted ? "UI/Sprites/button_highlighted" : "UI/Sprites/button_base");
         img.type = Image.Type.Sliced;
-        img.pixelsPerUnitMultiplier = 3f;   // compresses 9-slice borders → smaller corner radius
+        img.pixelsPerUnitMultiplier = 3f;
         img.color = Color.white;
 
         var btn = root.gameObject.AddComponent<Button>();
         btn.targetGraphic = img;
 
-        // All buttons transparent at rest. On hover:
-        //   RESUME → full-opacity green glow (button_highlighted sprite)
-        //   others → ~55% teal outline (button_base sprite)
         var colors = btn.colors;
         colors.normalColor      = new Color(1f, 1f, 1f, 0f);
         colors.highlightedColor = highlighted ? Color.white : new Color(1f, 1f, 1f, 0.55f);
@@ -254,7 +234,6 @@ public class GamePausedUI : MonoBehaviour
         colors.colorMultiplier  = 1f;
         btn.colors = colors;
 
-        // Text — centered; reserve right padding only when an icon is present
         float rightPad = iconSpriteName != null ? -80f : -10f;
         var txtRt = NewRt("Txt", root.transform);
         txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
@@ -270,7 +249,6 @@ public class GamePausedUI : MonoBehaviour
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow   = VerticalWrapMode.Overflow;
 
-        // Icon anchored to right edge (skipped when iconSpriteName is null)
         if (iconSpriteName != null)
         {
             var iconRt = NewRt("Icon", root.transform);
@@ -281,7 +259,6 @@ public class GamePausedUI : MonoBehaviour
             iconRt.sizeDelta = new Vector2(56f, 56f);
             var iconImg = iconRt.gameObject.AddComponent<Image>();
             iconImg.sprite = Resources.Load<Sprite>("UI/Sprites/" + iconSpriteName);
-            // Bright teal tint so the icon pops against the dark panel background
             iconImg.color = new Color(0f, 1f, 0.831f, 1f);
             iconImg.raycastTarget = false;
             if (iconImg.sprite == null) iconImg.enabled = false;

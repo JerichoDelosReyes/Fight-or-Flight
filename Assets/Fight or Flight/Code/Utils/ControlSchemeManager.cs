@@ -1,11 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Static control-scheme system. Persists via PlayerPrefs.
-/// Key "ControlScheme"        (0 = KeyboardOnly, 1 = MouseKeyboard).
-/// Key "InvertY"              (0 / 1) — only meaningful in MouseKeyboard mode.
-/// Key "InvertPitchKeyboard"  (0 / 1) — only meaningful in KeyboardOnly mode.
-/// </summary>
 public static class ControlSchemeManager
 {
     public enum Scheme { KeyboardOnly, MouseKeyboard }
