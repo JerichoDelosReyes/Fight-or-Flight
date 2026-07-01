@@ -23,11 +23,11 @@ A 3D space-flight action game. The player pilots a ship through an asteroid fiel
 | Action | Mouse + Keyboard | Keyboard Only |
 |--------|-----------------|---------------|
 | Thrust / Brake | `W / S` | `Left Shift` |
-| Strafe | `A / D` | — |
+| Strafe | `A / D` | - |
 | Pitch | Mouse Y | `W / S` |
 | Yaw | Mouse X | `A / D` |
 | Roll | `Q / E` | `Q / E` |
-| Boost | `Left Shift` | — |
+| Boost | `Left Shift` | - |
 | Fire | `Space` or `LMB` | `Space` or `LMB` |
 
 Control scheme is switchable in the in-game Settings menu.
@@ -96,8 +96,8 @@ UserSettings/             - Local editor settings
 
 ## Game Modes
 
-- **Campaign** — Survive 5 waves of enemies. Clearing all waves unlocks Survival Mode.
-- **Survival** — Endless enemy waves. Locked until Campaign is completed.
+- **Campaign** - Survive 5 waves of enemies. Clearing all waves unlocks Survival Mode.
+- **Survival** - Endless enemy waves. Locked until Campaign is completed.
 
 Save data (scores, unlocks) is stored in `PlayerPrefs`. Can be reset from the Settings menu.
 
